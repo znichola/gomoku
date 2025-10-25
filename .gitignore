@@ -1,4 +1,5 @@
 *.swp
 obj
 gomoku
-
+deps
+elm-stuff

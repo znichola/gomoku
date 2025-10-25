@@ -29,7 +29,7 @@ INCS_PATH = -Iinclude/.
 SRCS	= $(addprefix $(SRCS_PATH), $(addsuffix .cpp, $(FILES)))
 OBJS	= $(addprefix $(OBJS_PATH), $(addsuffix .o, $(FILES)))
 
-all	: $(NAME)
+all	: $(NAME) deps/elm
 
 $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp
 	@mkdir -p $(@D)
@@ -45,6 +45,13 @@ fclean	: clean
 	$(RM) $(NAME)
 
 re	: fclean all
+
+deps/elm:
+	mkdir -p deps && cd deps \
+	&& curl -L -o elm.gz https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz \
+	&& gzip -d elm.gz \
+	&& chmod +x elm
+
 
 run : all
 	./$(NAME)
