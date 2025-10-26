@@ -1,0 +1,21 @@
+/* ================================
+   Theme customisation for Gomoku
+   Based on PicoCSS (Red variant)
+   ================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Texturina:opsz,wght@12..72,700&display=swap');
+
+/* Stylized header for nicer aesthetic */
+h1, h2, h3 {
+  font-family: "Texturina", serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* Sticky footer that adjusts to content height */
+body {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: start;
+  min-height: 100vh;
+}

@@ -4,16 +4,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <link rel="stylesheet" href="assets/pico.classless.red.css">
+    <link rel="stylesheet" href="assets/pico.red.css">
+    <link rel="stylesheet" href="assets/custom.css">
     <title>Hello world!</title>
     <script src="main.js"></script>
   </head>
   <body>
+    <header class="container">
+      <h1>Gomoku!</h1>
+    </header>
     <main class="container">
-      <h1>Hello world!</h1>
-      <div>
-          <script>var app = Elm.Main.init();</script>
+      <div id="elm-node">
+        <script>
+          var app = Elm.Main.init({
+              node: document.getElementById("elm-node")
+          });
+        </script>
       </div>
     </main>
+    <footer class="container">@2025</footer>
   </body>
 </html>
