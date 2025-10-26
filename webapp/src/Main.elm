@@ -1,26 +1,66 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, button, div, text)
-import Html.Events exposing (onClick)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onInput)
 
-main = 
-    Browser.sandbox { init = 0, update = update, view = view }
+-- MAIN
 
-type Msg = Increment | Decrement
+main : Program () Model Msg
+main =
+    Browser.sandbox {init = init, update = update, view = view }
 
-update msg model = 
+
+-- MODEL
+
+type alias Model =
+    { name : String
+    , password : String
+    , passwordAgain : String
+    }
+
+init : Model
+init =
+    Model "" "" ""
+
+-- UPDATE
+
+type Msg
+    = Name String
+    | Password String
+    | PasswordAgain String
+
+
+update : Msg -> Model -> Model
+update msg model =
     case msg of
-        Increment -> 
-            model + 1
+        Name name ->
+            { model | name = name }
+        Password password ->
+            { model | password = password }
+        PasswordAgain password ->
+            { model | passwordAgain = password }
 
-        Decrement ->
-            model - 1
+-- VIEW
 
+view : Model -> Html Msg
 view model =
     div []
-        [ button [ onClick Decrement ] [ text "-" ]
-        , div [] [ text (String.fromInt model) ]
-        , button  [ onClick Increment ] [ text "+" ]
+        [ viewInput "text" "Name" model.name Name
+        , viewInput "password" "Password" model.password Password
+        , viewInput "passwordAgain" "Re-enter password" model.passwordAgain PasswordAgain
+        , viewValidation model
         ]
+
+viewInput : String -> String -> String -> (String -> msg) -> Html msg
+viewInput t p v toMsg =
+    input [type_ t, style "display" "block", placeholder p, value v, onInput toMsg ] []
+
+viewValidation : Model -> Html msg
+viewValidation model =
+    if model.password == model.passwordAgain then
+        div [ style "color" "green" ] [ text "OK" ]
+    else
+        div [ style "color" "red" ] [ text "Passwords do no match!" ]
 
