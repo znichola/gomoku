@@ -6,9 +6,9 @@
 
 struct GameState {
     bool isHumanGame = false;
-    int movesPlayed = 0;
     Board board;
+    std::vector<unsigned> moveHistory;
 
     std::string serialize() const;
-    bool doMove(unsigned id);
+    bool playMove(unsigned id);
 };

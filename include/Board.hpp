@@ -7,12 +7,13 @@ struct Board {
     enum class Cell: uint8_t {EMPTY=0, BLACK=1, WHITE=2};
 
     std::vector<Cell> grid;
-    unsigned blackCaptured;
-    unsigned whiteCaptured;
+    unsigned boardSize;
+    unsigned blackCaptured = 0;
+    unsigned whiteCaptured = 0;
     bool isBlackToPlay = false;
 
 
-    Board(unsigned board_size=19) : grid(board_size * board_size, Cell::EMPTY) {}
+    Board(unsigned board_size=19) :  grid(board_size * board_size, Cell::EMPTY), boardSize(board_size) {}
 
     // maybe later
     // std::set<size_t> _whitePieces;
@@ -29,8 +30,8 @@ struct Board {
     id = y * WIDTH + x
     */
 
-    inline Cell getXY(int x, int y);
-    inline void setXY(int x, int y);
+    bool playMove(unsigned id);
+    bool isValidMove(unsigned id) const;
 
-    std::string serialize() const; // someng like this or << overload
+    std::string serialize() const;
 };

@@ -8,14 +8,15 @@ std::string GameState::serialize() const {
 
     out << "{\n";
     out << "  \"isHumanGame\": " << (isHumanGame ? "true" : "false") << ",\n";
-    out << "  \"movesPlayed\": " << movesPlayed << ",\n";
+    out << "  \"movesPlayed\": " << moveHistory.size() << ",\n";
     out << "  \"board\": " << board.serialize() << "\n";
     out << "}";
 
     return out.str();
 }
 
-bool GameState::doMove(unsigned id) {
+bool GameState::playMove(unsigned id) {
     std::cout << "Playing move: " << id << "\n";
-    return true;
+    moveHistory.push_back(id);
+    return board.playMove(id);
 }

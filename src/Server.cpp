@@ -107,7 +107,7 @@ std::string Server::buildResponse(const Response& res) const {
         << "Content-Length: " << res._body.size() << "\r\n"
         << "\r\n"
         << res._body;
- 
+
     return oss.str();
 }
 
