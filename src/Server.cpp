@@ -25,7 +25,7 @@ Server::Server(int port) {
         perror("setsockopt"); exit(1); }
 
     sockaddr_in addr{};
-addr.sin_family = AF_INET;
+    addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
 
@@ -35,7 +35,8 @@ addr.sin_family = AF_INET;
     std::cout << "Server listening on port " << port << "...\n";
 }
 
-void Server::start() {
+void Server::start(GameState gs) {
+    (void)gs;
     std::signal(SIGINT, handleSigint);
 
     while(true) {
@@ -51,7 +52,7 @@ void Server::start() {
             std::string queryString = parseQueryString(request);
 
             std::cout   << "\nREQUEST\n"
-                        // << "method: {" << method << "}\n"
+                        << "method: {" << method << "}\n"
                         << "path: {" << path << "}\n"
                         << "queryStrings: {"<< queryString << "}\n"
                         // << "requst {\n" << request 

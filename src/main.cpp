@@ -10,7 +10,8 @@ int	main(int ac, char **av)
 
     Server server(9012);
 
-    server.start();
+	GameState gs;
+    server.start(gs);
 
 	return(0);
 }

@@ -1,15 +1,3 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: znichola <znichola@student.42lausanne.ch>  +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2025/10/25 20:59:50 by znichola          #+#    #+#              #
-#    Updated: 2025/10/25 20:59:50 by znichola         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
 NAME	= gomoku
 
 CC		= clang++
@@ -20,7 +8,7 @@ ifdef DEBUG
 CFLAGS	+= -g3 -fsanitize=address
 endif
 
-FILES	= main Server
+FILES	= main Server Board GameState
 
 OBJS_PATH = obj/
 SRCS_PATH = src/

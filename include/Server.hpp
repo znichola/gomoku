@@ -1,5 +1,9 @@
 #pragma once
-#include "string"
+
+#include <string>
+
+#include "GameState.hpp"
+
 
 class Server {
 private:
@@ -21,6 +25,6 @@ public:
 
     ~Server();
 
-    void start();
+    void start(GameState gs);
 };
 
