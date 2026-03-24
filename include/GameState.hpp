@@ -10,4 +10,5 @@ struct GameState {
     Board board;
 
     std::string serialize() const;
+    bool doMove(unsigned id);
 };

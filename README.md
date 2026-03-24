@@ -19,16 +19,16 @@ get gameState
     time stamp for last move, AI or human
 
 
-put startGame
+get /startGame
     send game config
         is game human v human
     response is ok
 
-put move
+get /move?id
     send a move by client
         is it player 1 or player two move
     response is ok
 
-put abandonGame
+get /abandonGame
     response is ok
 ```

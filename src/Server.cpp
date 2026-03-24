@@ -1,8 +1,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
-#include "iostream"
+#include <iostream>
+#include <sstream>
 #include "csignal"
-
 
 #include "Server.hpp"
 
@@ -35,35 +35,86 @@ Server::Server(int port) {
     std::cout << "Server listening on port " << port << "...\n";
 }
 
-void Server::start(GameState gs) {
-    (void)gs;
+void Server::start() {
     std::signal(SIGINT, handleSigint);
-
-    while(true) {
+ 
+    while (true) {
         int client = accept(server_fd, nullptr, nullptr);
-        if (client < 0) {
-            perror("accept");
-            continue;
-        }
-        std::string request = readFullRequest(client);
-        if (request.length() > 0) {
-            std::string method = parseMethod(request);
-            std::string path = parsePath(request);
-            std::string queryString = parseQueryString(request);
-
-            std::cout   << "\nREQUEST\n"
-                        << "method: {" << method << "}\n"
-                        << "path: {" << path << "}\n"
-                        << "queryStrings: {"<< queryString << "}\n"
-                        // << "requst {\n" << request 
-                        ;
-            std::string res = "HTTP/1.1 OK\r\nContent-Type: text/html;\r\nConnection: Close\r\nContent-Length: 6\r\n\r\nGOMOKU";
-            if (send(client, res.c_str(), res.length(), 0) < 0) {
-                perror("send");
-            }
+        if (client < 0) { perror("accept"); continue; }
+ 
+        std::string raw = readFullRequest(client);
+        if (!raw.empty()) {
+            Request req;
+            req.method = parseMethod(raw);
+            req.path   = parsePath(raw);
+            req.query  = parseQueryString(raw);
+            req.body   = parseBody(raw);
+ 
+            std::cout << "\nREQUEST"
+                      << "\n  method: " << req.method
+                      << "\n  path:   " << req.path
+                      << "\n  query:  " << req.query
+                      << "\n";
+ 
+            dispatch(client, req);
         }
         close(client);
     }
+}
+
+void Server::get(const std::string& path, Handler handler) {
+    get_handlers[path] = handler;
+}
+
+
+void Server::dispatch(int client, const Request& req) {
+    Handler* handler = nullptr;
+
+    if (req.method == "GET" && get_handlers.count(req.path))
+        handler = &get_handlers[req.path];
+
+    Response res;
+    if (handler)
+        try {
+            res = (*handler)(req);
+        } catch (const std::exception& e) {
+            res.status = 500;
+            res.body   = std::string("{\"error\":\"") + e.what() + "\"}";
+            std::cerr << "[500] " << req.method << " " << req.path << " — " << e.what() << "\n";
+
+            // TODO remove when done
+            throw e;
+        } catch (...) {
+            res.status = 500;
+            res.body   = "{\"error\":\"unknown internal error\"}";
+            std::cerr << "[500] " << req.method << " " << req.path << " — unknown exception\n";
+        }
+    else {
+        res.status = 404;
+        res.body   = "{\"error\":\"not found\"}";
+        std::cerr << "[404] Unknown route " << req.path << "\n";
+    }
+
+    std::string raw = buildResponse(res);
+    if (send(client, raw.c_str(), raw.size(), 0) < 0)
+        perror("send");
+}
+
+std::string Server::buildResponse(const Response& res) const {
+    std::ostringstream oss;
+    std::string reason = (res.status == 200) ? "OK"
+                       : (res.status == 400) ? "Bad Request"
+                       : (res.status == 404) ? "Not Found"
+                       : "Internal Server Error";
+ 
+    oss << "HTTP/1.1 " << res.status << " " << reason << "\r\n"
+        << "Content-Type: " << res.content_type << "\r\n"
+        << "Connection: close\r\n"
+        << "Content-Length: " << res.body.size() << "\r\n"
+        << "\r\n"
+        << res.body;
+ 
+    return oss.str();
 }
 
 std::string Server::readFullRequest(int client) {
@@ -109,3 +160,8 @@ std::string Server::parseQueryString(const std::string &request) const {
     return request.substr(start, end - start);
 }
 
+std::string Server::parseBody(const std::string& request) const {
+    size_t pos = request.find("\r\n\r\n");
+    if (pos == std::string::npos) return "";
+    return request.substr(pos + 4);
+}

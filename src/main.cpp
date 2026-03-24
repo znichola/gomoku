@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "Server.hpp"
+#include "Routes.hpp"
 
 int	main(int ac, char **av)
 {
@@ -11,7 +12,8 @@ int	main(int ac, char **av)
     Server server(9012);
 
 	GameState gs;
-    server.start(gs);
+	registerRoutes(server, gs);
+    server.start();
 
 	return(0);
 }
