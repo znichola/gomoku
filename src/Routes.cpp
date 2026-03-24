@@ -7,20 +7,19 @@ void registerRoutes(Server& server, GameState& gs) {
     server.get("/gameState", [&gs](const Request& req) -> Response {
         (void)req;
         Response res;
-        res.body = gs.serialize();
-        return res;
+        return res.body(gs.serialize());
     });
- 
+
     server.get("/move", [&gs](const Request& req) -> Response {
         Response res;
 
-        unsigned id = std::stoi(req.query);
+        auto it = req.query.find("id");
+        if (it == req.query.end())
+            return Response{400, "missing 'id' query parameter"};
+        unsigned id = std::stoi(it->second);
         
         gs.doMove(id);
 
-        res.body = gs.serialize();
-
-        return res;
+        return res.body(gs.serialize());
     });
 }
- 

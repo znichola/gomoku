@@ -54,7 +54,7 @@ void Server::start() {
                       << "\n  method: " << req.method
                       << "\n  path:   " << req.path
                       << "\n  query:  " << req.query
-                      << "\n";
+                      << "\n\n";
  
             dispatch(client, req);
         }
@@ -78,20 +78,14 @@ void Server::dispatch(int client, const Request& req) {
         try {
             res = (*handler)(req);
         } catch (const std::exception& e) {
-            res.status = 500;
-            res.body   = std::string("{\"error\":\"") + e.what() + "\"}";
+            res.status(500).body(std::string("{\"error\":\"") + e.what() + "\"}");
             std::cerr << "[500] " << req.method << " " << req.path << " — " << e.what() << "\n";
-
-            // TODO remove when done
-            throw e;
         } catch (...) {
-            res.status = 500;
-            res.body   = "{\"error\":\"unknown internal error\"}";
+            res.status(500).body("{\"error\":\"unknown internal error\"}");
             std::cerr << "[500] " << req.method << " " << req.path << " — unknown exception\n";
         }
     else {
-        res.status = 404;
-        res.body   = "{\"error\":\"not found\"}";
+        res.status(404).body("{\"error\":\"not found\"}");
         std::cerr << "[404] Unknown route " << req.path << "\n";
     }
 
@@ -102,17 +96,17 @@ void Server::dispatch(int client, const Request& req) {
 
 std::string Server::buildResponse(const Response& res) const {
     std::ostringstream oss;
-    std::string reason = (res.status == 200) ? "OK"
-                       : (res.status == 400) ? "Bad Request"
-                       : (res.status == 404) ? "Not Found"
+    std::string reason = (res._status == 200) ? "OK"
+                       : (res._status == 400) ? "Bad Request"
+                       : (res._status == 404) ? "Not Found"
                        : "Internal Server Error";
  
-    oss << "HTTP/1.1 " << res.status << " " << reason << "\r\n"
-        << "Content-Type: " << res.content_type << "\r\n"
+    oss << "HTTP/1.1 " << res._status << " " << reason << "\r\n"
+        << "Content-Type: " << res._content_type << "\r\n"
         << "Connection: close\r\n"
-        << "Content-Length: " << res.body.size() << "\r\n"
+        << "Content-Length: " << res._body.size() << "\r\n"
         << "\r\n"
-        << res.body;
+        << res._body;
  
     return oss.str();
 }
@@ -150,18 +144,84 @@ std::string Server::parsePath(const std::string& request) const {
     return request.substr(start, end - start);
 }
 
-std::string Server::parseQueryString(const std::string &request) const {
-    size_t endFirstLine = request.find("\r\n");
-    size_t start = request.find('?');
-    if (start == std::string::npos || start > endFirstLine)
-        return "";
-    start += 1;
-    size_t end = request.find(" ", start);
-    return request.substr(start, end - start);
+Server::QueryMap Server::parseQueryString(const std::string &request) const {
+    auto findQueryStringStartStop = [&request]() -> std::pair<size_t, size_t> {
+        size_t stopFirstLine = request.find("\r\n");
+        size_t start = request.find('?');
+        if (start == std::string::npos || start > stopFirstLine)
+            return {0, 0};
+        start += 1;
+        size_t stop = request.find(" ", start);
+        return {start, stop};
+    };
+
+    auto [start, stop] = findQueryStringStartStop();
+    QueryMap data;
+    std::string key;
+    std::string val;
+    bool hasEquals = false;
+
+    for (size_t i = start; i < stop; i++) {
+        char c = request[i];
+        if (c == '&' || c == '\0') {
+            if (!key.empty())
+                data.insert({decodeURIComponent(key), decodeURIComponent(val)});
+            key.clear();
+            val.clear();
+            hasEquals = false;
+        } else if (c == '=' && !hasEquals) {
+            hasEquals = true;
+        } else if (hasEquals) {
+            val += c;
+        } else {
+            key += c;
+        }
+    }
+
+    // Flush the last key/value pair
+    if (!key.empty())
+        data.insert({decodeURIComponent(key), decodeURIComponent(val)});
+
+    return data;
 }
 
 std::string Server::parseBody(const std::string& request) const {
     size_t pos = request.find("\r\n\r\n");
     if (pos == std::string::npos) return "";
     return request.substr(pos + 4);
+}
+
+std::string Server::decodeURIComponent(std::string str) const {
+    std::string::iterator it;
+    std::string::iterator start;
+    int mode = 0;
+    int num;
+    char repl[2] = {0};
+
+    for (it = str.begin(); it != str.end(); it++) {
+        if (*it == '%') {
+            start = it;
+            mode = 1;
+        }
+        else if (isxdigit(*it) && 1 <= mode && mode < 3) {
+            mode++;
+            if (mode == 3) {
+                num = strtol(std::string(start + 1, it + 1).c_str(), NULL, 16);
+                if (32 <= num && num <= 126) {
+                    *repl = static_cast<char>(num);
+                    str.replace(start, it + 1, repl);
+                    it -= 2;
+                }
+                else if (0 <= num && num < 32) {
+                    // Securité on accepte pas les caractères invisibles
+                    str.erase(start, it + 1);
+                    it -= 3;
+                }
+                mode = 0;
+            }
+        }
+        else
+            mode = 0;
+    }
+    return (str);
 }
