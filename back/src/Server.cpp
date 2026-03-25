@@ -105,6 +105,7 @@ std::string Server::buildResponse(const Response& res) const {
         << "Content-Type: " << res._content_type << "\r\n"
         << "Connection: close\r\n"
         << "Content-Length: " << res._body.size() << "\r\n"
+        << "Access-Control-Allow-Origin: *\r\n"
         << "\r\n"
         << res._body;
 
