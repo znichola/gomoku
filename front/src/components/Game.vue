@@ -3,7 +3,7 @@ import type { RefStringOrNull } from '@/types/vue'
 import { onMounted, ref } from 'vue'
 
 const errorMessage: RefStringOrNull = ref(null)
-const boardSize = ref(0)
+const boardDimentions = ref(0)
 
 onMounted(load)
 
@@ -14,7 +14,7 @@ async function load() {
     console.log(resp.status) // TODO: Improve this
     const data = await resp.json()
     console.log(data)
-    boardSize.value = data.board.boardSize
+    boardDimentions.value = data.board.boardDimentions
   } catch (err) {
     errorMessage.value = ''
     console.warn(err)
@@ -27,11 +27,11 @@ async function load() {
     <p class="error" v-if="errorMessage">Message : {{ errorMessage }}</p>
     <!-- Gameboard -->
     <div class="board">
-      <div v-for="y in boardSize" class="line">
-        <div v-for="x in boardSize" class="cell">
+      <div v-for="y in boardDimentions" class="line">
+        <div v-for="x in boardDimentions" class="cell">
           <div class="circle" :class="Math.random() < 0.5 ? (Math.random() < 0.5 ? 'black' : 'white') : 'empty'"
-          :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardSize}`"
-            >{{(x - 1) + (y - 1) * boardSize}}</div>
+          :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardDimentions}`"
+            >{{(x - 1) + (y - 1) * boardDimentions}}</div>
         </div>
       </div>
     </div>

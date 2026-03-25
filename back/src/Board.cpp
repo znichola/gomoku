@@ -1,6 +1,7 @@
 #include <sstream>
 
 #include "Board.hpp"
+#include "Cell.hpp"
 
 bool Board::playMove(unsigned id) {
     if (!isValidMove(id))
@@ -11,12 +12,20 @@ bool Board::playMove(unsigned id) {
     return true;
 }
 
-bool Board::isValidMove(unsigned id) const {
+bool Board::isValidMove(unsigned id) {
     if (id >= grid.size())
         return false;
 
     if (grid[id] != Cell::EMPTY)
         return false;
+
+    // is it part of two three free
+    if (isBlackToPlay) grid.setBlack(id); else grid.setWhite(id);
+
+    if (grid.threeFreesPlayedPieceIsPartOf(id) >= 2)
+        return false;
+
+    grid.setEmpty(id);
 
     return true;
 }
@@ -25,17 +34,11 @@ std::string Board::serialize() const {
     std::ostringstream out;
 
     out << "{\n";
-    out << "\"boardSize\": " << boardSize << ",\n";
+    out << "\"boardDimentions\": " << grid.boardDimentions << ",\n";
     out << "\"blackCaptured\": " << blackCaptured << ",\n";
     out << "\"whiteCaptured\": " << whiteCaptured << ",\n";
     out << "\"isBlackToPlay\": " << (isBlackToPlay ? "true" : "false") << ",\n";
-    out << "\"grid\": [";
-    for (size_t i = 0; i < grid.size(); ++i) {
-        out << static_cast<int>(grid[i]);
-        if (i + 1 < grid.size())
-            out << ",";
-    }
-    out << "]\n";
+    out << "\"grid\": " << grid.serialize() << "\n";
     out << "}";
 
     return out.str();

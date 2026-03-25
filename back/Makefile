@@ -8,7 +8,7 @@ ifdef DEBUG
 CFLAGS	+= -g3 -fsanitize=address
 endif
 
-FILES	= Server Board GameState Routes
+FILES	= Server Routes GameState Board Grid 
 
 OBJS_PATH = obj/
 SRCS_PATH = src/

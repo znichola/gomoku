@@ -4,18 +4,18 @@
 #include <string>
 #include <cmath>
 
-struct Board {
-    enum class Cell: uint8_t {EMPTY=0, BLACK=1, WHITE=2};
+#include "Cell.hpp"
+#include "Grid.hpp"
 
-    std::vector<Cell> grid;
-    unsigned boardSize;
+struct Board {
+    Grid grid;
     unsigned blackCaptured = 0;
     unsigned whiteCaptured = 0;
     bool isBlackToPlay = false;
 
 
-    Board(unsigned board_size=19) :  grid(board_size * board_size, Cell::EMPTY), boardSize(board_size) {}
-    Board(std::vector<Cell> grid) : grid(std::move(grid)), boardSize(static_cast<unsigned>(std::sqrt(grid.size()))) {}
+    Board(unsigned board_size=19) : grid(Grid{board_size}) {}
+    Board(const std::vector<Cell> &grid) : grid(std::move(grid)) {}
 
     // maybe later
     // std::set<size_t> _whitePieces;
@@ -33,7 +33,7 @@ struct Board {
     */
 
     bool playMove(unsigned id);
-    bool isValidMove(unsigned id) const;
+    bool isValidMove(unsigned id);
 
     std::string serialize() const;
 };
