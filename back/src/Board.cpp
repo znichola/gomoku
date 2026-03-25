@@ -15,7 +15,8 @@ bool Board::isValidMove(unsigned id) const {
     if (id >= grid.size())
         return false;
 
-    // Something complicated which validates based off the rules
+    if (grid[id] != Cell::EMPTY)
+        return false;
 
     return true;
 }

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <cmath>
 
 struct Board {
     enum class Cell: uint8_t {EMPTY=0, BLACK=1, WHITE=2};
@@ -14,7 +15,7 @@ struct Board {
 
 
     Board(unsigned board_size=19) :  grid(board_size * board_size, Cell::EMPTY), boardSize(board_size) {}
-    Board(std::vector<Cell> grid, unsigned board_size) : grid(std::move(grid)), boardSize(board_size) {}
+    Board(std::vector<Cell> grid) : grid(std::move(grid)), boardSize(static_cast<unsigned>(std::sqrt(grid.size()))) {}
 
     // maybe later
     // std::set<size_t> _whitePieces;
