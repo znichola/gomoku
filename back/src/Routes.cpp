@@ -20,4 +20,10 @@ void registerRoutes(Server& server, GameState& gs) {
             return Response{400, "invalid move"};
         return Response{200, gs.serialize()};
     });
+
+    server.get("/reset", [&gs](const Request& req) -> Response {
+        (void)req;
+        gs.reset();
+        return Response{200, gs.serialize()};
+    });
 }

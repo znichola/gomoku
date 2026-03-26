@@ -12,8 +12,6 @@ import '../assets/styles.css'
 </template>
 
 <style lang="less">
-@import url('https://fonts.googleapis.com/css2?family=Pirata+One&display=swap');
-
 body {
   --bg-color: #2d3442;
   --line-color: #676a79;

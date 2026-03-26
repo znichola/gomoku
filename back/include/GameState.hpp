@@ -11,4 +11,5 @@ struct GameState {
 
     std::string serialize() const;
     bool playMove(unsigned id);
+    void reset();
 };

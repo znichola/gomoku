@@ -20,3 +20,8 @@ bool GameState::playMove(unsigned id) {
     moveHistory.push_back(id);
     return board.playMove(id);
 }
+
+void GameState::reset() {
+    board = Board(board.grid.boardDimentions);
+    moveHistory.clear();
+}
