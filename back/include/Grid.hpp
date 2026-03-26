@@ -26,4 +26,3 @@ struct Grid {
 
     unsigned threeFreesPlayedPieceIsPartOf(unsigned id) const;
 };
-

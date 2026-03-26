@@ -34,7 +34,10 @@ struct Board {
     */
 
     bool playMove(unsigned id);
+    void doCaltures(unsigned id);
     bool isValidMove(unsigned id);
+
+    void addCapture(Cell color);
 
     std::string serialize() const;
 };
