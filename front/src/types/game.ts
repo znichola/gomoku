@@ -11,7 +11,7 @@ type Board = {
 type GameState = {
     isHumanGame: boolean;
     movesPlayed: number[];
-    board: Board;
+    board: Board | null;
 }
 
 export { Cell }

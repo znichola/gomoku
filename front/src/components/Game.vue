@@ -3,9 +3,11 @@ import type { RefStringOrNull } from '@/types/vue'
 import { onMounted, ref } from 'vue'
 import type { GameState } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
+import { useGameStore } from '@/stores/game'
+import controles from './Controles.vue'
 
 const errorMessage: RefStringOrNull = ref(null)
-const gameState = ref<GameState | null>(null)
+const gameStore = useGameStore()
 
 onMounted(load)
 
@@ -16,7 +18,7 @@ async function load() {
     console.log(resp.status) // TODO: Improve this
     const data = await resp.json()
     console.log(data)
-    gameState.value = data
+    gameStore.updateGameState(data);
   } catch (err) {
     errorMessage.value = 'NO error rescued, but something went wrong !'
     console.warn(err)
@@ -33,7 +35,7 @@ async function move(event: MouseEvent) {
     })
     const data = await resp.json()
     console.log(data)
-    gameState.value = data
+    gameStore.updateGameState(data)
   } catch (err) {
     errorMessage.value = 'NO error rescued, but something went wrong !'
     console.warn(err)
@@ -43,21 +45,22 @@ async function move(event: MouseEvent) {
 </script>
 
 <template>
+  <controles/>
   <content>
     <p class="error" v-if="errorMessage">Message : {{ errorMessage }}</p>
     <!-- Gameboard -->
-    <div v-if="gameState" class="board"
+    <div v-if="gameStore.gameState.board" class="board"
       :style="{
-        '--turn-color': gameState.board.isBlackToPlay
+        '--turn-color': gameStore.gameState.board.isBlackToPlay
           ? 'var(--black-color)'
           : 'var(--white-color)'
       }">
-      <div v-for="y in gameState.board.boardDimentions" class="line">
-        <div v-for="x in gameState.board.boardDimentions" class="cell">
+      <div v-for="y in gameStore.gameState.board.boardDimentions" class="line">
+        <div v-for="x in gameStore.gameState.board.boardDimentions" class="cell">
           <div class="circle"
-          :class="getCellClass(gameState.board.grid[(x - 1) + (y - 1) * gameState.board.boardDimentions])"
-          :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * gameState.board.boardDimentions}`"
-          :id="`${(x - 1) + (y - 1) * gameState.board.boardDimentions}`"
+          :class="getCellClass(gameStore.gameState.board.grid[(x - 1) + (y - 1) * gameStore.gameState.board.boardDimentions])"
+          :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * gameStore.gameState.board.boardDimentions}`"
+          :id="`${(x - 1) + (y - 1) * gameStore.gameState.board.boardDimentions}`"
           @click="move"
             ></div>
         </div>
@@ -75,7 +78,7 @@ p.error {
 }
 
 div.board {
-  --celsize: 50px;
+  --celsize: 40px;
   margin-bottom: var(--celsize);
   margin-right: var(--celsize);
 

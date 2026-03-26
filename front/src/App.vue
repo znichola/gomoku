@@ -13,12 +13,13 @@ import '../assets/styles.css'
 
 <style lang="less">
 body {
+  --primary-color: #e2d9b2;
+  --accent-color: #d35013;
   --bg-color: #2d3442;
   --line-color: #676a79;
   --text-color: var(--bg-color);
-  --accent-color: #d35013;
   --black-color: var(--accent-color);
-  --white-color: #ffffff;
+  --white-color: var(--primary-color);
 }
 
 main {
