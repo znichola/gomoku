@@ -43,10 +43,15 @@ async function move(event: MouseEvent) {
 </script>
 
 <template>
-  <main>
+  <content>
     <p class="error" v-if="errorMessage">Message : {{ errorMessage }}</p>
     <!-- Gameboard -->
-    <div v-if="gameState" class="board">
+    <div v-if="gameState" class="board"
+      :style="{
+        '--turn-color': gameState.board.isBlackToPlay
+          ? 'var(--black-color)'
+          : 'var(--white-color)'
+      }">
       <div v-for="y in gameState.board.boardDimentions" class="line">
         <div v-for="x in gameState.board.boardDimentions" class="cell">
           <div class="circle"
@@ -58,7 +63,7 @@ async function move(event: MouseEvent) {
         </div>
       </div>
     </div>
-  </main>
+  </content>
 </template>
 
 <style scoped lang="less">
@@ -69,23 +74,10 @@ p.error {
     color: white;
 }
 
-main {
-  width: 100vw;
-  min-height: 100vh;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  --bg-color: #2d3442;
-  background-color: var(--bg-color);
-}
-
 div.board {
-  --celsize: 40px;
-  --line-color: #aab0b0;
-  --text-color: var(--bg-color);
-  --active-color: #d35013;
+  --celsize: 50px;
   margin-bottom: var(--celsize);
+  margin-right: var(--celsize);
 
   div.line {
     display: flex;
@@ -101,11 +93,11 @@ div.board {
 
     position: relative;
     div.circle {
-      --radius: calc(var(--celsize) / 2);
+      --radius: calc(var(--celsize) / 3);
       position: absolute;
       left: calc(var(--celsize) - var(--radius) / 2);
       top: calc(var(--celsize) - var(--radius) / 2);
-      width: var(--radius);
+      width: calc(var(--radius));
       height: var(--radius);
       line-height: var(--radius);
       font-size: 8px;
@@ -117,13 +109,13 @@ div.board {
       cursor: pointer;
       z-index: 200;
       &:hover {
-        background-color: var(--active-color);
+        background-color: var(--turn-color);
       }
 
       &.black, &.white {
         --radius: calc(var(--celsize) * 0.75);
 
-        background: white;
+        background: var(--white-color);
         &::after {
           position: absolute;
           left: 0px;
@@ -139,8 +131,8 @@ div.board {
         }
       }
       &.black {
-        background: black;
-        color: white;
+        background: var(--black-color);
+        color: var(--white-color);
       }
       &.empty {
         display: none;

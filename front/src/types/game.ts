@@ -5,10 +5,10 @@ type Board = {
     boardDimentions: number;
     blackCaptured: number;
     whiteCaptured: number;
-    isBlackToPlay: false;
+    isBlackToPlay: boolean;
 }
 
-type GameState = Board & {
+type GameState = {
     isHumanGame: boolean;
     movesPlayed: number[];
     board: Board;
