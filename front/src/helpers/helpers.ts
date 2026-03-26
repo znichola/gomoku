@@ -7,7 +7,7 @@ function getCellClass(cell: Cell): string {
     case Cell.WHITE:
       return 'white';
     default:
-      return '';
+      return 'empty';
   }
 }
 

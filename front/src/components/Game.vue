@@ -96,7 +96,7 @@ div.board {
 
     position: relative;
     div.circle {
-      --radius: calc(var(--celsize) / 3);
+      --radius: calc(var(--celsize) / 1.5);
       position: absolute;
       left: calc(var(--celsize) - var(--radius) / 2);
       top: calc(var(--celsize) - var(--radius) / 2);
@@ -138,7 +138,11 @@ div.board {
         color: var(--white-color);
       }
       &.empty {
-        display: none;
+        opacity: 0;
+        transition: all 0.2s ease-in;
+      }
+      &.empty:hover {
+        opacity: 1;
       }
     }
   }
