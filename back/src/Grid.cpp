@@ -21,8 +21,23 @@ Grid &Grid::setBlack(unsigned id) {
     return *this;
 }
 
+Grid &Grid::setBlack(std::initializer_list<unsigned> ids) {
+    for (auto id : ids) {
+        grid[id] = Cell::BLACK;
+    }
+    return *this;
+}
+
+
 Grid &Grid::setWhite(unsigned id) {
     grid[id] = Cell::WHITE;
+    return *this;
+}
+
+Grid &Grid::setWhite(std::initializer_list<unsigned> ids) {
+    for (auto id : ids) {
+        grid[id] = Cell::WHITE;
+    }
     return *this;
 }
 
@@ -43,7 +58,7 @@ unsigned Grid::threeFreesPlayedPieceIsPartOf(unsigned id) const {
         auto ids = {idl-5, idl-4, idl-3, idl-2, idl-1, idl, idl+1, idl+2, idl+3, idl+4, idl+5};
         std::vector<Cell> tiles;
         for (long i : ids) {
-            if (i < 0 || i >= static_cast<long>(grid.size()) || (i / boardDimentions) != (i / boardDimentions))
+            if (i < 0 || i >= static_cast<long>(grid.size()) || true /*some check so ids stay in the same line*/)
                 tiles.push_back(opponentColor);
             else
                 tiles.push_back(grid[i]);
@@ -91,6 +106,25 @@ if any of the two flanking pieces are opposit color, it's NO
 
     */
 
+
+    /*
+
+011100
+010110
+010101
+001110
+001101
+000111
+100111
+
+[1, 1, 1, 0, 0]
+[1, 0, 1, 1, 0]
+[1, 0, 1, 0, 1]
+[0, 1, 1, 1, 0]
+[0, 1, 1, 0, 1]
+[0, 0, 1, 1, 1]
+    
+    */
 
     return 0;
 }

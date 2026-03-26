@@ -16,6 +16,7 @@ struct Board {
 
     Board(unsigned board_size=19) : grid(Grid{board_size}) {}
     Board(const std::vector<Cell> &grid) : grid(std::move(grid)) {}
+    Board(const Grid &grid) : grid(grid) {}
 
     // maybe later
     // std::set<size_t> _whitePieces;

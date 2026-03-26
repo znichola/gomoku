@@ -27,7 +27,7 @@ $(NAME)	: $(OBJS) $(OBJS_PATH)main.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 clean	:
-	$(RM) $(OBJS) $(OBJS_PATH)main.o
+	$(RM) $(OBJS_PATH)main.o $(OBJS) $(TEST_OBJS)
 
 fclean	: clean
 	$(RM) $(NAME)

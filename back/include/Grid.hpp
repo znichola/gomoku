@@ -19,7 +19,9 @@ struct Grid {
     std::string serialize() const;
 
     Grid &setBlack(unsigned id);
+    Grid &setBlack(std::initializer_list<unsigned> ids);
     Grid &setWhite(unsigned id);
+    Grid &setWhite(std::initializer_list<unsigned> ids);
     Grid &setEmpty(unsigned id);
 
     unsigned threeFreesPlayedPieceIsPartOf(unsigned id) const;

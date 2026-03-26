@@ -38,7 +38,7 @@ void isValidMove() {
     };
 
     std::vector<TestCase> testCases = {
-        {false, 16, Board{{C::EMPTY, C::EMPTY, C::EMPTY, C::EMPTY}}, "Out of bounds move"},
+        {false, 16, Board{Grid(4)}, "Out of bounds move"},
         {true, 1, Board{{C::BLACK, C::EMPTY, C::EMPTY, C::EMPTY}}, "Valid move"},
         {false, 0, Board{{C::WHITE, C::EMPTY, C::EMPTY, C::EMPTY}}, "Move onto occupied cell"},
     };
@@ -85,12 +85,23 @@ void threeFreesPlayedPieceIsPartOf() {
 
     std::vector<TestCase> testCases = {
         // Horizontal free three checks
-        {0, 1, Grid(7), "Move that's intended move is blank, it can't be part of a freeThree, invalid input"},
-        {1, 2, Grid(7).setWhite(2).setWhite(3).setWhite(4), "White plays in the middle of three adjacent white pieces, it's part of a freeThree"},
-        {0, 2, Grid(7).setWhite(2).setWhite(3).setWhite(4).setBlack(5), "White played on id 2, a three is formed but black is blocking on id 5"},
-        {0, 1, Grid(7).setWhite(0).setWhite(1).setWhite(2), "White played on id 1, a three is formed but the board edge is blocking before id 0"},
-        {1, 3, Grid(7).setWhite(2).setWhite(3).setWhite(5), "White plays a disconnected three, 1 0 1 1, and is sufficiently far from the edges"},
-        {1, 1, Grid(7).setWhite(1).setWhite(2).setWhite(3), "White plays a connected three, and it's sufficiently far from the edges"},
+        //  Blocking checks
+        {0, 1, Grid(7), "Move that's played is blank, it can't be part of a freeThree, invalid input"}
+        ,{0, 2, Grid(7).setWhite({2, 3}), "White playes but it's only forming a set of two"}
+        ,{0, 2, Grid(7).setWhite({1, 2, 5, 6}), "White playes but it's only forming a set of two, with distant white pieces"}
+        ,{0, 4, Grid(7).setWhite(4), "White playes a single piece, no threes can be formed"}
+        ,{0, 4, Grid(7).setWhite({2, 3, 4, 5}), "White plays, but a set of 4 is formed, should not count as a freeThree"} // TODO : is this true?
+        ,{0, 3, Grid(7).setWhite({2, 3, 4, 5}), "White plays a set of disconnnected 4 is formed, should not count as freeThree"} // TODO : is this true?
+        ,{0, 2, Grid(7).setWhite({2, 3, 4, 5}), "White played on id 2, a three is formed but black is blocking on id 5"}
+        ,{0, 1, Grid(7).setWhite({0, 1, 2}), "White played on id 1, a three is formed but the board edge is blocking before id 0"}
+        ,{0, 3, Grid(7).setWhite({1, 3, 5}), "White plays but pieces are all too spaced out"}
+        ,{0, 1, Grid(7).setWhite({1, 2, 3, 4}), "White plays to form a disconnected 3, but black is blocking in between"}
+        ,{0, 3, Grid(7).setWhite({2, 3, 4}).setBlack({0, 6}), "White makes a connected 3 but is flanked by black one tile out. There is way to have 4 without one touching an edge, so it's not a free three"} // TODO : check
+        ,{0, 4, Grid(7).setWhite({2, 4, 5}).setBlack(1), "White makes disconneced 3, but black flanks and so block a freeThree"}
+        // Three free formed
+        ,{1, 2, Grid(7).setWhite({2, 3, 4}), "White plays in the middle of adjacent white pieces, it's part of a freeThree"}
+        ,{1, 3, Grid(7).setWhite({1, 2, 3}).setBlack(5), "White plays a three, back piece is too far to block"} // TODO : is this true?
+        ,{1, 3, Grid(7).setWhite({2, 3, 5}), "White plays a disconnected three, 1 0 1 1, and is sufficiently far from the edges"}
     };
 
     for (const auto& [expected, moveToPlay, grid, description] : testCases) {
