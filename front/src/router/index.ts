@@ -1,8 +1,8 @@
-import Game from '@/components/Game.vue'
+import Main from '@/components/Main.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
-  { path: "/", component: Game },
+  { path: "/", component: Main },
 ]
 
 const router = createRouter({

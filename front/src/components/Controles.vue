@@ -19,19 +19,27 @@ async function reset() {
 </script>
 
 <template>
-<button class="reset-btn" @click="reset">Restart</button>
+<div class="controles">
+  <button class="reset-btn" @click="reset">Restart</button>
+</div>
 </template>
 
 <style scoped lang="less">
 
+.controles {
+  padding: 0.3em;
+  display: flex;
+  align-items: center;
+  margin-left: 2rem;
+}
+
 button {
-  padding: 0.6rem;
-  outline: solid 3px var(--accent-color);
+  padding: 0.2rem 0.3rem;;
+  outline: solid 0.165rem var(--accent-color);
   border-radius: 1.2rem;
   background-color: var(--primary-color);
   color: var(--bg-color);
-  font-weight: bolder;
-  font-size: large;
+  font: var(--ui-font);
 }
 
 </style>

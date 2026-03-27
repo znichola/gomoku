@@ -4,7 +4,6 @@ import { onMounted, ref } from 'vue'
 import type { GameState } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
 import { useGameStore } from '@/stores/game'
-import controles from './Controles.vue'
 
 const errorMessage: RefStringOrNull = ref(null)
 const gameStore = useGameStore()
@@ -45,7 +44,6 @@ async function move(event: MouseEvent) {
 </script>
 
 <template>
-  <controles/>
   <content>
     <p class="error" v-if="errorMessage">Message : {{ errorMessage }}</p>
     <!-- Gameboard -->
@@ -72,13 +70,13 @@ async function move(event: MouseEvent) {
 <style scoped lang="less">
 p.error {
     background: indianred;
-    padding: 20px;
+    padding: 1.2rem;
     text-align: center;
     color: white;
 }
 
 div.board {
-  --celsize: 40px;
+  --celsize: min(40px, calc(100vw / 19));
   margin-bottom: var(--celsize);
   margin-right: var(--celsize);
 
@@ -121,8 +119,8 @@ div.board {
         background: var(--white-color);
         &::after {
           position: absolute;
-          left: 0px;
-          top: 0px;
+          left: 0;
+          top: 0;
           width: calc(var(--radius) * 0.8);
           height: calc(var(--radius) * 0.8);
           margin: calc(var(--radius) * 0.1);

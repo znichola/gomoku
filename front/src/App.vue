@@ -5,13 +5,16 @@ import '../assets/styles.css'
 
 <template>
   <main>
-    <h1>Gomoku</h1>
     <!-- Page Router view -->
     <router-view />
   </main>
 </template>
 
 <style lang="less">
+html {
+  font-size: clamp(0.7rem, 1vw + 0.5rem, 1.2rem);
+}
+
 body {
   --primary-color: #e2d9b2;
   --accent-color: #d35013;
@@ -20,6 +23,9 @@ body {
   --text-color: var(--bg-color);
   --black-color: var(--accent-color);
   --white-color: var(--primary-color);
+  --title-font-family: 'Pirata One', 'Impact', 'Arial Narrow Bold', sans-serif;
+  --ui-font-family: 'Galdeano', sans-serif;
+  --ui-font: bold 1.4rem var(--ui-font-family);
 }
 
 main {
@@ -33,7 +39,7 @@ main {
 }
 
 h1 {
-  font-family: "Pirata One", system-ui;
+  font-family: var(--title-font-family);
   font-weight: 400;
   font-style: normal;
   font-size: 5rem;
