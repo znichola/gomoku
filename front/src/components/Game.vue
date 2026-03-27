@@ -54,8 +54,8 @@ async function move(event: MouseEvent) {
       :style="{
         '--turn-color': gameStore.gameState.board.isBlackToPlay
           ? 'var(--black-color)'
-          : 'var(--white-color)'
-      }">
+          : 'var(--white-color)'}"
+      >
       <div v-for="y in boardDimentions" :key="y" class="line">
         <div v-for="x in boardDimentions" :key="x" class="cell">
           <div class="circle"
@@ -79,7 +79,7 @@ p.error {
 }
 
 div.board {
-  --celsize: min(40px, calc(100vw / 19));
+  // --celsize: min(40px, calc(100vw / 19));
   margin-bottom: var(--celsize);
   margin-right: var(--celsize);
 

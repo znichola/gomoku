@@ -19,7 +19,7 @@ button /* added */ {
 	padding: 0;
 	border: 0;
 	font-size: 1rem; /* take browser fontsize as base, it's accesible this way */
-	font-family: Avenir, Helvetica, Arial, sans-serif; /* edited */
+	/*font-family: Avenir, Helvetica, Arial, sans-serif; /* edited */
 	vertical-align: baseline;
 	box-sizing: border-box; /* added */
 }

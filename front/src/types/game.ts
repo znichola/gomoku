@@ -10,7 +10,7 @@ type Board = {
 
 type GameState = {
     isHumanGame: boolean;
-    movesPlayed: number[];
+    moveHistory: number[];
     board: Board | null;
 }
 

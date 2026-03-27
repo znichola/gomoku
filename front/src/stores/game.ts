@@ -3,12 +3,12 @@ import { defineStore } from 'pinia'
 import type { GameState } from '../types/game'
 
 export const useGameStore = defineStore('game', () => {
-  const gameState = reactive<GameState>({ isHumanGame: false, movesPlayed: [], board: null })
+  const gameState = reactive<GameState>({ isHumanGame: false, moveHistory: [], board: null })
 
   function updateGameState(newgameState: GameState) {
     gameState.board = newgameState.board
     gameState.isHumanGame = newgameState.isHumanGame
-    gameState.movesPlayed = newgameState.movesPlayed
+    gameState.moveHistory = newgameState.moveHistory
   }
 
   return { gameState, updateGameState }

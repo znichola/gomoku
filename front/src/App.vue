@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import '../assets/styles.css'
+import { computed } from 'vue';
+import { useGameStore } from '@/stores/game'
 
+const gameStore: gameStore = useGameStore()
+const boardDimentions = computed(() => gameStore.gameState.board?.boardDimentions || 19)
 </script>
 
 <template>
-  <main>
+  <main :style="{'--board-dimention': `${boardDimentions}`}">
     <!-- Page Router view -->
     <router-view />
   </main>
@@ -26,6 +30,10 @@ body {
   --title-font-family: 'Pirata One', 'Impact', 'Arial Narrow Bold', sans-serif;
   --ui-font-family: 'Galdeano', sans-serif;
   --ui-font: bold 1.4rem var(--ui-font-family);
+
+  --board-dimention: 19;
+  --celsize: min(40px, calc(100vw / var(--board-dimention)));
+  --content-width: calc(var(--celsize)*var(--board-dimention));
 }
 
 main {
@@ -36,6 +44,7 @@ main {
   flex-direction: column;
   align-items: center;
   background-color: var(--bg-color);
+  padding: 0.8rem 0 3rem;
 }
 
 h1 {
