@@ -20,7 +20,7 @@ async function load() {
     const data = await resp.json()
     console.log(data)
     gameStore.updateGameState(data);
-    boardDimentions.value = data.boardDimentions
+    boardDimentions.value = data.board.boardDimentions
   } catch (err) {
     errorMessage.value = 'NO error rescued, but something went wrong !'
     console.warn(err)
@@ -47,7 +47,7 @@ async function move(event: MouseEvent) {
 </script>
 
 <template>
-  <content>
+  <section>
     <p class="error" v-if="errorMessage">Message : {{ errorMessage }}</p>
     <!-- Gameboard -->
     <div v-if="gameStore.gameState.board" class="board"
@@ -67,7 +67,7 @@ async function move(event: MouseEvent) {
         </div>
       </div>
     </div>
-  </content>
+  </section>
 </template>
 
 <style scoped lang="less">
