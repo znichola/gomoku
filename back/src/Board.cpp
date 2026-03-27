@@ -10,7 +10,7 @@ bool Board::playMove(unsigned id) {
 
     grid[id] = isBlackToPlay ? Cell::BLACK : Cell::WHITE;
 
-    doCaltures(id);
+    doCaptures(id);
 
     isBlackToPlay = !isBlackToPlay;
     return true;
@@ -34,7 +34,7 @@ bool Board::isValidMove(unsigned id) {
     return true;
 }
 
-void Board::doCaltures(unsigned id) {
+void Board::doCaptures(unsigned id) {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return;
     const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
@@ -50,17 +50,19 @@ void Board::doCaltures(unsigned id) {
         { 1, -1}  // top-right
     };
 
+    const long cx = id % d;
+    const long cy = id / d;
     for (auto [x, y] : extremities) {
-        const long nx = id % d + x * 3;
-        const long ny = id / d + y * 3;
+        const long nx = cx + x * 3;
+        const long ny = cy + y * 3;
         const long e = ny * d + nx;
         std::cout << e << " [" << nx << "; " << ny << "] ";
         if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
         std::cout << " " << (myColor == Cell::BLACK ? "B" : myColor == Cell::WHITE ? "W" : "E") 
             << "  " << (grid[e] == Cell::BLACK ? "B" : grid[e] == Cell::WHITE ? "W" : "E") << "\n";
         if (grid[e] != myColor) continue;
-        const long e1 = (id / d + y * 1) * d + (id % d + x * 1);
-        const long e2 = (id / d + y * 2) * d + (id % d + x * 2);
+        const long e1 = (cy + y * 1) * d + (cx + x * 1);
+        const long e2 = (cy + y * 2) * d + (cx + x * 2);
         std::cout << "E1:" << e1 << " E2:" << e2 << "\n";
         if (grid[e1] == enemyColor && grid[e2] == enemyColor) {
             grid.setEmpty(static_cast<unsigned>(e1));
