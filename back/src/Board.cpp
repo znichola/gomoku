@@ -71,7 +71,7 @@ void Board::doCaltures(unsigned id) {
 }
 
 void Board::addCapture(Cell color) {
-    if (color != Cell::EMPTY) return;
+    if (color == Cell::EMPTY) return;
     if (color == Cell::BLACK) {
         blackCaptured += 2;
         return;

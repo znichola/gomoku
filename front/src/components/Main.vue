@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import controles from './Controles.vue'
-import game from "./Game.vue";
+import game from "./Game.vue"
+import hud from './Hud.vue'
 
 </script>
 
 <template>
   <div class="header">
     <h1>Gomoku</h1>
-      <controles/>
+    <controles/>
+    <hud/>
   </div>
   <game/>
 
