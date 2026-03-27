@@ -80,8 +80,11 @@ p.error {
 
 div.board {
   // --celsize: min(40px, calc(100vw / 19));
-  margin-bottom: var(--celsize);
-  margin-right: var(--celsize);
+  margin-top: calc(var(--celsize) / -2);
+  margin-left: calc(var(--celsize) / -2);
+  padding-bottom: calc(var(--celsize) / 2);
+  padding-right: calc(var(--celsize) / 2);
+  box-sizing: content-box;
 
   div.line {
     display: flex;

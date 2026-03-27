@@ -27,14 +27,6 @@ import turnlog from './TurnLog.vue'
   display: flex;
   align-items: center;
   justify-content: center;
-  grid-area: header;
-  h1 {
-    padding-bottom: 1.2rem;
-  }
-}
-
-.game {
-  margin-top: -2.5rem;
 }
 
 .turnlog {
