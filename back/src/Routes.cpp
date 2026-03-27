@@ -26,4 +26,16 @@ void registerRoutes(Server& server, GameState& gs) {
         gs.reset();
         return Response{200, gs.serialize()};
     });
+
+    server.get("/debug-action", [&gs](const Request& req) -> Response {
+        Server::QueryMap::const_iterator it = req.query.find("action");
+        if (it == req.query.end())
+            return Response{400, "missing 'action' query parameter"};
+        std::string action = it->second;
+        if (it->second == "make-double-tree")
+            gs.makeDoubleTree();
+        else
+            return Response{400, "invalid action"};
+        return Response{200, gs.serialize()};
+    });
 }
