@@ -1,5 +1,6 @@
 #pragma once
 #include <ostream>
+#include <stdint.h>
 
 enum class Cell: uint8_t {EMPTY=0U, BLACK=1U, WHITE=2U};
 

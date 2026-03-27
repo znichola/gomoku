@@ -29,4 +29,10 @@ export default defineConfigWithVueTs(
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
 
   skipFormatting,
+
+  {
+    rules: {
+      'vue/no-reserved-component-names': 'off',
+    },
+  },
 )

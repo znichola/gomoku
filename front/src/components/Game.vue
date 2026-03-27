@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { RefStringOrNull } from '@/types/vue'
 import { onMounted, ref } from 'vue'
-import type { GameState } from '@/types/game'
+import type { Cell } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
 import { useGameStore } from '@/stores/game'
 
 const errorMessage: RefStringOrNull = ref(null)
 const gameStore = useGameStore()
+
+const boardDimentions = ref(19)
 
 onMounted(load)
 
@@ -18,11 +20,12 @@ async function load() {
     const data = await resp.json()
     console.log(data)
     gameStore.updateGameState(data);
+    boardDimentions.value = data.boardDimentions
   } catch (err) {
     errorMessage.value = 'NO error rescued, but something went wrong !'
     console.warn(err)
   }
-} 
+}
 
 async function move(event: MouseEvent) {
   const target = event.target as HTMLElement
@@ -53,12 +56,12 @@ async function move(event: MouseEvent) {
           ? 'var(--black-color)'
           : 'var(--white-color)'
       }">
-      <div v-for="y in gameStore.gameState.board.boardDimentions" class="line">
-        <div v-for="x in gameStore.gameState.board.boardDimentions" class="cell">
+      <div v-for="y in boardDimentions" :key="y" class="line">
+        <div v-for="x in boardDimentions" :key="x" class="cell">
           <div class="circle"
-          :class="getCellClass(gameStore.gameState.board.grid[(x - 1) + (y - 1) * gameStore.gameState.board.boardDimentions])"
-          :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * gameStore.gameState.board.boardDimentions}`"
-          :id="`${(x - 1) + (y - 1) * gameStore.gameState.board.boardDimentions}`"
+          :class="getCellClass(gameStore.gameState.board?.grid[(x - 1) + (y - 1) * boardDimentions] as Cell)"
+          :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardDimentions}`"
+          :id="`${(x - 1) + (y - 1) * boardDimentions}`"
           @click="move"
             ></div>
         </div>
@@ -148,7 +151,7 @@ div.board {
   div.line > div:nth-child(1).cell:nth-child(1) {
     border-bottom: none;
   }
-  
+
   div.line:nth-child(1) > div.cell {
     border-right: none;
   }
