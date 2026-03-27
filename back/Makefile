@@ -1,59 +1,75 @@
-NAME	= gomoku
+NAME	  = gomoku
 
-CC		= clang++
-CFLAGS	= -Wall -Wextra -Werror
-CFLAGS	+= -std=c++20
+CXX       = clang++
+CXXFLAGS  = -Wall -Wextra -Werror
+CXXFLAGS += -std=c++20
 
-ifdef DEBUG
-CFLAGS	+= -g3 -fsanitize=address
-endif
+FILES     = Server Routes GameState Board Grid Cell
+MFILES    = main $(FILES)
 
-FILES	= Server Routes GameState Board Grid 
+OBJ_PATH  = obj/
+SRC_PATH  = src/
+INC_PATH  = include/
 
-OBJS_PATH = obj/
-SRCS_PATH = src/
-INCS_PATH = include/.
+SRC       = $(addprefix $(SRC_PATH), $(addsuffix .cpp, $(MFILES)))
+HDEP      = $(addprefix $(INC_PATH), $(addsuffix .hpp, $(FILES)))
+OBJ       = $(addprefix $(OBJ_PATH), $(addsuffix .o, $(MFILES)))
 
-SRCS	= $(addprefix $(SRCS_PATH), $(addsuffix .cpp, $(FILES)))
-OBJS	= $(addprefix $(OBJS_PATH), $(addsuffix .o, $(FILES)))
+LIBS      = -I$(INC_PATH)
 
 all	: $(NAME)
 
-$(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp
+$(OBJ_PATH)%.o: $(SRC_PATH)%.cpp $(HDEP)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c -I$(INCS_PATH) $< -o $@
+	$(CXX) $(CXXFLAGS) $(LIBS) -c $< -o $@
 
-$(NAME)	: $(OBJS) $(OBJS_PATH)main.o
-	$(CC) $(CFLAGS) $^ -o $@
+$(NAME): $(OBJ) $(HDEP)
+	$(CXX) $(CXXFLAGS) $(LIBS) -o $(NAME) $(OBJ)
 
-clean	:
-	$(RM) $(OBJS_PATH)main.o $(OBJS) $(TEST_OBJS)
+# Usage: make debug && lldb gomoku_debug -o run
+$(NAME)_debug: $(SRC) $(HDEP)
+	$(CXX) $(CXXFLAGS) $(LIBS) -g -o $(NAME)_debug $(SRC)
 
-fclean	: clean
+$(NAME)_sanitize: $(SRC) $(HDEP)
+	$(CXX) $(CXXFLAGS) $(LIBS) -fsanitize=address -g -o $(NAME)_sanitize $(SRC)
+
+$(NAME)_sanitize3: $(SRC) $(HDEP)
+	$(CXX) $(CXXFLAGS) $(LIBS) -fsanitize=address -g3 -o $(NAME)_sanitize $(SRC)
+
+debug: $(NAME)_debug
+
+sanitize: $(NAME)_sanitize
+
+sanitize3: $(NAME)_sanitize3
+
+clean:
+	$(RM) $(OBJ_PATH)main.o $(OBJ) $(TEST_OBJ)
+
+fclean: clean
 	$(RM) $(NAME)
 
-re	: fclean all
+re: fclean all
 
-run : all
+run: all
 	./$(NAME)
 
 
 # Tests
 
 TEST_DIR       = test/
-TEST_OBJS_PATH = test/$(OBJS_PATH)
+TEST_OBJ_PATH = test/$(OBJ_PATH)
 TEST_FILES     = moves
 
-TEST_OBJS = $(addprefix $(TEST_DIR)obj/, $(addsuffix .o, $(TEST_FILES)))
+TEST_OBJ = $(addprefix $(TEST_DIR)obj/, $(addsuffix .o, $(TEST_FILES)))
 TEST_BINS = $(TEST_FILES)
 
-$(TEST_OBJS_PATH)%.o: $(TEST_DIR)%.cpp
+$(TEST_OBJ_PATH)%.o: $(TEST_DIR)%.cpp
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c -I$(INCS_PATH) -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -I$(INC_PATH) -o $@ $<
 
-test/moves: $(TEST_OBJS_PATH)moves.o $(OBJS)
-	$(CC) $(CFLAGS) $^ -o $@
+test/moves: $(TEST_OBJ_PATH)moves.o $(OBJ)
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
 
-.PHONY: all clean fclean re run
+.PHONY: all debug sanitize sanitize3 clean fclean re run
 

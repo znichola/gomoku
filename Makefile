@@ -1,24 +1,30 @@
-all : back/gomoku front/dist
+NAME = gomoku
 
-init:
-	@if [ "$(nvm --version)" != "$(node --version)" ]; then \
-		nvm use v24.14.1; \
-	fi
+all: $(NAME)
+
+$(NAME): back front
 
 back/gomoku:
-	make -C back/
+	make -C back gomoku
 
-front/node_modules: init
-	npm --prefix front install
+front/dist: 
+	make -C front build
 
-front/dist: init front/node_modules
-	npm --prefix front run build
+back: back/gomoku
+
+front: front/dist
+
+dev: back
+	make -C front dev
 
 clean:
-	make -C back/ clean
-	rm -rf front/dist
+	make -C back clean
+	make -C front clean
 
 fclean: clean
-	make -C back/ fclean
+	make -C back fclean
+	make -C front fclean
 
 re: fclean all
+
+.PHONY: all $(NAME) back front dev clean fclean re
