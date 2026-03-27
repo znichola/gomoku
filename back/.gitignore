@@ -1,5 +1,6 @@
 *.swp
 obj
 gomoku
+/gomoku_*
 
 test/moves
