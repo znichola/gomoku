@@ -8,12 +8,15 @@ FILES     = Server Routes GameState Board Grid Cell
 MFILES    = main $(FILES)
 
 OBJ_PATH  = obj/
+GOBJ_PATH = gobj/
 SRC_PATH  = src/
 INC_PATH  = include/
 
 SRC       = $(addprefix $(SRC_PATH), $(addsuffix .cpp, $(MFILES)))
 HDEP      = $(addprefix $(INC_PATH), $(addsuffix .hpp, $(FILES)))
 OBJ       = $(addprefix $(OBJ_PATH), $(addsuffix .o, $(MFILES)))
+
+GOBJ      = $(addprefix $(GOBJ_PATH), $(addsuffix .o, $(MFILES)))
 
 LIBS      = -I$(INC_PATH)
 
@@ -23,15 +26,19 @@ $(OBJ_PATH)%.o: $(SRC_PATH)%.cpp $(HDEP)
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) $(LIBS) -c $< -o $@
 
+$(GOBJ_PATH)%.o: $(SRC_PATH)%.cpp $(HDEP)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(LIBS) -c $< -o $@
+
 $(NAME): $(OBJ) $(HDEP)
-	$(CXX) $(CXXFLAGS) $(LIBS) -o $(NAME) $(OBJ)
+	$(CXX) $(CXXFLAGS) $(LIBS) -g3 -o $(NAME) $(OBJ)
 
 # Usage: make debug && lldb gomoku_debug -o run
-$(NAME)_debug: $(SRC) $(HDEP)
-	$(CXX) $(CXXFLAGS) $(LIBS) -g -o $(NAME)_debug $(SRC)
+$(NAME)_debug: $(GOBJ) $(HDEP)
+	$(CXX) $(CXXFLAGS) $(LIBS) -g -o $(NAME)_debug $(GOBJ)
 
 $(NAME)_sanitize: $(SRC) $(HDEP)
-	$(CXX) $(CXXFLAGS) $(LIBS) -fsanitize=address -g -o $(NAME)_sanitize $(SRC)
+	$(CXX) $(CXXFLAGS) $(LIBS) -fsanitize=address -g -o $(NAME)_sanitize $(GOBJ)
 
 $(NAME)_sanitize3: $(SRC) $(HDEP)
 	$(CXX) $(CXXFLAGS) $(LIBS) -fsanitize=address -g3 -o $(NAME)_sanitize $(SRC)
@@ -43,10 +50,10 @@ sanitize: $(NAME)_sanitize
 sanitize3: $(NAME)_sanitize3
 
 clean:
-	$(RM) $(OBJ_PATH)main.o $(OBJ) $(TEST_OBJ)
+	$(RM) $(OBJ_PATH)main.o $(OBJ) $(GOBJ) $(TEST_OBJ)
 
 fclean: clean
-	$(RM) $(NAME)
+	$(RM) $(NAME) $(NAME)_debug $(NAME)_sanitize $(NAME)_sanitize3
 
 re: fclean all
 
