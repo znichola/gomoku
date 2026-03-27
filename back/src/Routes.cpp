@@ -34,6 +34,8 @@ void registerRoutes(Server& server, GameState& gs) {
         std::string action = it->second;
         if (it->second == "make-double-tree")
             gs.makeDoubleTree();
+        if (it->second == "set-reset")
+            gs.setReset();
         else
             return Response{400, "invalid action"};
         return Response{200, gs.serialize()};

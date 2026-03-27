@@ -14,5 +14,6 @@ struct GameState {
     void reset();
 
     // debug
+    void setReset();
     bool makeDoubleTree();
 };

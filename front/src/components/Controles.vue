@@ -38,6 +38,7 @@ async function debug(action: string) {
     <span>Débug</span>
     <ul>
       <li><button class="debug-btn" @click="debug('make-double-tree')">Double Tree Maker</button></li>
+      <li><button class="debug-btn" @click="debug('set-reset')">Set Restart</button></li>
     </ul>
   </div>
 </div>
@@ -61,6 +62,7 @@ div.menu {
     padding-top: 1rem;
     li {
       width: max-content;
+      padding-bottom: 1rem;
     }
   }
   &:hover ul, & ul:hover {

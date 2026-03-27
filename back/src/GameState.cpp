@@ -27,9 +27,20 @@ bool GameState::playMove(unsigned id) {
     return board.playMove(id);
 }
 
+static Grid* rGrid = nullptr;
+
 void GameState::reset() {
     board = Board(board.grid.boardDimentions);
+    if (rGrid != nullptr && moveHistory.size() >= 1)
+        board.grid = *rGrid;
     moveHistory.clear();
+}
+
+void GameState::setReset() {
+    if (rGrid == nullptr)
+        rGrid = new Grid(board.grid);
+    else
+        *rGrid = board.grid;
 }
 
 static std::mt19937 gen(std::random_device{}());
