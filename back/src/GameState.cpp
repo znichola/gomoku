@@ -85,3 +85,29 @@ bool GameState::makeDoubleTree() {
     }
     return false;
 }
+
+void GameState::reload(const std::vector<Cell>& newGrid,
+                    unsigned blackCaptured,
+                    unsigned whiteCaptured,
+                    bool isBlackToPlay,
+                    unsigned boardDimentions,
+                    const std::vector<unsigned>& newMoveHistory,
+                    bool newIsHumanGame) {
+    const size_t expected = static_cast<size_t>(boardDimentions) * static_cast<size_t>(boardDimentions);
+    if (newGrid.size() != expected) {
+        throw std::runtime_error("reload: board_grid size mismatch (expected " +
+                                 std::to_string(expected) + ", got " +
+                                 std::to_string(newGrid.size()) + ")");
+    }
+
+    isHumanGame = newIsHumanGame;
+
+    board.grid = Grid(boardDimentions);
+    board.grid.grid = newGrid;
+
+    board.blackCaptured = blackCaptured;
+    board.whiteCaptured = whiteCaptured;
+    board.isBlackToPlay = isBlackToPlay;
+
+    moveHistory = newMoveHistory;
+}

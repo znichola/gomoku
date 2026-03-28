@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <chrono>
 #include <iostream>
 #include <sstream>
 #include "csignal"
@@ -37,7 +38,13 @@ Server::Server(int port) {
 
 void Server::start() {
     std::signal(SIGINT, handleSigint);
- 
+
+    auto start_time = std::chrono::system_clock::now();
+    auto time = std::chrono::system_clock::to_time_t(start_time);
+    start_at = std::ctime(&time);
+    if (start_at.back() == '\n') start_at.pop_back();
+    std::cout << "Server started at " << start_at << std::endl;
+
     while (true) {
         int client = accept(server_fd, nullptr, nullptr);
         if (client < 0) { perror("accept"); continue; }
@@ -101,11 +108,19 @@ std::string Server::buildResponse(const Response& res) const {
                        : (res._status == 404) ? "Not Found"
                        : "Internal Server Error";
  
+    auto start_time = std::chrono::system_clock::now();
+    auto time = std::chrono::system_clock::to_time_t(start_time);
+
+    std::string time_str = std::ctime(&time);
+    if (time_str.back() == '\n') time_str.pop_back();
+    
     oss << "HTTP/1.1 " << res._status << " " << reason << "\r\n"
-        << "Content-Type: " << res._content_type << "\r\n"
+        << "Access-Control-Allow-Origin: *\r\n"
         << "Connection: close\r\n"
         << "Content-Length: " << res._body.size() << "\r\n"
-        << "Access-Control-Allow-Origin: *\r\n"
+        << "Content-Type: " << res._content_type << "\r\n"
+        << "Date: " << time_str << "\r\n"
+        << "Expires: " << start_at << "\r\n" // HACK for CORS reading header (https://stackoverflow.com/a/44816592)
         << "\r\n"
         << res._body;
 

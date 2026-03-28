@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RefStringOrNull } from '@/types/vue'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { Cell } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
 import { useGameStore } from '@/stores/game'
@@ -8,19 +8,22 @@ import { useGameStore } from '@/stores/game'
 const errorMessage: RefStringOrNull = ref(null)
 const gameStore = useGameStore()
 
-const boardDimentions = ref(19)
+const boardDimentions = computed(() => gameStore.gameState.board?.boardDimentions || 19)
 
 onMounted(load)
+onUnmounted(() => gameStore.backWatcher('unMounted'))
 
 async function load() {
+  // const watcher = gameStore.backWatcher('mounted')
   errorMessage.value = ''
   try {
     const resp = await fetch('http://localhost:9012/gameState')
-    console.log(resp.status) // TODO: Improve this
+    if (resp.status != 200)
+      throw Error('STATUS NOT 200')
     const data = await resp.json()
     console.log(data)
-    gameStore.updateGameState(data);
-    boardDimentions.value = data.board.boardDimentions
+    // if (watcher.checkResponse(data, resp))
+    gameStore.updateGameState(data)
   } catch (err) {
     errorMessage.value = 'NO error rescued, but something went wrong !'
     console.warn(err)
@@ -32,12 +35,13 @@ async function move(event: MouseEvent) {
   const cellId = target.id
   console.log(`Clicked on cell ${cellId}`)
   try {
-    const resp = await fetch(`http://localhost:9012/move?id=${cellId}`, {
-      method: 'GET',
-    })
+    const resp = await fetch(`http://localhost:9012/move?id=${cellId}`)
+    if (resp.status != 200)
+      throw Error('STATUS NOT 200')
     const data = await resp.json()
     console.log(data)
-    gameStore.updateGameState(data)
+    if (gameStore.backWatcher().checkResponse(data, resp))
+      gameStore.updateGameState(data)
   } catch (err) {
     errorMessage.value = 'NO error rescued, but something went wrong !'
     console.warn(err)

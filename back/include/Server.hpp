@@ -28,6 +28,8 @@ public:
 
     using Handler = std::function<Response(const Request&)>;
 
+    std::string start_at;
+
     Server(int port);
 
     Server() = delete;

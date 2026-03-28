@@ -16,4 +16,12 @@ struct GameState {
     // debug
     void setReset();
     bool makeDoubleTree();
+
+    void reload(const std::vector<Cell>& grid,
+        unsigned blackCaptured,
+        unsigned whiteCaptured,
+        bool isBlackToPlay,
+        unsigned boardDimentions,
+        const std::vector<unsigned>& moveHistory,
+        bool isHumanGame);
 };

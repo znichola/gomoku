@@ -39,6 +39,7 @@ async function debug(action: string) {
     <ul>
       <li><button class="debug-btn" @click="debug('make-double-tree')">Double Tree Maker</button></li>
       <li><button class="debug-btn" @click="debug('set-reset')">Set Restart</button></li>
+      <li><button class="debug-btn" @click="() => gameStore.backWatcher('mounted')">Start watcher</button></li>
     </ul>
   </div>
 </div>
