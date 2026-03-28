@@ -1,7 +1,39 @@
 <script setup lang="ts">
 import { useGameStore } from '@/stores/game'
+import { onMounted, onUnmounted } from 'vue'
 
 const gameStore = useGameStore()
+
+onMounted(() => window.addEventListener('click', click, true))
+onUnmounted(() => window.removeEventListener('click', click, true))
+
+async function click(event: Event) {
+  if (!event.target || !gameStore.watcherState.edition)
+    return
+  const target = (event.target as HTMLElement)
+  let element: HTMLElement | null = null
+  let action: [string, string] | null = null
+  if ((element = target.closest('div.circle'))) {
+    if (element.classList.contains('black') || element.classList.contains('white')) {
+      action = ['erase', element.id]
+    }
+  } else if ((element = target.closest('div.capture-card'))) {
+    action = ['minus', element.classList.contains('black') ? '1' : '2']
+  }
+  if (!action)
+    return
+  event.stopPropagation()
+  event.preventDefault()
+  try {
+    const resp = await fetch(`http://localhost:9012/debug-action?action=${action[0]}&id=${action[1]}`, {
+      method: 'GET',
+    })
+    const data = await resp.json()
+    gameStore.updateGameState(data);
+    } catch (err) {
+    console.warn(err)
+  }
+}
 
 async function reset() {
   try {
@@ -9,7 +41,6 @@ async function reset() {
       method: 'GET',
     })
     const data = await resp.json()
-    console.log(data)
     gameStore.updateGameState(data);
     } catch (err) {
     console.warn(err)
@@ -36,6 +67,9 @@ function watcher(action: string) {
     gameStore.backWatcher('stop')
   } else if (action === 'set-t0') {
     gameStore.backWatcher().setT0()
+  } else if (action === 'toggle-edit') {
+    gameStore.watcherState.edition = !gameStore.watcherState.edition
+    console.log('Switch edit mode', gameStore.watcherState.edition)
   }
 }
 
@@ -49,7 +83,7 @@ function preview(state: boolean) {
 <div class="controles">
   <button class="reset-btn" @click="reset">Restart</button>
   <div class="menu">
-    <span>Débug</span>
+    <span>Debug</span>
     <ul>
       <li><button class="debug-btn" @click="debug('make-double-tree')">Double Tree Maker</button></li>
       <li><button class="debug-btn" @click="debug('set-reset')">Set Restart</button></li>
@@ -58,6 +92,8 @@ function preview(state: boolean) {
         <button class="debug-btn reverse" @click="watcher('stop')" v-else>Stop watcher</button>
       </li>
       <li><button class="debug-btn" @click="watcher('set-t0')" @mouseover="preview(true)" @mouseleave="preview(false)">Watcher Set T0</button></li>
+      <li><button class="debug-btn" @click="watcher('toggle-edit')"
+                  :class="{ reverse: gameStore.watcherState.edition }">Toggle Edit</button></li>
     </ul>
   </div>
 </div>

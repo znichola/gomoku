@@ -23,30 +23,29 @@ async function load() {
     if (resp.status != 200)
       throw Error('STATUS NOT 200')
     const data = await resp.json()
-    console.log(data)
     if (watcher.checkResponse(data, resp))
       gameStore.updateGameState(data)
   } catch (err) {
-    errorMessage.value = 'NO error rescued, but something went wrong !'
-    console.warn(err)
+    // errorMessage.value = 'NO error rescued, but something went wrong !'
+    console.warn(err.message)
   }
 }
 
 async function move(event: MouseEvent) {
   const target = event.target as HTMLElement
   const cellId = target.id
+  errorMessage.value = ''
   console.log(`Clicked on cell ${cellId}`)
   try {
     const resp = await fetch(`http://localhost:9012/move?id=${cellId}`)
     if (resp.status != 200)
       throw Error('STATUS NOT 200')
     const data = await resp.json()
-    console.log(data)
     if (gameStore.backWatcher().checkResponse(data, resp))
       gameStore.updateGameState(data)
   } catch (err) {
-    errorMessage.value = 'NO error rescued, but something went wrong !'
-    console.warn(err)
+    // errorMessage.value = 'NO error rescued, but something went wrong !'
+    console.warn(err.message)
   }
 }
 

@@ -11,14 +11,14 @@ const whiteCaptured = computed(() => board.value?.whiteCaptured ?? 0)
 
 <template>
   <div class="hud">
-    <div class="capture-card capture-card--black">
+    <div class="capture-card black">
       <div class="capture-bowl">
         <bowlofstones />
         <span class="capture-count">{{ blackCaptured }}</span>
       </div>
     </div>
 
-    <div class="capture-card capture-card--white">
+    <div class="capture-card white">
       <div class="capture-bowl">
         <bowlofstones />
         <span class="capture-count">{{ whiteCaptured }}</span>
@@ -41,14 +41,14 @@ const whiteCaptured = computed(() => board.value?.whiteCaptured ?? 0)
   flex-direction: column;
   align-items: center;
 
-  &--black {
+  &.black {
     color: var(--black-color);
     .capture-count {
       color: var(--white-color);
     }
   }
-  
-  &--white {
+
+  &.white {
     color: var(--white-color);
     .capture-count {
       color: var(--black-color);

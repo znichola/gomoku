@@ -6,7 +6,8 @@ export const useGameStore = defineStore('game', () => {
   const gameState = reactive<GameState>({ isHumanGame: false, moveHistory: [], board: null })
   const watcherState = reactive({
     enabled: false,
-    preview: false
+    preview: false,
+    edition: false
   })
 
   function updateGameState(newgameState: GameState) {

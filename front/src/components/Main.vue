@@ -52,6 +52,19 @@ h1 {
   }
 }
 
+h1::after {
+  content: '✏️';
+  position: absolute;
+  font-size: 2rem;
+  right: -1.5rem;
+  top: -3rem;
+  transition: all 0.5s ease-in-out;
+}
+
+.editMode h1::after {
+  top: 0;
+}
+
 .turnlog {
 }
 
