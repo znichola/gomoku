@@ -45,6 +45,17 @@ $(NAME)_sanitize3: $(SRC) $(HDEP)
 
 debug: $(NAME)_debug
 
+watcher:
+	@(trap '' INT; \
+	while true; do \
+		echo "=== BUILD ==="; \
+		make debug; \
+		echo "=== RUN ==="; \
+		./$(NAME)_debug || true; \
+		read -p "Press enter to continue (q to quit): " input; \
+		[ "$$input" = "q" ] && break; \
+	done)
+
 sanitize: $(NAME)_sanitize
 
 sanitize3: $(NAME)_sanitize3
@@ -78,5 +89,5 @@ test/moves: $(TEST_OBJ_PATH)moves.o $(OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 
-.PHONY: all debug sanitize sanitize3 clean fclean re run
+.PHONY: all debug watcher sanitize sanitize3 clean fclean re run
 
