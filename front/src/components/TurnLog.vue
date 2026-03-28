@@ -5,7 +5,7 @@ import { useGameStore } from '@/stores/game'
 const gameStore: gameStore = useGameStore()
 
 const moves = computed(() => gameStore.gameState.moveHistory)
-const boardDimentions = computed(() => gameStore.gameState.board?.boardDimentions || 19)
+const boardDimension = computed(() => gameStore.gameState.board?.boardDimension || 19)
 </script>
 
 <template>
@@ -42,7 +42,7 @@ const boardDimentions = computed(() => gameStore.gameState.board?.boardDimention
 }
 
 .turn {
-  border: solid 1px var(--line-color);  
+  border: solid 1px var(--line-color);
   padding: 0.2rem;
   min-width: 2ch;
 }

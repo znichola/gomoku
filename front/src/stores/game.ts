@@ -34,7 +34,7 @@ export const useGameStore = defineStore('game', () => {
         isHumanGame: gameState.isHumanGame ? 'true' : 'false',
         moveHistory: gameState.moveHistory.join(','),
         board_grid: gameState.board.grid.join(','),
-        board_boardDimentions: gameState.board.boardDimentions.toString(),
+        board_boardDimension: gameState.board.boardDimension.toString(),
         board_blackCaptured: gameState.board.blackCaptured.toString(),
         board_whiteCaptured: gameState.board.whiteCaptured.toString(),
         board_isBlackToPlay: gameState.board.isBlackToPlay ? 'true' : 'false'

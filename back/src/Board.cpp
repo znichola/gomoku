@@ -38,7 +38,7 @@ void Board::doCaptures(unsigned id) {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return;
     const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
-    const unsigned d = grid.boardDimentions;
+    const unsigned d = grid.boardDimension;
     const std::initializer_list<std::pair<long, long>> extremities = {
         { 1,  0}, // right
         { 1,  1}, // bottom-right
@@ -85,7 +85,7 @@ std::string Board::serialize() const {
     std::ostringstream out;
 
     out << "{\n";
-    out << "\"boardDimentions\": " << grid.boardDimentions << ",\n";
+    out << "\"boardDimension\": " << grid.boardDimension << ",\n";
     out << "\"blackCaptured\": " << blackCaptured << ",\n";
     out << "\"whiteCaptured\": " << whiteCaptured << ",\n";
     out << "\"isBlackToPlay\": " << (isBlackToPlay ? "true" : "false") << ",\n";

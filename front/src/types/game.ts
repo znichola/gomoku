@@ -2,7 +2,7 @@ enum Cell { EMPTY=0, BLACK=1, WHITE=2 };
 
 type Board = {
     grid: Cell[];
-    boardDimentions: number;
+    boardDimension: number;
     blackCaptured: number;
     whiteCaptured: number;
     isBlackToPlay: boolean;

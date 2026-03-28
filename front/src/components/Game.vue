@@ -8,7 +8,7 @@ import { useGameStore } from '@/stores/game'
 const errorMessage: RefStringOrNull = ref(null)
 const gameStore = useGameStore()
 
-const boardDimentions = computed(() => gameStore.gameState.board?.boardDimentions || 19)
+const boardDimension = computed(() => gameStore.gameState.board?.boardDimension || 19)
 
 onMounted(load)
 onUnmounted(() => gameStore.backWatcher('unMounted'))
@@ -60,12 +60,12 @@ async function move(event: MouseEvent) {
           ? 'var(--black-color)'
           : 'var(--white-color)'}"
       >
-      <div v-for="y in boardDimentions" :key="y" class="line">
-        <div v-for="x in boardDimentions" :key="x" class="cell">
+      <div v-for="y in boardDimension" :key="y" class="line">
+        <div v-for="x in boardDimension" :key="x" class="cell">
           <div class="circle"
-          :class="getCellClass(gameStore.gameState.board?.grid[(x - 1) + (y - 1) * boardDimentions] as Cell)"
-          :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardDimentions}`"
-          :id="`${(x - 1) + (y - 1) * boardDimentions}`"
+          :class="getCellClass(gameStore.gameState.board?.grid[(x - 1) + (y - 1) * boardDimension] as Cell)"
+          :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardDimension}`"
+          :id="`${(x - 1) + (y - 1) * boardDimension}`"
           @click="move"
             ></div>
         </div>

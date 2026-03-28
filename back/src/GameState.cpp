@@ -30,7 +30,7 @@ bool GameState::playMove(unsigned id) {
 static Grid* rGrid = nullptr;
 
 void GameState::reset() {
-    board = Board(board.grid.boardDimentions);
+    board = Board(board.grid.boardDimension);
     if (rGrid != nullptr && moveHistory.size() >= 1)
         board.grid = *rGrid;
     moveHistory.clear();
@@ -49,7 +49,7 @@ static std::uniform_int_distribution<int> dist(0, 3);
 bool GameState::makeDoubleTree() {
     auto &grid = board.grid;
     if (moveHistory.size() <= 0) return false;
-    const unsigned d = grid.boardDimentions;
+    const unsigned d = grid.boardDimension;
 
     unsigned lastMove = moveHistory.back();
     std::cout << "lastMove: " << lastMove << "\n";
@@ -90,10 +90,10 @@ void GameState::reload(const std::vector<Cell>& newGrid,
                     unsigned blackCaptured,
                     unsigned whiteCaptured,
                     bool isBlackToPlay,
-                    unsigned boardDimentions,
+                    unsigned boardDimension,
                     const std::vector<unsigned>& newMoveHistory,
                     bool newIsHumanGame) {
-    const size_t expected = static_cast<size_t>(boardDimentions) * static_cast<size_t>(boardDimentions);
+    const size_t expected = static_cast<size_t>(boardDimension) * static_cast<size_t>(boardDimension);
     if (newGrid.size() != expected) {
         throw std::runtime_error("reload: board_grid size mismatch (expected " +
                                  std::to_string(expected) + ", got " +
@@ -102,7 +102,7 @@ void GameState::reload(const std::vector<Cell>& newGrid,
 
     isHumanGame = newIsHumanGame;
 
-    board.grid = Grid(boardDimentions);
+    board.grid = Grid(boardDimension);
     board.grid.grid = newGrid;
 
     board.blackCaptured = blackCaptured;

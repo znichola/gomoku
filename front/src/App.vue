@@ -4,11 +4,11 @@ import { computed } from 'vue';
 import { useGameStore } from '@/stores/game'
 
 const gameStore: gameStore = useGameStore()
-const boardDimentions = computed(() => gameStore.gameState.board?.boardDimentions || 19)
+const boardDimension = computed(() => gameStore.gameState.board?.boardDimension || 19)
 </script>
 
 <template>
-  <main :style="{'--board-dimention': `${boardDimentions}`}">
+  <main :style="{'--board-dimention': `${boardDimension}`}">
     <!-- Page Router view -->
     <router-view />
   </main>
