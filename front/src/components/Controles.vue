@@ -29,6 +29,14 @@ async function debug(action: string) {
   }
 }
 
+function watcher(action: string) {
+  if (action === 'start') {
+    gameStore.backWatcher('mounted')
+  } else if (action === 'set-t0') {
+    gameStore.backWatcher().setT0()
+  }
+}
+
 </script>
 
 <template>
@@ -39,7 +47,8 @@ async function debug(action: string) {
     <ul>
       <li><button class="debug-btn" @click="debug('make-double-tree')">Double Tree Maker</button></li>
       <li><button class="debug-btn" @click="debug('set-reset')">Set Restart</button></li>
-      <li><button class="debug-btn" @click="() => gameStore.backWatcher('mounted')">Start watcher</button></li>
+      <li><button class="debug-btn" @click="watcher('start')">Start watcher</button></li>
+      <li><button class="debug-btn" @click="watcher('set-t0')">Watcher Set T0</button></li>
     </ul>
   </div>
 </div>

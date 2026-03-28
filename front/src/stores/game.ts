@@ -20,6 +20,20 @@ export const useGameStore = defineStore('game', () => {
    * @returns true for normal behavior, false to not call updateGameState and use custom/debug watcher behavior
    */
 
+  function makeGameStateQuery(): string {
+    if (!gameState.board)
+      return ''
+    return new URLSearchParams({
+      isHumanGame: gameState.isHumanGame ? 'true' : 'false',
+      moveHistory: gameState.moveHistory.join(','),
+      board_grid: gameState.board.grid.join(','),
+      board_boardDimension: gameState.board.boardDimension.toString(),
+      board_blackCaptured: gameState.board.blackCaptured.toString(),
+      board_whiteCaptured: gameState.board.whiteCaptured.toString(),
+      board_isBlackToPlay: gameState.board.isBlackToPlay ? 'true' : 'false'
+    }).toString()
+  }
+
   let serverStartAt: string | null = null
   function checkResponse(newgameState: GameState, resp: Response) {
     const startAt = resp.headers.get('expires')
@@ -30,15 +44,8 @@ export const useGameStore = defineStore('game', () => {
         serverStartAt = startAt
         return true
       }
-      fetch('http://localhost:9012/debug-action?action=load-game-state&' + new URLSearchParams({
-        isHumanGame: gameState.isHumanGame ? 'true' : 'false',
-        moveHistory: gameState.moveHistory.join(','),
-        board_grid: gameState.board.grid.join(','),
-        board_boardDimension: gameState.board.boardDimension.toString(),
-        board_blackCaptured: gameState.board.blackCaptured.toString(),
-        board_whiteCaptured: gameState.board.whiteCaptured.toString(),
-        board_isBlackToPlay: gameState.board.isBlackToPlay ? 'true' : 'false'
-      }).toString())
+      const query = localStorage.getItem('gomoku-watcher-TO') ?? makeGameStateQuery()
+      fetch('http://localhost:9012/debug-action?action=load-game-state&' + query)
         .then((response) => response.json())
         .then((data) => {
           const startAt = resp.headers.get('expires')
@@ -52,6 +59,10 @@ export const useGameStore = defineStore('game', () => {
       return false
     }
     return true
+  }
+
+  function setT0() {
+    localStorage.setItem('gomoku-watcher-TO', makeGameStateQuery())
   }
 
   async function watchServer() {
@@ -81,11 +92,13 @@ export const useGameStore = defineStore('game', () => {
     }
     if (!watcherStarted) {
       return {
-        checkResponse: (_newgameState: GameState, _resp: Response) => true
+        checkResponse: (_newgameState: GameState, _resp: Response) => true,
+        setT0: () => true
       }
     }
     return {
-      checkResponse
+      checkResponse,
+      setT0
     }
   }
   /* << */
