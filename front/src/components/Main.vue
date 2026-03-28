@@ -8,13 +8,14 @@ import game from "./Game.vue"
 import hud from './Hud.vue'
 import turnlog from './TurnLog.vue'
 
+const reload = () => window.location.reload()
 </script>
 
 <template>
 <div class="layout">
   <div class="header">
     <div id="logo">
-      <h1>Gomoku</h1>
+      <h1 @click="reload">Gomoku</h1>
       <span class="desc" v-if="gameStore.watcherState.enabled">[DEBUG] Watcher is enabled</span>
     </div>
     <controles />
