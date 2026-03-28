@@ -4,6 +4,10 @@ import type { GameState } from '../types/game'
 
 export const useGameStore = defineStore('game', () => {
   const gameState = reactive<GameState>({ isHumanGame: false, moveHistory: [], board: null })
+  const watcherState = reactive({
+    enabled: false,
+    preview: false
+  })
 
   function updateGameState(newgameState: GameState) {
     gameState.board = newgameState.board
@@ -12,7 +16,6 @@ export const useGameStore = defineStore('game', () => {
   }
 
   /* >> DEBUG BACK WATCHER */
-  let watcherStarted = false
   /**
    *
    * @param newgameState
@@ -44,7 +47,7 @@ export const useGameStore = defineStore('game', () => {
         serverStartAt = startAt
         return true
       }
-      const query = localStorage.getItem('gomoku-watcher-TO') ?? makeGameStateQuery()
+      const query = localStorage.getItem('gomoku-watcher-T0') ?? makeGameStateQuery()
       fetch('http://localhost:9012/debug-action?action=load-game-state&' + query)
         .then((response) => response.json())
         .then((data) => {
@@ -62,7 +65,11 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function setT0() {
-    localStorage.setItem('gomoku-watcher-TO', makeGameStateQuery())
+    if (!gameState.board)
+      return
+    localStorage.setItem('gomoku-watcher-T0', makeGameStateQuery())
+    localStorage.setItem('gomoku-watcher-preview', gameState.board.grid.join(','))
+    console.info('Set T0.')
   }
 
   async function watchServer() {
@@ -79,21 +86,27 @@ export const useGameStore = defineStore('game', () => {
 
   let _watch_interval = 0
   function backWatcher(type: string = 'none') {
-    console.log(type, watcherStarted)
-    if (type === 'mounted' && !watcherStarted) {
-      console.log('ok!')
-      watcherStarted = true
+    if (type === 'mounted' && !watcherState.enabled) {
+      if (localStorage.getItem('gomoku-watcher-enabled') === 'true') {
+        return backWatcher('start')
+      }
+    } else if (type === 'start' && !watcherState.enabled) {
+      console.info('Watcher started!')
+      localStorage.setItem('gomoku-watcher-enabled', 'true')
+      watcherState.enabled = true
       clearInterval(_watch_interval)
       _watch_interval = setInterval(watchServer, 1000)
-    } else if (type === 'unMounted' && watcherStarted) {
-      watcherStarted = false
+    } else if (type === 'unMounted' && watcherState.enabled) {
+      return backWatcher('stop')
+    } else if (type === 'stop' && watcherState.enabled) {
+      localStorage.setItem('gomoku-watcher-enabled', 'false')
+      watcherState.enabled = false
       clearInterval(_watch_interval)
-      console.info('unMounted')
     }
-    if (!watcherStarted) {
+    if (!watcherState.enabled) {
       return {
         checkResponse: (_newgameState: GameState, _resp: Response) => true,
-        setT0: () => true
+        setT0
       }
     }
     return {
@@ -103,5 +116,5 @@ export const useGameStore = defineStore('game', () => {
   }
   /* << */
 
-  return { gameState, updateGameState, backWatcher }
+  return { gameState, updateGameState, backWatcher, watcherState }
 })

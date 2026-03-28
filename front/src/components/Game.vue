@@ -10,11 +10,13 @@ const gameStore = useGameStore()
 
 const boardDimension = computed(() => gameStore.gameState.board?.boardDimension || 19)
 
+const previewGrid = computed(() => localStorage.getItem('gomoku-watcher-preview')?.split(',').map((a)=>+a) as Cell[] || [])
+
 onMounted(load)
 onUnmounted(() => gameStore.backWatcher('unMounted'))
 
 async function load() {
-  // const watcher = gameStore.backWatcher('mounted')
+  const watcher = gameStore.backWatcher('mounted')
   errorMessage.value = ''
   try {
     const resp = await fetch('http://localhost:9012/gameState')
@@ -22,8 +24,8 @@ async function load() {
       throw Error('STATUS NOT 200')
     const data = await resp.json()
     console.log(data)
-    // if (watcher.checkResponse(data, resp))
-    gameStore.updateGameState(data)
+    if (watcher.checkResponse(data, resp))
+      gameStore.updateGameState(data)
   } catch (err) {
     errorMessage.value = 'NO error rescued, but something went wrong !'
     console.warn(err)
@@ -60,16 +62,30 @@ async function move(event: MouseEvent) {
           ? 'var(--black-color)'
           : 'var(--white-color)'}"
       >
-      <div v-for="y in boardDimension" :key="y" class="line">
-        <div v-for="x in boardDimension" :key="x" class="cell">
-          <div class="circle"
-          :class="getCellClass(gameStore.gameState.board?.grid[(x - 1) + (y - 1) * boardDimension] as Cell)"
-          :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardDimension}`"
-          :id="`${(x - 1) + (y - 1) * boardDimension}`"
-          @click="move"
-            ></div>
+      <template v-if="gameStore.watcherState.preview && previewGrid.length > 0">
+        <div v-for="y in boardDimension" :key="y" class="line preview">
+          <div v-for="x in boardDimension" :key="x" class="cell">
+            <div class="circle"
+            :class="getCellClass(previewGrid[(x - 1) + (y - 1) * boardDimension] as Cell)"
+            :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardDimension}`"
+            :id="`${(x - 1) + (y - 1) * boardDimension}`"
+            @click="move"
+              ></div>
+          </div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div v-for="y in boardDimension" :key="y" class="line">
+          <div v-for="x in boardDimension" :key="x" class="cell">
+            <div class="circle"
+            :class="getCellClass(gameStore.gameState.board?.grid[(x - 1) + (y - 1) * boardDimension] as Cell)"
+            :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardDimension}`"
+            :id="`${(x - 1) + (y - 1) * boardDimension}`"
+            @click="move"
+              ></div>
+          </div>
+        </div>
+      </template>
     </div>
   </section>
 </template>
@@ -92,6 +108,11 @@ div.board {
 
   div.line {
     display: flex;
+
+    &.preview div.cell {
+      border-right: 1px solid green;
+      border-bottom: 1px solid green;
+    }
   }
 
   div.cell {

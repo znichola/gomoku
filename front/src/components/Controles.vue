@@ -31,10 +31,16 @@ async function debug(action: string) {
 
 function watcher(action: string) {
   if (action === 'start') {
-    gameStore.backWatcher('mounted')
+    gameStore.backWatcher('start')
+  } else if (action === 'stop') {
+    gameStore.backWatcher('stop')
   } else if (action === 'set-t0') {
     gameStore.backWatcher().setT0()
   }
+}
+
+function preview(state: boolean) {
+  gameStore.watcherState.preview = state
 }
 
 </script>
@@ -47,8 +53,11 @@ function watcher(action: string) {
     <ul>
       <li><button class="debug-btn" @click="debug('make-double-tree')">Double Tree Maker</button></li>
       <li><button class="debug-btn" @click="debug('set-reset')">Set Restart</button></li>
-      <li><button class="debug-btn" @click="watcher('start')">Start watcher</button></li>
-      <li><button class="debug-btn" @click="watcher('set-t0')">Watcher Set T0</button></li>
+      <li>
+        <button class="debug-btn" @click="watcher('start')" v-if="!gameStore.watcherState.enabled">Start watcher</button>
+        <button class="debug-btn reverse" @click="watcher('stop')" v-else>Stop watcher</button>
+      </li>
+      <li><button class="debug-btn" @click="watcher('set-t0')" @mouseover="preview(true)" @mouseleave="preview(false)">Watcher Set T0</button></li>
     </ul>
   </div>
 </div>
@@ -92,9 +101,14 @@ button, div.menu span {
   font: var(--ui-font);
   transition: all 0.3s ease;
 
-  &:hover {
+  &:hover, &.reverse {
     background-color: var(--accent-color);
     color: var(--primary-color);
+  }
+
+  &.reverse:hover {
+    background-color: var(--primary-color);
+    color: var(--bg-color);
   }
 
   &:active {
