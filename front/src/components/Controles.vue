@@ -91,18 +91,44 @@ function preview(state: boolean) {
   <div class="menu">
     <span>Debug</span>
     <ul>
-      <li><button class="debug-btn" @click="debug('make-double-tree')">Double Tree Maker</button></li>
-      <li><button class="debug-btn" @click="debug('set-reset')">Set Restart</button></li>
       <li>
-        <button class="debug-btn" @click="watcher('start')" v-if="!gameStore.watcherState.enabled">Start Watcher</button>
-        <button class="debug-btn reverse" @click="watcher('stop')" v-else>Stop Watcher</button>
+        <button class="debug-btn" @click="debug('make-double-tree')"
+            title="Créer un double three selon la position de la dernière pièce, dans une rotation aléatoire."
+          >Double Tree Maker</button>
       </li>
-      <li><button class="debug-btn" @click="watcher('set-t0')" @mouseover="preview(true)" @mouseleave="preview(false)">Watcher Set T0</button></li>
-      <li><button class="debug-btn" @click="watcher('apply-t0')" @mouseover="preview(true)" @mouseleave="preview(false)">Apply T0</button></li>
-      <li><button class="debug-btn" @click="watcher('reset-t0')"
-            title="">Reset T0</button></li>
-      <li><button class="debug-btn" @click="watcher('toggle-edit')"
-                  :class="{ reverse: gameStore.watcherState.edition }">Toggle Edit</button></li>
+      <li>
+        <button class="debug-btn" @click="debug('set-reset')"
+            title="Définit le reset sur l'état actuel de la grille ."
+          >Set Restart</button>
+        </li>
+      <li>
+        <button class="debug-btn" @click="watcher('start')" v-if="!gameStore.watcherState.enabled"
+            title="Démarre le Watcher. Si le serveur redémarre le GameState actuel ou T0 sera envoyé."
+          >Start Watcher</button>
+        <button class="debug-btn reverse" @click="watcher('stop')" v-else
+            title="Arrête le Watcher. Si le serveur redémarre l'état du jeu sera reset."
+          >Stop Watcher</button>
+      </li>
+      <li>
+        <button class="debug-btn" @click="watcher('set-t0')" @mouseover="preview(true)" @mouseleave="preview(false)"
+            title="Utilise le GameState actuel comme point de rollback pour chaque redémarrage du serveur."
+          >Watcher Set T0</button>
+      </li>
+      <li>
+        <button class="debug-btn" @click="watcher('apply-t0')" @mouseover="preview(true)" @mouseleave="preview(false)"
+            title="Applique immédiatement T0."
+          >Apply T0</button>
+      </li>
+      <li>
+        <button class="debug-btn" @click="watcher('reset-t0')"
+            title="Supprime T0, le dernier état de GameState dans le navigateur sera utilisé comme point de rollback."
+          >Reset T0</button>
+      </li>
+      <li>
+        <button class="debug-btn" @click="watcher('toggle-edit')" :class="{ reverse: gameStore.watcherState.edition }"
+            title="Active/Désactive le mode édition au clique. Permet de supprimer une pièce ou de diminuer le score de capture"
+          >Toggle Edit</button>
+      </li>
     </ul>
   </div>
 </div>
