@@ -58,6 +58,8 @@ export const useGameStore = defineStore('game', () => {
   function applyT0(updateStartAt: boolean = false) {
     let startAt: string | null = null
     const query = localStorage.getItem('gomoku-watcher-T0') ?? makeGameStateQuery()
+    if (!query || query.length <= 0)
+      return console.debug('No T0.')
     fetch('http://localhost:9012/debug-action?action=load-game-state&' + query)
       .then((response) => {
         if (response.status != 200) {

@@ -13,21 +13,29 @@ const boardDimension = computed(() => gameStore.gameState.board?.boardDimension 
 const previewGrid = computed(() => gameStore.watcherState.preview_state)
 
 onMounted(load)
-onUnmounted(() => gameStore.backWatcher('unMounted'))
+onUnmounted(() => {
+  clearTimeout(_load_timeout)
+  gameStore.backWatcher('unMounted')
+})
 
-async function load() {
-  const watcher = gameStore.backWatcher('mounted')
+let _load_timeout = 0
+async function load(error: boolean = false) {
   errorMessage.value = ''
   try {
-    const resp = await fetch('http://localhost:9012/gameState')
+    const resp = await fetch('http://localhost:9012/gameState?silent&firstload')
     if (resp.status != 200)
       throw Error('STATUS NOT 200')
+    const watcher = gameStore.backWatcher('mounted')
     const data = await resp.json()
     if (watcher.checkResponse(data, resp))
       gameStore.updateGameState(data)
+    if (gameStore.watcherState.enabled && error)
+      watcher.applyT0()
   } catch (err) {
+    clearTimeout(_load_timeout)
+    _load_timeout = setTimeout(load, 1000, true)
     // errorMessage.value = 'NO error rescued, but something went wrong !'
-    console.warn(err.message)
+    console.warn((err as Error).message)
   }
 }
 
@@ -44,8 +52,8 @@ async function move(event: MouseEvent) {
     if (gameStore.backWatcher().checkResponse(data, resp))
       gameStore.updateGameState(data)
   } catch (err) {
-    // errorMessage.value = 'NO error rescued, but something went wrong !'
-    console.warn(err.message)
+    errorMessage.value = 'NO error rescued, but something went wrong !'
+    console.warn((err as Error).message)
   }
 }
 
@@ -55,25 +63,24 @@ async function move(event: MouseEvent) {
   <section>
     <p class="error" v-if="errorMessage">Message : {{ errorMessage }}</p>
     <!-- Gameboard -->
-    <div v-if="gameStore.gameState.board" class="board"
+    <div class="board"
       :style="{
-        '--turn-color': gameStore.gameState.board.isBlackToPlay
+        '--turn-color': gameStore.gameState.board?.isBlackToPlay
           ? 'var(--black-color)'
           : 'var(--white-color)'}"
       >
-      <template v-if="gameStore.watcherState.preview && previewGrid.length > 0">
+      <template v-if="(gameStore.watcherState.preview || (gameStore.watcherState.enabled && !gameStore.gameState.board)) && previewGrid.length > 0">
         <div v-for="y in boardDimension" :key="y" class="line preview">
           <div v-for="x in boardDimension" :key="x" class="cell">
             <div class="circle"
             :class="getCellClass(previewGrid[(x - 1) + (y - 1) * boardDimension] as Cell)"
             :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardDimension}`"
             :id="`${(x - 1) + (y - 1) * boardDimension}`"
-            @click="move"
               ></div>
           </div>
         </div>
       </template>
-      <template v-else>
+      <template v-else-if="gameStore.gameState.board">
         <div v-for="y in boardDimension" :key="y" class="line">
           <div v-for="x in boardDimension" :key="x" class="cell">
             <div class="circle"
@@ -173,6 +180,10 @@ div.board {
         opacity: 1;
       }
     }
+  }
+
+  div.preview div.circle.empty {
+    display: none;
   }
 
   div.line > div:nth-child(1).cell:nth-child(1) {
