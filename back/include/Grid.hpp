@@ -5,6 +5,8 @@
 
 #include "Cell.hpp"
 
+typedef std::pair<long, long> Coord;
+
 struct Grid {
     std::vector<Cell> grid;
     unsigned boardDimension;
@@ -24,5 +26,5 @@ struct Grid {
     Grid &setWhite(std::initializer_list<unsigned> ids);
     Grid &setEmpty(unsigned id);
 
-    unsigned threeFreesPlayedPieceIsPartOf(unsigned id) const;
+    bool isDoubleThree(unsigned id) const;
 };

@@ -62,7 +62,7 @@ bool GameState::makeDoubleTree() {
         { 4, -3, Cell::WHITE},
     };
     int rotation = dist(gen);
-    auto rotatePoint = [](long x, long y, int rotations) -> std::pair<long, long> {
+    auto rotatePoint = [](long x, long y, int rotations) -> Coord {
         for (int i = 0; i < rotations; ++i) {
             auto temp = x;
             x = -y;

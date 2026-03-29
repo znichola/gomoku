@@ -46,85 +46,72 @@ Grid &Grid::setEmpty(unsigned id) {
     return *this;
 }
 
-unsigned Grid::threeFreesPlayedPieceIsPartOf(unsigned id) const {
-    if (grid[id] == Cell::EMPTY)
-        return 0;
+bool Grid::isDoubleThree(unsigned id) const {
+    const Cell myColor = grid[id];
+    if (myColor == Cell::EMPTY) return false;
+    const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
 
-    Cell myColor = grid[id];
-    Cell opponentColor = (myColor == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
-
-    auto getHorizontalTiles = [this, opponentColor](unsigned id) -> std::vector<Cell> {
-        long idl = static_cast<long>(id);
-        auto ids = {idl-5, idl-4, idl-3, idl-2, idl-1, idl, idl+1, idl+2, idl+3, idl+4, idl+5};
-        std::vector<Cell> tiles;
-        for (long i : ids) {
-            if (i < 0 || i >= static_cast<long>(grid.size()) || true /*some check so ids stay in the same line*/)
-                tiles.push_back(opponentColor);
-            else
-                tiles.push_back(grid[i]);
-        }
-        return tiles;
+    const unsigned d = boardDimension;
+    const std::initializer_list<Coord> extremities = {
+        { 1,  0}, // right
+        { 1,  1}, // bottom-right
+        { 0,  1}, // bottom
+        {-1,  1}, // bottom-left
+        {-1,  0}, // left
+        {-1, -1}, // top-left
+        { 0, -1}, // top
+        { 1, -1}  // top-right
     };
 
-    auto horizontalTiles = getHorizontalTiles(id);
-    // std::cout << "Horizontal tiles for id " << id << ": ";
-    // for (const auto& tile : horizontalTiles) {
-    //     std::cout << static_cast<int>(tile) << " ";
-    // }
-    // std::cout << "\n";
+    const long cx = id % d;
+    const long cy = id / d;
+    for (long i = 0, nid = 0; i < 4; i++) {
+        const char* spinner[] = {"—", "\\", "|", "/"};
+        long l = 0;
+        Cell lc = Cell::OUTSIDE;
+        do {
+            const long ox = (extremities.begin() + i)->first;
+            const long oy = (extremities.begin() + i)->second;
+            const long nx = cx + ox * (l + 1);
+            const long ny = cy + oy * (l + 1);
+            if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
+            nid = ny * d + nx;
+            lc = grid[nid];
+            if (lc != myColor) break;
+        } while (++l <= d);
+        long r = 0;
+        Cell rc = Cell::OUTSIDE;
+        do { // TODO: CAN BE REFACTORED
+            const long ox = (extremities.begin() + i + 4)->first;
+            const long oy = (extremities.begin() + i + 4)->second;
+            const long nx = cx + ox * (r + 1);
+            const long ny = cy + oy * (r + 1);
+            if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
+            nid = ny * d + nx;
+            rc = grid[nid];
+            if (rc != myColor) break;
+        } while (++r <= d);
+        if (l + r >= 2) {
+            std::cout << "[" << (myColor == Cell::BLACK ? "BLACK" : "WHITE") << "] ";
+            std::cout << "[DIR: " << spinner[i % 4] << "] ";
+        }
+        if (l + r >= 4) {
+            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " it is a win ! (98%, 2\% for capture)" << std::endl;
+            // TODO: CHECK FOR CAPTURE
+        } else if (l + r == 3 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
+            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " you will win ! Cannot be blocked !" << std::endl;
+        } else if (l + r == 3) {
+            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " you will win !? Not sure because can be blocked :(" << std::endl;
+        } else if (l + r == 2 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
+            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " it is a free-three !?" << std::endl;
+            // CHECK DOUBLE THREE HERE
+        }
+        // std::cout << "LR " << l << " " << r << std::endl;
+    }
 
-    if (horizontalTiles[4] == opponentColor || horizontalTiles[6] == opponentColor)
-        return 0;
+    (void) d;
+    (void) extremities;
+    (void) enemyColor;
 
-    /*
-        Horizontal checks
-
-            |        
-    0 0 0 0 x 0 0 0 0 res NO
-    0 0 0 0 x x 0 0 0 res NO
-    0 0 0 x x 0 0 0 0 res NO
-    0 0 0 x x x 0 0 0 res YES
-    0 0 x 0 x 0 x 0 0 res YES
-    0 0 0 0 x 0 x x 0 res YES
-    0 x x 0 x 0 0 0 0 res YES
-    0 0 x x x 0 0 0 0 res YES
-
-
-if any of the two flanking pieces are opposit color, it's NO
-    0 0 0 0 0 x w 0 0 0 0 res NO
-    0 0 0 0 w x 0 0 0 0 0 res NO
-    0 0 0 0 w x x x 0 0 0 res NO
-
-    0 0 0 W 0 x 0 x x 0 0 res NO
-
-    1 2 3 4 5 6 7 8 9 10 11
-              |          
-    0 0 0 w 0 x x x 0 0 0 res YES
-    0 0 0 w 0 x x x 0 W 0 res NO
-    0 0 0 w 0 x x x 0 W 0 res YES
-    0 0 0 w 0 x 0 x x W 0 res NO
-
-    */
-
-
-    /*
-
-011100
-010110
-010101
-001110
-001101
-000111
-100111
-
-[1, 1, 1, 0, 0]
-[1, 0, 1, 1, 0]
-[1, 0, 1, 0, 1]
-[0, 1, 1, 1, 0]
-[0, 1, 1, 0, 1]
-[0, 0, 1, 1, 1]
-    
-    */
-
-    return 0;
+    return false;
 }

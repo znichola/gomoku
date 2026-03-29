@@ -9,14 +9,14 @@ unsigned num_passed_tests = 0;
 unsigned test_count = 0;
 
 void isValidMove();
-void threeFreesPlayedPieceIsPartOf();
+bool isDoubleThree();
 
 int main() {
     std::cout << "Testing Interpreter\n";
     std::cout << "===================\n";
 
     isValidMove();
-    threeFreesPlayedPieceIsPartOf();
+    isDoubleThree();
 
     std::cout << "\nTotals : " << num_passed_tests << "/" << test_count << "\n"; 
     return 0;
@@ -57,8 +57,8 @@ void isValidMove() {
     std::cout << "Result: " << num_passed_tests - before_passed_tests<< "/" << test_count - before_test_count << "\n";
 }
 
-void threeFreesPlayedPieceIsPartOf() {
-    std::cout << "\nTesting threeFreesPlayedPieceIsPartOf\n";
+bool isDoubleThree() {
+    std::cout << "\nTesting isDoubleThree\n";
     unsigned before_test_count = test_count;
     unsigned before_passed_tests = num_passed_tests;
 
@@ -105,7 +105,7 @@ void threeFreesPlayedPieceIsPartOf() {
     };
 
     for (const auto& [expected, moveToPlay, grid, description] : testCases) {
-        unsigned result = grid.threeFreesPlayedPieceIsPartOf(moveToPlay);
+        unsigned result = grid.isDoubleThree(moveToPlay);
         if (result == expected) {
             std::cout << std::setw(2) << test_count - before_test_count << " [OK]\n";
             num_passed_tests++;
