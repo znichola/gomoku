@@ -89,6 +89,13 @@ export const useGameStore = defineStore('game', () => {
     console.info('Set T0.')
   }
 
+  function resetT0() {
+    localStorage.removeItem('gomoku-watcher-T0')
+    watcherState.preview_state = []
+    localStorage.removeItem('gomoku-watcher-preview')
+    console.info('Reset T0.')
+  }
+
   async function watchServer() {
     try {
       const resp = await fetch('http://localhost:9012/gameState?silent')
@@ -127,14 +134,12 @@ export const useGameStore = defineStore('game', () => {
     if (!watcherState.enabled) {
       return {
         checkResponse: (_newgameState: GameState, _resp: Response) => true,
-        setT0,
-        applyT0
+        setT0, applyT0, resetT0
       }
     }
     return {
       checkResponse,
-      setT0,
-      applyT0
+      setT0, applyT0, resetT0
     }
   }
   /* << */

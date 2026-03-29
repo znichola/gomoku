@@ -69,6 +69,8 @@ function watcher(action: string) {
     gameStore.backWatcher().setT0()
   } else if (action === 'apply-t0') {
     gameStore.backWatcher().applyT0()
+  } else if (action === 'reset-t0') {
+    gameStore.backWatcher().resetT0()
   } else if (action === 'toggle-edit') {
     gameStore.watcherState.edition = !gameStore.watcherState.edition
     console.log('Switch edit mode', gameStore.watcherState.edition)
@@ -97,6 +99,8 @@ function preview(state: boolean) {
       </li>
       <li><button class="debug-btn" @click="watcher('set-t0')" @mouseover="preview(true)" @mouseleave="preview(false)">Watcher Set T0</button></li>
       <li><button class="debug-btn" @click="watcher('apply-t0')" @mouseover="preview(true)" @mouseleave="preview(false)">Apply T0</button></li>
+      <li><button class="debug-btn" @click="watcher('reset-t0')"
+            title="">Reset T0</button></li>
       <li><button class="debug-btn" @click="watcher('toggle-edit')"
                   :class="{ reverse: gameStore.watcherState.edition }">Toggle Edit</button></li>
     </ul>
