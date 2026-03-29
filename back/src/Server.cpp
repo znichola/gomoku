@@ -57,11 +57,11 @@ void Server::start() {
             req.query  = parseQueryString(raw);
             req.body   = parseBody(raw);
  
-            std::cout << "\nREQUEST"
-                      << "\n  method: " << req.method
-                      << "\n  path:   " << req.path
-                      << "\n  query:  " << req.query
-                      << "\n\n";
+            if (req.query.find("silent") == req.query.end()) {
+                std::cout << req.method << " " << req.path << std::endl;
+                if (req.query.size() > 0)
+                    std::cout << "  query: " << req.query << std::endl;
+            }
  
             dispatch(client, req);
         }
@@ -81,7 +81,11 @@ void Server::dispatch(int client, const Request& req) {
         handler = &get_handlers[req.path];
 
     Response res;
-    if (handler)
+    if (req.method == "OPTIONS") {
+        // CORS HANDLER
+        res.status(204);
+    }
+    else if (handler)
         try {
             res = (*handler)(req);
         } catch (const std::exception& e) {
@@ -104,6 +108,7 @@ void Server::dispatch(int client, const Request& req) {
 std::string Server::buildResponse(const Response& res) const {
     std::ostringstream oss;
     std::string reason = (res._status == 200) ? "OK"
+                       : (res._status == 204) ? "No Content"
                        : (res._status == 400) ? "Bad Request"
                        : (res._status == 404) ? "Not Found"
                        : "Internal Server Error";
@@ -116,6 +121,9 @@ std::string Server::buildResponse(const Response& res) const {
     
     oss << "HTTP/1.1 " << res._status << " " << reason << "\r\n"
         << "Access-Control-Allow-Origin: *\r\n"
+        << "Access-Control-Allow-Methods: *\r\n"
+        << "Access-Control-Allow-Headers: *\r\n"
+        << "Access-Control-Max-Age: 86400\r\n"
         << "Connection: close\r\n"
         << "Content-Length: " << res._body.size() << "\r\n"
         << "Content-Type: " << res._content_type << "\r\n"
@@ -240,4 +248,19 @@ std::string Server::decodeURIComponent(std::string str) const {
             mode = 0;
     }
     return (str);
+}
+
+std::ostream &operator<<(std::ostream &os, const Server::QueryMap &map) {
+    bool first = true;
+    for (const auto &[key, val] : map) {
+        if (!first) os << " ";
+        if (val.length() <= 0)
+            os << key;
+        else if (key == "board_grid" && val.length() > 21)
+            os << "board_grid=" << val.substr(0, 20) << "…";
+        else
+            os << key << "=" << val;
+        first = false;
+    }
+    return os;
 }

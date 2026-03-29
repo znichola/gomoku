@@ -4,7 +4,7 @@ CXX       = clang++
 CXXFLAGS  = -Wall -Wextra -Werror
 CXXFLAGS += -std=c++20
 
-FILES     = Server Routes GameState Board Grid Cell
+FILES     = Board Cell GameState Grid Routes Server Utils
 MFILES    = main $(FILES)
 
 OBJ_PATH  = obj/
@@ -48,10 +48,16 @@ debug: $(NAME)_debug
 watcher:
 	@(trap '' INT; \
 	while true; do \
-		echo "=== BUILD ==="; \
-		make debug; \
-		echo "=== RUN ==="; \
+		echo "\033[0;32m=== BUILD ===\033[0;00m"; \
+		if ! make debug; then \
+			echo "\n\033[0;31mBuild failed.\033[0;00m"; \
+			read -p "Press enter to retry (q to quit): " input; \
+			[ "$$input" = "q" ] && exit 0; \
+			continue; \
+		fi; \
+		echo "\033[0;32m=== RUN ===\033[0;00m"; \
 		./$(NAME)_debug || true; \
+		echo ""; \
 		read -p "Press enter to continue (q to quit): " input; \
 		[ "$$input" = "q" ] && break; \
 	done)

@@ -58,12 +58,4 @@ private:
     void dispatch(int client, const Request& req);
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Server::QueryMap &map) {
-    bool first = true;
-    for (const auto &[key, val] : map) {
-        if (!first) os << " ";
-        os << key << "=" << val;
-        first = false;
-    }
-    return os;
-}
+std::ostream &operator<<(std::ostream &os, const Server::QueryMap &map);
