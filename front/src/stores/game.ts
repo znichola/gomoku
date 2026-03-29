@@ -1,4 +1,4 @@
-import { reactive } from 'vue'
+import { reactive, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { Cell, GameState } from '../types/game'
 
@@ -108,6 +108,15 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  const highlightCircle: Ref<number | null> = ref(null)
+  function setHighlightCircle(cid: number, state: boolean) {
+    if (!state) {
+      highlightCircle.value = null
+    } else {
+      highlightCircle.value = cid
+    }
+  }
+
   let _watch_interval = 0
   function backWatcher(type: string = 'none') {
     if (type === 'mounted' && !watcherState.enabled) {
@@ -144,5 +153,11 @@ export const useGameStore = defineStore('game', () => {
   }
   /* << */
 
-  return { gameState, updateGameState, backWatcher, watcherState }
+  return {
+    gameState, updateGameState, backWatcher, watcherState,
+    highlight: {
+      get: () => highlightCircle.value,
+      set: setHighlightCircle
+    }
+  }
 })

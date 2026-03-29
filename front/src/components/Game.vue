@@ -9,6 +9,16 @@ const errorMessage: RefStringOrNull = ref(null)
 const gameStore = useGameStore()
 
 const boardDimension = computed(() => gameStore.gameState.board?.boardDimension || 19)
+const grids = computed(() => {
+  const arr: number[][] = []
+  for (let y = 0; y < boardDimension.value; y++) {
+    arr[y] = []
+    for (let x = 0; x < boardDimension.value; x++) {
+      arr[y]![x] = x + y * boardDimension.value
+    }
+  }
+  return arr
+})
 
 const previewGrid = computed(() => gameStore.watcherState.preview_state)
 
@@ -70,23 +80,25 @@ async function move(event: MouseEvent) {
           : 'var(--white-color)'}"
       >
       <template v-if="(gameStore.watcherState.preview || (gameStore.watcherState.enabled && !gameStore.gameState.board)) && previewGrid.length > 0">
-        <div v-for="y in boardDimension" :key="y" class="line preview">
-          <div v-for="x in boardDimension" :key="x" class="cell">
+        <div v-for="(line, y) in grids" :key="y" class="line preview">
+          <div v-for="(cid, x) in line" :key="x" class="cell">
             <div class="circle"
-            :class="getCellClass(previewGrid[(x - 1) + (y - 1) * boardDimension] as Cell)"
-            :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardDimension}`"
-            :id="`${(x - 1) + (y - 1) * boardDimension}`"
+            :key="cid.toString()"
+            :data-type="getCellClass(previewGrid[cid] as Cell)"
+            :title="`[${x}; ${y}] - id: ${cid}`"
+            :id="cid.toString()"
               ></div>
           </div>
         </div>
       </template>
       <template v-else-if="gameStore.gameState.board">
-        <div v-for="y in boardDimension" :key="y" class="line">
-          <div v-for="x in boardDimension" :key="x" class="cell">
+        <div v-for="(line, y) in grids" :key="y" class="line">
+          <div v-for="(cid, x) in line" :key="x" class="cell">
             <div class="circle"
-            :class="getCellClass(gameStore.gameState.board?.grid[(x - 1) + (y - 1) * boardDimension] as Cell)"
-            :title="`[${x - 1}; ${y - 1}] - id: ${(x - 1) + (y - 1) * boardDimension}`"
-            :id="`${(x - 1) + (y - 1) * boardDimension}`"
+            :class="{ highlight: gameStore.highlight.get() == cid }"
+            :data-type="getCellClass(gameStore.gameState.board?.grid[cid] as Cell)"
+            :title="`[${x}; ${y}] - id: ${cid}`"
+            :id="cid.toString()"
             @click="move"
               ></div>
           </div>
@@ -150,7 +162,27 @@ div.board {
         background-color: var(--turn-color);
       }
 
-      &.black, &.white {
+      &.highlight {
+        animation: scale-highlight 1s ease-in-out infinite;
+        &[data-type=empty] {
+          opacity: 1;
+          transition: all 0.2s ease-in;
+        }
+      }
+
+      @keyframes scale-highlight {
+        from {
+          transform: scale(1.2);
+        }
+        50% {
+          transform: scale(1.4);
+        }
+        to {
+          transform: scale(1.2);
+        }
+      }
+
+      &[data-type=black], &[data-type=white] {
         --radius: calc(var(--celsize) * 0.75);
 
         background: var(--white-color);
@@ -168,21 +200,21 @@ div.board {
           z-index: 201;
         }
       }
-      &.black {
+      &[data-type=black] {
         background: var(--black-color);
         color: var(--white-color);
       }
-      &.empty {
+      &[data-type=empty] {
         opacity: 0;
         transition: all 0.2s ease-in;
       }
-      &.empty:hover {
+      &[data-type=empty]:hover {
         opacity: 1;
       }
     }
   }
 
-  div.preview div.circle.empty {
+  div.preview div.circle[data-type=empty] {
     display: none;
   }
 

@@ -14,7 +14,7 @@ async function click(event: Event) {
   let element: HTMLElement | null = null
   let action: [string, string] | null = null
   if ((element = target.closest('div.circle'))) {
-    if (element.classList.contains('black') || element.classList.contains('white')) {
+    if (element.getAttribute('data-type') === 'black' || element.getAttribute('data-type') === 'white') {
       action = ['erase', element.id]
     }
   } else if ((element = target.closest('div.capture-card'))) {

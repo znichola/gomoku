@@ -2,10 +2,9 @@
 import { computed } from 'vue';
 import { useGameStore } from '@/stores/game'
 
-const gameStore: gameStore = useGameStore()
+const gameStore = useGameStore()
 
 const moves = computed(() => gameStore.gameState.moveHistory)
-const boardDimension = computed(() => gameStore.gameState.board?.boardDimension || 19)
 </script>
 
 <template>
@@ -15,6 +14,7 @@ const boardDimension = computed(() => gameStore.gameState.board?.boardDimension 
       <span v-for="(move, i) in moves"
         :key="move"
         class="turn"
+         @mouseover="gameStore.highlight.set(move, true)" @mouseleave="gameStore.highlight.set(move, false)"
         :class="i % 2 === 0 ? 'white' : 'black'"
         >{{ move }}</span>
     </div>
@@ -45,6 +45,7 @@ const boardDimension = computed(() => gameStore.gameState.board?.boardDimension 
   border: solid 1px var(--line-color);
   padding: 0.2rem;
   min-width: 2ch;
+  cursor: pointer;
 }
 
 </style>
