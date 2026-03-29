@@ -10,7 +10,7 @@ const gameStore = useGameStore()
 
 const boardDimension = computed(() => gameStore.gameState.board?.boardDimension || 19)
 
-const previewGrid = computed(() => localStorage.getItem('gomoku-watcher-preview')?.split(',').map((a)=>+a) as Cell[] || [])
+const previewGrid = computed(() => gameStore.watcherState.preview_state)
 
 onMounted(load)
 onUnmounted(() => gameStore.backWatcher('unMounted'))

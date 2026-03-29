@@ -67,9 +67,13 @@ function watcher(action: string) {
     gameStore.backWatcher('stop')
   } else if (action === 'set-t0') {
     gameStore.backWatcher().setT0()
+  } else if (action === 'apply-t0') {
+    gameStore.backWatcher().applyT0()
   } else if (action === 'toggle-edit') {
     gameStore.watcherState.edition = !gameStore.watcherState.edition
     console.log('Switch edit mode', gameStore.watcherState.edition)
+  } else {
+    console.warn('action not found')
   }
 }
 
@@ -88,10 +92,11 @@ function preview(state: boolean) {
       <li><button class="debug-btn" @click="debug('make-double-tree')">Double Tree Maker</button></li>
       <li><button class="debug-btn" @click="debug('set-reset')">Set Restart</button></li>
       <li>
-        <button class="debug-btn" @click="watcher('start')" v-if="!gameStore.watcherState.enabled">Start watcher</button>
-        <button class="debug-btn reverse" @click="watcher('stop')" v-else>Stop watcher</button>
+        <button class="debug-btn" @click="watcher('start')" v-if="!gameStore.watcherState.enabled">Start Watcher</button>
+        <button class="debug-btn reverse" @click="watcher('stop')" v-else>Stop Watcher</button>
       </li>
       <li><button class="debug-btn" @click="watcher('set-t0')" @mouseover="preview(true)" @mouseleave="preview(false)">Watcher Set T0</button></li>
+      <li><button class="debug-btn" @click="watcher('apply-t0')" @mouseover="preview(true)" @mouseleave="preview(false)">Apply T0</button></li>
       <li><button class="debug-btn" @click="watcher('toggle-edit')"
                   :class="{ reverse: gameStore.watcherState.edition }">Toggle Edit</button></li>
     </ul>

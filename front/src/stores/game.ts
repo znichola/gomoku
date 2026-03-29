@@ -1,11 +1,12 @@
 import { reactive } from 'vue'
 import { defineStore } from 'pinia'
-import type { GameState } from '../types/game'
+import type { Cell, GameState } from '../types/game'
 
 export const useGameStore = defineStore('game', () => {
   const gameState = reactive<GameState>({ isHumanGame: false, moveHistory: [], board: null })
   const watcherState = reactive({
     enabled: false,
+    preview_state: [] as Cell[],
     preview: false,
     edition: false
   })
@@ -48,34 +49,47 @@ export const useGameStore = defineStore('game', () => {
         serverStartAt = startAt
         return true
       }
-      const query = localStorage.getItem('gomoku-watcher-T0') ?? makeGameStateQuery()
-      fetch('http://localhost:9012/debug-action?action=load-game-state&' + query)
-        .then((response) => response.json())
-        .then((data) => {
-          const startAt = resp.headers.get('expires')
-            if (resp.status != 200)
-              console.warn('watcher: STATUS NOT 200')
-          if (!startAt) return
-          console.log('server restarted !')
-          updateGameState(data)
-          serverStartAt = startAt
-        })
+      applyT0(true)
       return false
     }
     return true
+  }
+
+  function applyT0(updateStartAt: boolean = false) {
+    let startAt: string | null = null
+    const query = localStorage.getItem('gomoku-watcher-T0') ?? makeGameStateQuery()
+    fetch('http://localhost:9012/debug-action?action=load-game-state&' + query)
+      .then((response) => {
+        if (response.status != 200) {
+          console.warn('watcher: STATUS NOT 200')
+        } else {
+          startAt = response.headers.get('expires')
+        }
+        return response
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!startAt) return
+        updateGameState(data)
+        if (updateStartAt) {
+          console.log('server restarted !')
+          serverStartAt = startAt
+        }
+      })
   }
 
   function setT0() {
     if (!gameState.board)
       return
     localStorage.setItem('gomoku-watcher-T0', makeGameStateQuery())
+    watcherState.preview_state = [...gameState.board.grid]
     localStorage.setItem('gomoku-watcher-preview', gameState.board.grid.join(','))
     console.info('Set T0.')
   }
 
   async function watchServer() {
     try {
-      const resp = await fetch('http://localhost:9012/gameState')
+      const resp = await fetch('http://localhost:9012/gameState?silent')
       if (resp.status != 200)
         throw Error('STATUS NOT 200')
       const data = await resp.json()
@@ -88,6 +102,10 @@ export const useGameStore = defineStore('game', () => {
   let _watch_interval = 0
   function backWatcher(type: string = 'none') {
     if (type === 'mounted' && !watcherState.enabled) {
+      const previewStr = localStorage.getItem('gomoku-watcher-preview')
+      if (previewStr) {
+        watcherState.preview_state = previewStr?.split(',').map((a)=>+a) as Cell[]
+      }
       if (localStorage.getItem('gomoku-watcher-enabled') === 'true') {
         return backWatcher('start')
       }
@@ -98,21 +116,23 @@ export const useGameStore = defineStore('game', () => {
       clearInterval(_watch_interval)
       _watch_interval = setInterval(watchServer, 1000)
     } else if (type === 'unMounted' && watcherState.enabled) {
-      return backWatcher('stop')
-    } else if (type === 'stop' && watcherState.enabled) {
-      localStorage.setItem('gomoku-watcher-enabled', 'false')
       watcherState.enabled = false
       clearInterval(_watch_interval)
+    } else if (type === 'stop' && watcherState.enabled) {
+      localStorage.setItem('gomoku-watcher-enabled', 'false')
+      return backWatcher('unMounted')
     }
     if (!watcherState.enabled) {
       return {
         checkResponse: (_newgameState: GameState, _resp: Response) => true,
-        setT0
+        setT0,
+        applyT0
       }
     }
     return {
       checkResponse,
-      setT0
+      setT0,
+      applyT0
     }
   }
   /* << */
