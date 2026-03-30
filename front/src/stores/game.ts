@@ -60,7 +60,7 @@ export const useGameStore = defineStore('game', () => {
     const query = localStorage.getItem('gomoku-watcher-T0') ?? makeGameStateQuery()
     if (!query || query.length <= 0)
       return console.debug('No T0.')
-    fetch('http://localhost:9012/debug-action?action=load-game-state&' + query)
+    fetch(`http://${window.location.hostname}:9012/debug-action?action=load-game-state&${query}`)
       .then((response) => {
         if (response.status != 200) {
           console.warn('watcher: STATUS NOT 200')
@@ -98,11 +98,12 @@ export const useGameStore = defineStore('game', () => {
 
   async function watchServer() {
     try {
-      const resp = await fetch('http://localhost:9012/gameState?silent')
+      const resp = await fetch(`http://${window.location.hostname}:9012/gameState?silent`)
       if (resp.status != 200)
         throw Error('STATUS NOT 200')
       const data = await resp.json()
-      checkResponse(data, resp)
+      if (checkResponse(data, resp))
+        updateGameState(data)
     } catch {
       console.warn('server offline');
     }

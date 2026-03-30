@@ -32,7 +32,7 @@ let _load_timeout = 0
 async function load(error: boolean = false) {
   errorMessage.value = ''
   try {
-    const resp = await fetch('http://localhost:9012/gameState?silent&firstload')
+    const resp = await fetch(`http://${window.location.hostname}:9012/gameState?silent&firstload`)
     if (resp.status != 200)
       throw Error('STATUS NOT 200')
     const watcher = gameStore.backWatcher('mounted')
@@ -55,7 +55,7 @@ async function move(event: MouseEvent) {
   errorMessage.value = ''
   console.log(`Clicked on cell ${cellId}`)
   try {
-    const resp = await fetch(`http://localhost:9012/move?id=${cellId}`)
+    const resp = await fetch(`http://${window.location.hostname}:9012/move?id=${cellId}`)
     if (resp.status != 200)
       throw Error('STATUS NOT 200')
     const data = await resp.json()
