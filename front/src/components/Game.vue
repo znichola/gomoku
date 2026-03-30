@@ -21,6 +21,7 @@ const grids = computed(() => {
 })
 
 const previewGrid = computed(() => gameStore.watcherState.preview_state)
+const iso3D = ref(true)
 
 onMounted(load)
 onUnmounted(() => {
@@ -74,6 +75,7 @@ async function move(event: MouseEvent) {
     <p class="error" v-if="errorMessage">Message : {{ errorMessage }}</p>
     <!-- Gameboard -->
     <div class="board"
+      :class="{ iso3D }"
       :style="{
         '--turn-color': gameStore.gameState.board?.isBlackToPlay
           ? 'var(--black-color)'
@@ -105,6 +107,7 @@ async function move(event: MouseEvent) {
         </div>
       </template>
     </div>
+    <button id="isoButton" @click="() => iso3D = !iso3D">iso3D</button>
   </section>
 </template>
 
@@ -225,5 +228,50 @@ div.board {
   div.line:nth-child(1) > div.cell {
     border-right: none;
   }
+}
+
+div.board {
+  transition:
+    .4s ease-in-out transform,
+    .4s ease-in-out box-shadow;
+}
+
+div.board.iso3D {
+  margin-top: calc(var(--celsize) / -2);
+  margin-left: calc(var(--celsize) / -2);
+  padding-bottom: calc(var(--celsize) / 1);
+  padding-right: calc(var(--celsize) / 1);
+
+  transform:
+    rotateX(50deg)
+    rotateZ(43deg);
+  transform-style: flat;
+  border-radius: 32px;
+  box-shadow:
+    1px 1px 0 1px #f9f9fb,
+    -1px 0 28px 0 rgba(34, 33, 81, 0.01),
+    28px 28px 28px 0 rgba(34, 33, 81, 0.25);
+  .circle[data-type=white] {
+    box-shadow:
+      5px 5px 0px 0px var(--white-color),
+      -1px 0 28px 0 rgba(34, 33, 81, 0.01),
+      28px 28px 28px 0 rgba(34, 33, 81, 0.25);
+  }
+  .circle[data-type=black] {
+    box-shadow:
+      5px 5px 0px 0px var(--black-color),
+      -1px 0 28px 0 rgba(34, 33, 81, 0.01),
+      28px 28px 28px 0 rgba(34, 33, 81, 0.25);
+  }
+}
+
+#isoButton {
+  background: none;
+  color: var(--white-color);
+  z-index: 1000;
+  cursor: pointer;
+  position: fixed;
+  bottom: 0;
+  left: 0;
 }
 </style>
