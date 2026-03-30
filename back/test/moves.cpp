@@ -9,7 +9,7 @@ unsigned num_passed_tests = 0;
 unsigned test_count = 0;
 
 void isValidMove();
-bool isDoubleThree();
+void isDoubleThree();
 
 int main() {
     std::cout << "Testing Interpreter\n";
@@ -57,7 +57,7 @@ void isValidMove() {
     std::cout << "Result: " << num_passed_tests - before_passed_tests<< "/" << test_count - before_test_count << "\n";
 }
 
-bool isDoubleThree() {
+void isDoubleThree() {
     std::cout << "\nTesting isDoubleThree\n";
     unsigned before_test_count = test_count;
     unsigned before_passed_tests = num_passed_tests;

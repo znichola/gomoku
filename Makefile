@@ -14,8 +14,11 @@ back: back/gomoku
 
 front: front/dist
 
-dev: back
-	make -C front dev
+dev:
+	tmux new-session -d -s $(NAME) "make -C back watcher"
+	tmux split-window -h -t $(NAME) "make -C front dev"
+	tmux set-option -g mouse on
+	tmux attach -t $(NAME)
 
 clean:
 	make -C back clean
