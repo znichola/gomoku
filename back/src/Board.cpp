@@ -25,11 +25,10 @@ bool Board::isValidMove(unsigned id) {
 
     if (isBlackToPlay) grid.setBlack(id); else grid.setWhite(id);
 
-    // is it part of two three free
-    if (grid.isDoubleThree(id))
+    if (grid.isDoubleThree(id)) {
+        grid.setEmpty(id);
         return false;
-
-    grid.setEmpty(id);
+    }
 
     return true;
 }
@@ -52,23 +51,19 @@ void Board::doCaptures(unsigned id) {
 
     const long cx = id % d;
     const long cy = id / d;
-    for (auto [x, y] : extremities) {
-        const long nx = cx + x * 3;
-        const long ny = cy + y * 3;
-        const long e = ny * d + nx;
-        // std::cout << e << " [" << nx << "; " << ny << "] ";
+    for (auto [ox, oy] : extremities) {
+        const long nx = cx + ox * 3;
+        const long ny = cy + oy * 3;
+        const long nid = ny * d + nx;
         if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
-        // std::cout << " " << (myColor == Cell::BLACK ? "B" : myColor == Cell::WHITE ? "W" : "E") 
-        //     << "  " << (grid[e] == Cell::BLACK ? "B" : grid[e] == Cell::WHITE ? "W" : "E") << "\n";
-        if (grid[e] != myColor) continue;
-        const long e1 = (cy + y * 1) * d + (cx + x * 1);
-        const long e2 = (cy + y * 2) * d + (cx + x * 2);
-        // std::cout << "E1:" << e1 << " E2:" << e2 << "\n";
-        if (grid[e1] == enemyColor && grid[e2] == enemyColor) {
-            grid.setEmpty(static_cast<unsigned>(e1));
-            grid.setEmpty(static_cast<unsigned>(e2));
-            addCapture(myColor);
-        };
+        if (grid[nid] != myColor) continue;
+        const long nid1 = (cy + oy * 1) * d + (cx + ox * 1);
+        if (grid[nid1] != enemyColor) continue;
+        const long nid2 = (cy + oy * 2) * d + (cx + ox * 2);
+        if (grid[nid2] != enemyColor) continue;
+        grid.setEmpty(static_cast<unsigned>(nid1));
+        grid.setEmpty(static_cast<unsigned>(nid2));
+        addCapture(myColor);
     }
 }
 

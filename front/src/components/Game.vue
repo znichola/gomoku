@@ -57,13 +57,16 @@ async function move(event: MouseEvent) {
   console.log(`Clicked on cell ${cellId}`)
   try {
     const resp = await fetch(`http://${window.location.hostname}:9012/move?id=${cellId}`)
-    if (resp.status != 200)
+    if (resp.status == 400) {
+      errorMessage.value = (await resp.json()).error || 'Invalid move.'
+      return
+    } else if (resp.status != 200)
       throw Error('STATUS NOT 200')
     const data = await resp.json()
     if (gameStore.backWatcher().checkResponse(data, resp))
       gameStore.updateGameState(data)
   } catch (err) {
-    errorMessage.value = 'NO error rescued, but something went wrong !'
+    errorMessage.value = 'Server refused this move.'
     console.warn((err as Error).message)
   }
 }

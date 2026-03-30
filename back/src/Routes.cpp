@@ -18,7 +18,7 @@ void registerRoutes(Server& server, GameState& gs) {
             return Response{400, "missing 'id' query parameter"};
         unsigned id = static_cast<unsigned>(std::stoul(it->second));
         if (errno == ERANGE || !gs.playMove(id))
-            return Response{400, "invalid move"};
+            return Response{400, "{\"error\": \"invalid move\"}"};
         return Response{200, gs.serialize()};
     });
 
