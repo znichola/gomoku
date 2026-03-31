@@ -7,12 +7,13 @@ import controles from './Controles.vue'
 import game from "./Game.vue"
 import hud from './Hud.vue'
 import turnlog from './TurnLog.vue'
+import messages from './Messages.vue'
 
 const reload = () => window.location.reload()
 </script>
 
 <template>
-<div class="layout">
+  <div class="layout">
   <div class="header">
     <div id="logo">
       <h1 @click="reload">Gomoku</h1>
@@ -20,6 +21,7 @@ const reload = () => window.location.reload()
     </div>
     <controles />
     <hud />
+    <messages />
   </div>
   <game class="game" />
   <turnlog class="turnlog" />
@@ -39,6 +41,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 #logo {

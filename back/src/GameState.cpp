@@ -4,6 +4,7 @@
 #include <tuple>
 
 #include "GameState.hpp"
+#include "MessageQueue.hpp"
 
 std::string GameState::serialize() const {
     std::ostringstream out;
@@ -16,8 +17,14 @@ std::string GameState::serialize() const {
         if (i + 1 < moveHistory.size())
             out << ",";
     }
-    out << "],\n\"board\": " << board.serialize() << "\n";
-    out << "}";
+    out << "],\n\"board\": " << board.serialize() << ",\n";
+    out << "\"messages\": [";
+    for (size_t i = 0; i < MessageQueue::messages.size(); ++i) {
+        out << "\"" << MessageQueue::messages[i] << "\"";
+        if (i + 1 <  MessageQueue::messages.size())
+            out << ",";
+    }
+    out << "]\n}";
 
     return out.str();
 }

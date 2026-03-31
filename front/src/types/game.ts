@@ -12,6 +12,7 @@ type GameState = {
     isHumanGame: boolean;
     moveHistory: number[];
     board: Board | null;
+    messages: string[];
 }
 
 export { Cell }

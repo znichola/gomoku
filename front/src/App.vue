@@ -2,6 +2,7 @@
 import '../assets/styles.css'
 import { computed } from 'vue';
 import { useGameStore } from '@/stores/game'
+import messages from './components/Messages.vue'
 
 const gameStore = useGameStore()
 const boardDimension = computed(() => gameStore.gameState.board?.boardDimension || 19)
@@ -22,6 +23,7 @@ html {
 body {
   --primary-color: #e2d9b2;
   --accent-color: #d35013;
+  --highlight-color: #6dbfcb;
   --bg-color: #2d3442;
   --line-color: #676a79;
   --text-color: var(--bg-color);
@@ -37,7 +39,6 @@ body {
 }
 
 main {
-  width: 100vw;
   min-height: 100vh;
   overflow: hidden;
   display: flex;

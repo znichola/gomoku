@@ -4,7 +4,7 @@ CXX       = clang++
 CXXFLAGS  = -Wall -Wextra -Werror
 CXXFLAGS += -std=c++20
 
-FILES     = Board Cell GameState Grid Routes Server Utils
+FILES     = Board Cell GameState Grid Routes Server Utils MessageQueue
 MFILES    = main $(FILES)
 
 OBJ_PATH  = obj/

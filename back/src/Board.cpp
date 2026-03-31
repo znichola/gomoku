@@ -3,6 +3,7 @@
 
 #include "Board.hpp"
 #include "Cell.hpp"
+#include "MessageQueue.hpp"
 
 bool Board::playMove(unsigned id) {
     if (!isValidMove(id))
@@ -11,6 +12,11 @@ bool Board::playMove(unsigned id) {
     grid[id] = isBlackToPlay ? Cell::BLACK : Cell::WHITE;
 
     doCaptures(id);
+
+    if (isVictory(id)) {
+        std::cout << "It's a win for " << (isBlackToPlay ? "BLACK" : "WHITE") << "\n";
+        MQ << "It's a win for " << (isBlackToPlay ? "BLACK" : "WHITE") << "\n";
+    }
 
     isBlackToPlay = !isBlackToPlay;
     return true;
@@ -74,6 +80,17 @@ void Board::addCapture(Cell color) {
         return;
     }
     whiteCaptured += 2;
+}
+
+bool Board::isVictory(unsigned id) {
+    (void)id;
+
+    if ((isBlackToPlay && blackCaptured >= 10) || (!isBlackToPlay && whiteCaptured >= 10)) return true;
+
+    // check 5 in a row
+    /// check no captures possible on 5 in a row
+
+    return false;
 }
 
 std::string Board::serialize() const {

@@ -1,5 +1,6 @@
 #include "Routes.hpp"
 #include "Utils.hpp"
+#include "MessageQueue.hpp"
 
 #include <iostream>
 
@@ -17,6 +18,7 @@ void registerRoutes(Server& server, GameState& gs) {
         if (it == req.query.end())
             return Response{400, "missing 'id' query parameter"};
         unsigned id = static_cast<unsigned>(std::stoul(it->second));
+        MessageQueue::drain(); // Draing before doing next move and refilling messages TODO: should be an API endpoint
         if (errno == ERANGE || !gs.playMove(id))
             return Response{400, "{\"error\": \"invalid move\"}"};
         return Response{200, gs.serialize()};

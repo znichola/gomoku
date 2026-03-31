@@ -165,7 +165,7 @@ button, div.menu span {
   cursor: pointer;
   display: block;
   padding: 0.2rem 0.3rem;;
-  outline: solid 0.165rem var(--accent-color);
+  border: solid 0.165rem var(--accent-color);
   border-radius: 1.2rem;
   background-color: var(--primary-color);
   color: var(--bg-color);
