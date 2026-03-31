@@ -7,6 +7,7 @@ Gomoku is a strategy board game traditionally played on a Go board with stones o
 - [wikipedia article, with rule variations](https://en.wikipedia.org/wiki/Gomoku)
 - [renju variation rules, close to doc rules](https://web.archive.org/web/20200920224708/https://renju.nu/renju-rules/)
 - [paper from 1962 on a program to play gomoku](https://ebiquity.umbc.edu/paper/html/id/1130/)
+- [min max](https://en.wikipedia.org/wiki/Minimax#Pseudocode)
 
 ## First meeting notes:
 

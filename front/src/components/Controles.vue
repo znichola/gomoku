@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useGameStore } from '@/stores/game'
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, computed } from 'vue'
 
 const gameStore = useGameStore()
+
+const aiGame = computed(() => !gameStore.gameState.isHumanGame)
 
 onMounted(() => window.addEventListener('click', click, true))
 onUnmounted(() => window.removeEventListener('click', click, true))
@@ -26,6 +28,19 @@ async function click(event: Event) {
   event.preventDefault()
   try {
     const resp = await fetch(`http://${window.location.hostname}:9012/debug-action?action=${action[0]}&id=${action[1]}`, {
+      method: 'GET',
+    })
+    const data = await resp.json()
+    gameStore.updateGameState(data);
+    } catch (err) {
+    console.warn(err)
+  }
+}
+
+async function toggleAI() {
+  try {
+    const v = !gameStore.gameState.isHumanGame
+    const resp = await fetch(`http://${window.location.hostname}:9012/set-config?isHumanGame=${v}`, {
       method: 'GET',
     })
     const data = await resp.json()
@@ -88,6 +103,7 @@ function preview(state: boolean) {
 <template>
 <div class="controles">
   <button class="reset-btn" @click="reset">Restart</button>
+  <button class="ai-play" :class="{reverse: aiGame}" @click="toggleAI"> AI</button>
   <div class="menu">
     <span>Debug</span>
     <ul>

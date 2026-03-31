@@ -3,7 +3,7 @@
 
 // DEBUG FUNCTION FOR WATCHER
 
-static bool parseBool(const std::string& s) {
+bool parseBool(const std::string& s) {
     if (s == "true" || s == "1") return true;
     if (s == "false" || s == "0") return false;
     throw std::runtime_error("invalid boolean: " + s);

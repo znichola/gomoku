@@ -63,7 +63,7 @@ void isDoubleThree() {
     unsigned before_passed_tests = num_passed_tests;
 
     struct TestCase {
-        unsigned expected;
+        bool expected;
         unsigned moveToPlay;
         Grid grid;
         std::optional<std::string> description;
@@ -99,7 +99,7 @@ void isDoubleThree() {
         ,{0, 3, Grid(7).setWhite({2, 3, 4}).setBlack({0, 6}), "White makes a connected 3 but is flanked by black one tile out. There is way to have 4 without one touching an edge, so it's not a free three"} // TODO : check
         ,{0, 4, Grid(7).setWhite({2, 4, 5}).setBlack(1), "White makes disconneced 3, but black flanks and so block a freeThree"}
         // Three free formed
-        ,{1, 2, Grid(7).setWhite({2, 3, 4}), "White plays in the middle of adjacent white pieces, it's part of a freeThree"}
+        ,{1, 3, Grid(7).setWhite({2, 3, 4}), "White plays in the middle of adjacent white pieces, it's part of a freeThree"}
         ,{1, 3, Grid(7).setWhite({1, 2, 3}).setBlack(5), "White plays a three, back piece is too far to block"} // TODO : is this true?
         ,{1, 3, Grid(7).setWhite({2, 3, 5}), "White plays a disconnected three, 1 0 1 1, and is sufficiently far from the edges"}
     };

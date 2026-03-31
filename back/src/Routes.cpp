@@ -20,13 +20,25 @@ void registerRoutes(Server& server, GameState& gs) {
         unsigned id = static_cast<unsigned>(std::stoul(it->second));
         MessageQueue::drain(); // Draing before doing next move and refilling messages TODO: should be an API endpoint
         if (errno == ERANGE || !gs.playMove(id))
-            return Response{400, "{\"error\": \"invalid move\"}"};
+            MQ << "INVALID MOVE";
+            // return Response{400, "{\"error\": \"invalid move\"}"};
         return Response{200, gs.serialize()};
     });
 
     server.get("/reset", [&gs](const Request& req) -> Response {
         (void)req;
         gs.reset();
+        return Response{200, gs.serialize()};
+    });
+
+    server.get("/set-config", [&gs](const Request& req) -> Response {
+        Server::QueryMap::const_iterator it;
+        if ((it = req.query.find("isHumanGame")) != req.query.end()) {
+            gs.isHumanGame = parseBool(it->second);
+        } else {
+            return Response{400, "{ \"error\": \"invalid action\" }"};
+        }
+
         return Response{200, gs.serialize()};
     });
 

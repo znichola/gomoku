@@ -25,10 +25,14 @@ const messages = computed(() => store.gameState.messages)
   display: flex;
   flex-direction: column;
 
-  max-height: 2rem;
+  // max-height: 2rem;
   overflow: hidden;
 
   transition: max-height 0.25s ease;
+
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
 }
 
 .message-container:hover {

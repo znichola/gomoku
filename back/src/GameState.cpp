@@ -5,6 +5,7 @@
 
 #include "GameState.hpp"
 #include "MessageQueue.hpp"
+#include "AI.hpp"
 
 std::string GameState::serialize() const {
     std::ostringstream out;
@@ -30,9 +31,17 @@ std::string GameState::serialize() const {
 }
 
 bool GameState::playMove(unsigned id) {
+    bool res = false;
     std::cout << "Playing move: " << id << "\n";
-    moveHistory.push_back(id);
-    return board.playMove(id);
+    res = board.playMove(id);
+    if (res) moveHistory.push_back(id); else return res;
+    if (!isHumanGame) {
+        MQ << "AI is thinking of a good move";
+        id = AI::play(board, id);
+        res = board.playMove(id);
+        if (res) moveHistory.push_back(id);
+    }
+    return res;
 }
 
 static Grid* rGrid = nullptr;

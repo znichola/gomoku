@@ -4,6 +4,7 @@
 #include <set>
 
 #include "Grid.hpp"
+#include "MessageQueue.hpp"
 
 std::string Grid::serialize() const {
     std::ostringstream out;
@@ -162,6 +163,8 @@ bool Grid::isDoubleThree(unsigned id) const {
             std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " you will win !? Not sure because can be blocked :(" << std::endl;
         } else if (l + r == 2 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
             // std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " it is a free-three." << std::endl;
+            MQ << "IT's a single free three";
+            return 1;
 
             std::set<long> adjacentCells;
 
@@ -222,11 +225,12 @@ bool Grid::isDoubleThree(unsigned id) const {
                         rc2 = grid[nid2];
                         if (rc2 != myColor) break;
                     } while (++r2 <= d);
-                    if (l2 + r2 >= 2) {
+                    if (l2 + r2 > 2) {
                         std::cout << "[" << acid << "] ";
                         std::cout << "[DIR: " << spinner[j % 4] << "] [SCORE: " << (l2+r2+1) << "] ";
                         if (lc2 == Cell::EMPTY && rc2 == Cell::EMPTY) {
                             std::cout << l2 << " + " << r2 << " + 1 = " << (l2+r2+1) << " it is a DOUBLE free-three." << std::endl;
+                            MQ << "IT's a dobble free three";
                             return true; // WE END AT FIRST DFT FOUND
                         } else {
                             std::cout << std::endl;
