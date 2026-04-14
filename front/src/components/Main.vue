@@ -51,7 +51,7 @@ h1 {
     position: absolute;
     right: -1rem;
     bottom: -0.2rem;
-    color: white;
+    color: var(--white-color);
   }
 }
 

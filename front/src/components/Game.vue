@@ -75,7 +75,9 @@ async function move(event: MouseEvent) {
 
 <template>
   <section>
-    <p class="error" v-if="errorMessage">Message : {{ errorMessage }}</p>
+    <div id="error-parent">
+      <p class="error" v-if="errorMessage" @click="() => errorMessage = ''">Message : {{ errorMessage }}</p>
+    </div>
     <!-- Gameboard -->
     <div class="board"
       :class="{ iso3D }"
@@ -115,11 +117,28 @@ async function move(event: MouseEvent) {
 </template>
 
 <style scoped lang="less">
+div#error-parent {
+  position: relative;
+}
+
 p.error {
-    background: indianred;
-    padding: 1.2rem;
-    text-align: center;
-    color: white;
+  background: indianred;
+  padding: 1.2rem;
+  text-align: center;
+  color: white;
+  transition: all 0.4s ease-in-out;
+  opacity: 0.8;
+  cursor: pointer;
+  &:hover {
+    opacity: 0.4;
+  }
+  position: absolute;
+  width: 500px;
+  top: 40px;
+  z-index: 1000;
+  left: 0px;
+  right: 0px;
+  margin: 0 auto;
 }
 
 div.board {

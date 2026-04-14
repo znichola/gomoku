@@ -26,7 +26,7 @@ body {
   --highlight-color: #6dbfcb;
   --bg-color: #2d3442;
   --line-color: #676a79;
-  --text-color: var(--bg-color);
+  --text-color: var(--primary-color);
   --black-color: var(--accent-color);
   --white-color: var(--primary-color);
   --title-font-family: 'Pirata One', 'Impact', 'Arial Narrow Bold', sans-serif;
