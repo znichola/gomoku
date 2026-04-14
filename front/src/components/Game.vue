@@ -76,7 +76,7 @@ async function move(event: MouseEvent) {
 <template>
   <section>
     <div id="error-parent">
-      <p class="error" v-if="errorMessage" @click="() => errorMessage = ''">Message : {{ errorMessage }}</p>
+      <p class="error" v-if="errorMessage" @click="() => errorMessage = null">Message : {{ errorMessage }}</p>
     </div>
     <!-- Gameboard -->
     <div class="board"
