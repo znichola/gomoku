@@ -14,7 +14,7 @@ bool Board::playMove(unsigned id) {
     doCaptures(id);
 
     if (isVictory(id)) {
-        std::cout << "It's a win for " << (isBlackToPlay ? "BLACK" : "WHITE") << "\n";
+        std::cout << "It's a win for " << (isBlackToPlay ? "BLACK" : "WHITE") << std::endl;
         MQ << "It's a win for " << (isBlackToPlay ? "BLACK" : "WHITE") << "\n";
     }
 

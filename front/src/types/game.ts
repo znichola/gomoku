@@ -9,7 +9,7 @@ type Board = {
 }
 
 type GameState = {
-    isHumanGame: boolean;
+    isAIGame: Cell;
     moveHistory: number[];
     board: Board | null;
     messages: string[];

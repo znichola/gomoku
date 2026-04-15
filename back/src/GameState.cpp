@@ -11,7 +11,7 @@ std::string GameState::serialize() const {
     std::ostringstream out;
 
     out << "{\n";
-    out << "\"isHumanGame\": " << (isHumanGame ? "true" : "false") << ",\n";
+    out << "\"isAIGame\": " << static_cast<unsigned>(isAIGame) << ",\n";
     out << "\"moveHistory\": [";
     for (size_t i = 0; i < moveHistory.size(); ++i) {
         out << moveHistory[i];
@@ -32,16 +32,23 @@ std::string GameState::serialize() const {
 
 bool GameState::playMove(unsigned id) {
     bool res = false;
-    std::cout << "Playing move: " << id << "\n";
+    std::cout << "Playing move: " << id << std::endl;
     res = board.playMove(id);
-    if (res) moveHistory.push_back(id); else return res;
-    if (!isHumanGame) {
-        MQ << "AI is thinking of a good move";
-        id = AI::play(board, id);
-        res = board.playMove(id);
-        if (res) moveHistory.push_back(id);
-    }
+    if (res) moveHistory.push_back(id);
     return res;
+}
+
+/**
+ * @return Return false if error (IA sending a wrong move), true if IA not enabled or has played
+ */
+bool GameState::askAI2Play() {
+    const Cell activePlayer = board.isBlackToPlay ? Cell::BLACK : Cell::WHITE;
+    if (isAIGame == activePlayer) {
+        MQ << "AI is thinking of a good move";
+        std::cout << "[AI] ";
+        return playMove(AI::play(board, moveHistory.empty() ? 180 : moveHistory.back()));
+    }
+    return true;
 }
 
 static Grid* rGrid = nullptr;
@@ -69,7 +76,7 @@ bool GameState::makeDoubleTree() {
     const unsigned d = grid.boardDimension;
 
     unsigned lastMove = moveHistory.back();
-    std::cout << "lastMove: " << lastMove << "\n";
+    std::cout << "lastMove: " << lastMove << std::endl;
     const std::initializer_list<std::tuple<long, long, Cell>> cells = {
         {-1,  0, Cell::WHITE},
         { 0,  0, Cell::WHITE},
@@ -109,7 +116,7 @@ void GameState::reload(const std::vector<Cell>& newGrid,
                     bool isBlackToPlay,
                     unsigned boardDimension,
                     const std::vector<unsigned>& newMoveHistory,
-                    bool newIsHumanGame) {
+                    Cell newisAIGame) {
     const size_t expected = static_cast<size_t>(boardDimension) * static_cast<size_t>(boardDimension);
     if (newGrid.size() != expected) {
         throw std::runtime_error("reload: board_grid size mismatch (expected " +
@@ -117,7 +124,7 @@ void GameState::reload(const std::vector<Cell>& newGrid,
                                  std::to_string(newGrid.size()) + ")");
     }
 
-    isHumanGame = newIsHumanGame;
+    isAIGame = newisAIGame;
 
     board.grid = Grid(boardDimension);
     board.grid.grid = newGrid;

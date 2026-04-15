@@ -3,22 +3,24 @@ import { computed } from 'vue'
 import { useGameStore } from '@/stores/game'
 import bowlofstones from './BowlOfStones.vue'
 
-const store = useGameStore()
-const board = computed(() => store.gameState.board)
+const gameStore = useGameStore()
+const board = computed(() => gameStore.gameState.board)
 const blackCaptured = computed(() => board.value?.blackCaptured ?? 0)
 const whiteCaptured = computed(() => board.value?.whiteCaptured ?? 0)
+
+const aiGame = computed(() => gameStore.gameState.isAIGame)
 </script>
 
 <template>
   <div class="hud">
-    <div class="capture-card black">
+    <div class="capture-card black" :class="{ai: aiGame === 1}">
       <div class="capture-bowl">
         <bowlofstones />
         <span class="capture-count">{{ blackCaptured }}</span>
       </div>
     </div>
 
-    <div class="capture-card white">
+    <div class="capture-card white" :class="{ai: aiGame === 2}">
       <div class="capture-bowl">
         <bowlofstones />
         <span class="capture-count">{{ whiteCaptured }}</span>
@@ -53,6 +55,16 @@ const whiteCaptured = computed(() => board.value?.whiteCaptured ?? 0)
     .capture-count {
       color: var(--black-color);
     }
+  }
+
+  position: relative;
+  &.ai::after {
+    content: 'AI';
+    font-size: 0.8rem;
+    font-weight: bold;
+    position: absolute;
+    right: 0;
+    bottom: -0.2rem;
   }
 }
 

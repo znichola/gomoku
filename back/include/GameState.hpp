@@ -5,12 +5,13 @@
 #include "Board.hpp"
 
 struct GameState {
-    bool isHumanGame = false;
+    Cell isAIGame = Cell::EMPTY;
     Board board;
     std::vector<unsigned> moveHistory;
 
     std::string serialize() const;
     bool playMove(unsigned id);
+    bool askAI2Play();
     void reset();
 
     // debug
@@ -23,5 +24,5 @@ struct GameState {
         bool isBlackToPlay,
         unsigned boardDimension,
         const std::vector<unsigned>& moveHistory,
-        bool isHumanGame);
+        Cell isAIGame);
 };

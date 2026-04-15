@@ -8,7 +8,7 @@
 #include "Server.hpp"
 
 void handleSigint(int) {
-    std::cout << "\nShutting down...\n";
+    std::cout << "\nShutting down..." << std::endl;
     exit(0);
 }
 
@@ -33,7 +33,7 @@ Server::Server(int port) {
     if (bind(server_fd, (sockaddr*)&addr, sizeof(addr)) < 0) {perror("bind"); exit(1); }
     if (listen(server_fd, 10) < 0) { perror("listen"); exit(1); }
 
-    std::cout << "Server listening on port " << port << "...\n";
+    std::cout << "Server listening on port " << port << "..." << std::endl;
 }
 
 void Server::start() {
@@ -90,14 +90,14 @@ void Server::dispatch(int client, const Request& req) {
             res = (*handler)(req);
         } catch (const std::exception& e) {
             res.status(500).body(std::string("{\"error\":\"") + e.what() + "\"}");
-            std::cerr << "[500] " << req.method << " " << req.path << " — " << e.what() << "\n";
+            std::cerr << "[500] " << req.method << " " << req.path << " — " << e.what() << std::endl;
         } catch (...) {
             res.status(500).body("{\"error\":\"unknown internal error\"}");
-            std::cerr << "[500] " << req.method << " " << req.path << " — unknown exception\n";
+            std::cerr << "[500] " << req.method << " " << req.path << " — unknown exception" << std::endl;
         }
     else {
         res.status(404).body("{\"error\":\"not found\"}");
-        std::cerr << "[404] Unknown route " << req.path << "\n";
+        std::cerr << "[404] Unknown route " << req.path << std::endl;
     }
 
     std::string raw = buildResponse(res);

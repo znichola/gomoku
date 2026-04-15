@@ -1,9 +1,15 @@
 #include "Utils.hpp"
 
+Cell parseCell(const std::string& s) {
+    if (s == "0") return Cell::EMPTY;
+    if (s == "1") return Cell::BLACK;
+    if (s == "2") return Cell::WHITE;
+    throw std::runtime_error("invalid Cell: " + s);
+}
 
 // DEBUG FUNCTION FOR WATCHER
 
-bool parseBool(const std::string& s) {
+static bool parseBool(const std::string& s) {
     if (s == "true" || s == "1") return true;
     if (s == "false" || s == "0") return false;
     throw std::runtime_error("invalid boolean: " + s);
@@ -65,7 +71,7 @@ static std::vector<unsigned> parseMoveHistoryCSV(const std::string& s) {
 }
 
 void handleLoadGameState(const Server::QueryMap& query, GameState& gs) {
-    const bool isHumanGame = parseBool(getQueryRequired(query, "isHumanGame"));
+    const Cell isAIGame = parseCell(getQueryRequired(query, "isAIGame"));
     const std::vector<unsigned> moveHistory = parseMoveHistoryCSV(getQueryRequired(query, "moveHistory"));
     const unsigned boardDimension =
         static_cast<unsigned>(std::stoul(getQueryRequired(query, "board_boardDimension")));
@@ -76,5 +82,5 @@ void handleLoadGameState(const Server::QueryMap& query, GameState& gs) {
     const bool isBlackToPlay = parseBool(getQueryRequired(query, "board_isBlackToPlay"));
     const std::vector<Cell> grid = parseGridCSV(getQueryRequired(query, "board_grid"));
 
-    gs.reload(grid, blackCaptured, whiteCaptured, isBlackToPlay, boardDimension, moveHistory, isHumanGame);
+    gs.reload(grid, blackCaptured, whiteCaptured, isBlackToPlay, boardDimension, moveHistory, isAIGame);
 }

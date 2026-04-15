@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import type { Cell, GameState } from '../types/game'
 
 export const useGameStore = defineStore('game', () => {
-  const gameState = reactive<GameState>({ isHumanGame: false, moveHistory: [], board: null, messages: [] })
+  const gameState = reactive<GameState>({ isAIGame: 0, moveHistory: [], board: null, messages: [] })
   const watcherState = reactive({
     enabled: false,
     preview_state: [] as Cell[],
@@ -13,7 +13,7 @@ export const useGameStore = defineStore('game', () => {
 
   function updateGameState(newgameState: GameState) {
     gameState.board = newgameState.board
-    gameState.isHumanGame = newgameState.isHumanGame
+    gameState.isAIGame = newgameState.isAIGame
     gameState.moveHistory = newgameState.moveHistory
     gameState.messages = newgameState.messages
   }
@@ -30,7 +30,7 @@ export const useGameStore = defineStore('game', () => {
     if (!gameState.board)
       return ''
     return new URLSearchParams({
-      isHumanGame: gameState.isHumanGame ? 'true' : 'false',
+      isAIGame: gameState.isAIGame.toString(),
       moveHistory: gameState.moveHistory.join(','),
       board_grid: gameState.board.grid.join(','),
       board_boardDimension: gameState.board.boardDimension.toString(),
@@ -58,7 +58,8 @@ export const useGameStore = defineStore('game', () => {
 
   function applyT0(updateStartAt: boolean = false) {
     let startAt: string | null = null
-    const query = localStorage.getItem('gomoku-watcher-T0') ?? makeGameStateQuery()
+    const query = (localStorage.getItem('gomoku-watcher-T0') ?? makeGameStateQuery())
+      .replace(/isHumanGame=(false|true|\d)/, 'isAIGame=0') // fix old cache version
     if (!query || query.length <= 0)
       return console.debug('No T0.')
     fetch(`http://${window.location.hostname}:9012/debug-action?action=load-game-state&${query}`)

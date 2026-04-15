@@ -11,7 +11,7 @@ struct Board {
     Grid grid;
     unsigned blackCaptured = 0;
     unsigned whiteCaptured = 0;
-    bool isBlackToPlay = false;
+    bool isBlackToPlay = true;
 
 
     Board(unsigned board_size=19) : grid(Grid{board_size}) {}

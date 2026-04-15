@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "AI.hpp"
 #include "MessageQueue.hpp"
 
@@ -8,7 +10,15 @@ unsigned AI::play(const Board &board, unsigned lastMove) {
     //     MQ << "AI failed to find a valid move :(";
     // }
     (void)board;
-    return 360 - lastMove;
+    const unsigned d = board.grid.boardDimension;
+    const long nid = 360 - lastMove;
+    long id = nid;
+    long i = 0;
+    while (board.grid.grid[id] != Cell::EMPTY && i <= d * d) {
+        id = 360 - (i / 2) * ((i % 2) ? -1 : 1);
+        i++;
+    }
+    return id;
 }
 /*
 std::vector<std::pair<unsigned, double>>AI::heuristic(const Board &board) {
