@@ -1,11 +1,13 @@
-NAME	  = gomoku
+NAME     ?= gomoku
+PORT     ?= 9012
+# make NAME=gomoku_9013 PORT=9013
 
 CXX       = clang++
 CXXFLAGS  = -Wall -Wextra -Werror
 CXXFLAGS += -std=c++20
 
 FILES     = Board Cell GameState Grid Routes Server Utils MessageQueue AI
-MFILES    = main $(FILES)
+MFILES    = main_$(PORT) $(FILES)
 
 OBJ_PATH  = obj/
 GOBJ_PATH = gobj/
@@ -20,7 +22,15 @@ GOBJ      = $(addprefix $(GOBJ_PATH), $(addsuffix .o, $(MFILES)))
 
 LIBS      = -I$(INC_PATH)
 
-all	: $(NAME)
+all: $(NAME)
+
+$(OBJ_PATH)main_$(PORT).o: $(SRC_PATH)main.cpp $(HDEP)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -D PORT=$(PORT) $(LIBS) -c $< -o $@
+
+$(GOBJ_PATH)main_$(PORT).o: $(SRC_PATH)main.cpp $(HDEP)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -D PORT=$(PORT) $(LIBS) -c $< -o $@
 
 $(OBJ_PATH)%.o: $(SRC_PATH)%.cpp $(HDEP)
 	@mkdir -p $(@D)
@@ -69,8 +79,10 @@ sanitize3: $(NAME)_sanitize3
 clean:
 	$(RM) $(OBJ_PATH)main.o $(OBJ) $(GOBJ) $(TEST_OBJ)
 
-fclean: clean
-	$(RM) $(NAME) $(NAME)_debug $(NAME)_sanitize $(NAME)_sanitize3
+bclean:
+	$(RM) $(NAME) $(NAME)_debug $(NAME)_sanitize $(NAME)_sanitize3 $(NAME)_9*
+
+fclean: clean bclean
 
 re: fclean all
 
@@ -96,6 +108,6 @@ test/moves: $(TEST_OBJ_PATH)moves.o $(TEST_MAIN_OBJ)
 	$(CXX) $(CXXFLAGS) $() $^ -o $@
 
 
-.PHONY: all debug watcher sanitize sanitize3 clean fclean re run
+.PHONY: all debug watcher sanitize sanitize3 clean bclean fclean re run
 
 include $(DEP)
