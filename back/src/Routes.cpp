@@ -8,6 +8,8 @@ using Request = Server::Request;
 using Response = Server::Response;
 
 void registerRoutes(Server& server, GameState& gs) {
+    registerRoutes_Arbiter(server, gs);
+
     server.get("/gameState", [&gs](const Request& req) -> Response {
         (void)req;
         return Response{200, gs.serialize()};

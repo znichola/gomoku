@@ -13,9 +13,13 @@ bool Board::playMove(unsigned id) {
 
     doCaptures(id);
 
-    if (isVictory(id)) {
-        std::cout << "It's a win for " << (isBlackToPlay ? "BLACK" : "WHITE") << std::endl;
-        MQ << "It's a win for " << (isBlackToPlay ? "BLACK" : "WHITE") << "\n";
+    Cell victory = isVictory();
+    if (victory == Cell::OUTSIDE) {
+        std::cout << "It's a draw" << std::endl;
+        MQ << "It's a draw" << "\n";
+    } else if (victory != Cell::EMPTY) {
+        std::cout << "It's a win for " << (victory == Cell::BLACK ? "BLACK" : "WHITE") << std::endl;
+        MQ << "It's a win for " << (victory == Cell::BLACK ? "BLACK" : "WHITE") << "\n";
     }
 
     isBlackToPlay = !isBlackToPlay;
@@ -82,15 +86,14 @@ void Board::addCapture(Cell color) {
     whiteCaptured += 2;
 }
 
-bool Board::isVictory(unsigned id) {
-    (void)id;
-
-    if ((isBlackToPlay && blackCaptured >= 10) || (!isBlackToPlay && whiteCaptured >= 10)) return true;
+Cell Board::isVictory() {
+    if ((isBlackToPlay && blackCaptured >= 10)) return Cell::BLACK;
+    else if ((!isBlackToPlay && whiteCaptured >= 10)) return Cell::WHITE;
 
     // check 5 in a row
     /// check no captures possible on 5 in a row
 
-    return false;
+    return Cell::EMPTY;
 }
 
 std::string Board::serialize() const {

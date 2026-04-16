@@ -7,18 +7,19 @@ CXXFLAGS  = -Wall -Wextra -Werror
 CXXFLAGS += -std=c++20
 
 FILES     = Board Cell GameState Grid Routes Server Utils MessageQueue AI
-MFILES    = main_$(PORT) $(FILES)
+# CXXFILES are files without header (.hpp file) :
+CXXFILES  = RoutesArbiter main_$(PORT) $(FILES)
 
 OBJ_PATH  = obj/
 GOBJ_PATH = gobj/
 SRC_PATH  = src/
 INC_PATH  = include/
 
-SRC       = $(addprefix $(SRC_PATH), $(addsuffix .cpp, $(MFILES)))
+SRC       = $(addprefix $(SRC_PATH), $(addsuffix .cpp, $(CXXFILES)))
 HDEP      = $(addprefix $(INC_PATH), $(addsuffix .hpp, $(FILES)))
-OBJ       = $(addprefix $(OBJ_PATH), $(addsuffix .o, $(MFILES)))
+OBJ       = $(addprefix $(OBJ_PATH), $(addsuffix .o, $(CXXFILES)))
 
-GOBJ      = $(addprefix $(GOBJ_PATH), $(addsuffix .o, $(MFILES)))
+GOBJ      = $(addprefix $(GOBJ_PATH), $(addsuffix .o, $(CXXFILES)))
 
 LIBS      = -I$(INC_PATH)
 

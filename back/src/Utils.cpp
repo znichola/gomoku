@@ -7,20 +7,6 @@ Cell parseCell(const std::string& s) {
     throw std::runtime_error("invalid Cell: " + s);
 }
 
-// DEBUG FUNCTION FOR WATCHER
-
-static bool parseBool(const std::string& s) {
-    if (s == "true" || s == "1") return true;
-    if (s == "false" || s == "0") return false;
-    throw std::runtime_error("invalid boolean: " + s);
-}
-
-static std::string getQueryRequired(const Server::QueryMap& q, const std::string& key) {
-    auto it = q.find(key);
-    if (it == q.end()) throw std::runtime_error("missing query parameter: " + key);
-    return it->second;
-}
-
 static std::vector<std::string> splitCSV(const std::string& s) {
     std::vector<std::string> out;
     std::string cur;
@@ -36,7 +22,7 @@ static std::vector<std::string> splitCSV(const std::string& s) {
     return out;
 }
 
-static std::vector<Cell> parseGridCSV(const std::string& s) {
+std::vector<Cell> parseGridCSV(const std::string& s) {
     // s like: "0,0,2,1,..."
     // empty string => empty vector (but in your case should not be empty)
     std::vector<Cell> grid;
@@ -53,6 +39,20 @@ static std::vector<Cell> parseGridCSV(const std::string& s) {
         else throw std::runtime_error("invalid cell value in board_grid: " + p);
     }
     return grid;
+}
+
+// DEBUG FUNCTION FOR WATCHER
+
+static bool parseBool(const std::string& s) {
+    if (s == "true" || s == "1") return true;
+    if (s == "false" || s == "0") return false;
+    throw std::runtime_error("invalid boolean: " + s);
+}
+
+static std::string getQueryRequired(const Server::QueryMap& q, const std::string& key) {
+    auto it = q.find(key);
+    if (it == q.end()) throw std::runtime_error("missing query parameter: " + key);
+    return it->second;
 }
 
 static std::vector<unsigned> parseMoveHistoryCSV(const std::string& s) {
