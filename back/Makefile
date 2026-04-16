@@ -32,22 +32,26 @@ $(GOBJ_PATH)main_$(PORT).o: $(SRC_PATH)main.cpp $(HDEP)
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) -D PORT=$(PORT) $(LIBS) -c $< -o $@
 
+$(SRC_PATH)main_$(PORT).cpp: $(SRC_PATH)main.cpp $(HDEP)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -D PORT=$(PORT) $(LIBS) -c $< -o $@
+
 $(OBJ_PATH)%.o: $(SRC_PATH)%.cpp $(HDEP)
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) $(LIBS) -c $< -o $@
 
 $(GOBJ_PATH)%.o: $(SRC_PATH)%.cpp $(HDEP)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(LIBS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(LIBS) -g -c $< -o $@
 
 $(NAME): $(OBJ) $(HDEP)
-	$(CXX) $(CXXFLAGS) $(LIBS) -g3 -o $(NAME) $(OBJ)
+	$(CXX) $(CXXFLAGS) $(LIBS) -o $(NAME) $(OBJ)
 
 # Usage: make debug && lldb gomoku_debug -o run
 $(NAME)_debug: $(GOBJ) $(HDEP)
 	$(CXX) $(CXXFLAGS) $(LIBS) -g -o $(NAME)_debug $(GOBJ)
 
-$(NAME)_sanitize: $(SRC) $(HDEP)
+$(NAME)_sanitize: $(GOBJ) $(HDEP)
 	$(CXX) $(CXXFLAGS) $(LIBS) -fsanitize=address -g -o $(NAME)_sanitize $(GOBJ)
 
 $(NAME)_sanitize3: $(SRC) $(HDEP)
@@ -59,7 +63,7 @@ watcher:
 	@(trap '' INT; \
 	while true; do \
 		echo "\033[0;32m=== BUILD ===\033[0;00m"; \
-		if ! make debug; then \
+		if ! make debug PORT=$(PORT); then \
 			echo "\n\033[0;31mBuild failed.\033[0;00m"; \
 			read -p "Press enter to retry (q to quit): " input; \
 			[ "$$input" = "q" ] && exit 0; \
