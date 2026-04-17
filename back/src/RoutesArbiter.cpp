@@ -120,7 +120,7 @@ void registerRoutes_Arbiter(Server& server, GameState& gs) {
 		out << "{\n";
 		out << "\"as_played\": true,\n";
 		out << "\"move\": " << gs.moveHistory.back() << ",\n";
-		out << "\"board\": " << gs.board.serialize() << ",\n";
+		out << "\"board\": " << gs.board.grid.serialize() << ",\n";
 		out << "\"turn\": " << gs.moveHistory.size() << ",\n";
 		out << "\"gstatus\": ";
     Cell victory = gs.board.isVictory();
