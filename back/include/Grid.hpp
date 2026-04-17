@@ -2,10 +2,13 @@
 
 #include <vector>
 #include <string>
+#include <set>
 
 #include "Cell.hpp"
 
 typedef std::pair<long, long> Coord;
+
+extern const std::initializer_list<Coord> extremities;
 
 struct Grid {
     std::vector<Cell> grid;
@@ -26,5 +29,8 @@ struct Grid {
     Grid &setWhite(std::initializer_list<unsigned> ids);
     Grid &setEmpty(unsigned id);
 
-    bool isDoubleThree(unsigned id) const;
+    long handleCaptures(unsigned const id, bool const apply = false);
+    long calcAlignedCells(unsigned const id, long const i, Cell &bc,
+                    std::set<long> *alignedCells, long const offset = 0) const;
+    bool isDoubleThree(unsigned const id) const;
 };

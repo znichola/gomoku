@@ -1,7 +1,6 @@
 #include <sstream>
 #include <cmath>
 #include <iostream>
-#include <set>
 
 #include "Grid.hpp"
 #include "MessageQueue.hpp"
@@ -48,22 +47,25 @@ Grid &Grid::setEmpty(unsigned id) {
     return *this;
 }
 
-bool Grid::isDoubleThree(unsigned id) const {
+const std::initializer_list<Coord> extremities = {
+    { 1,  0}, // right
+    { 1,  1}, // bottom-right
+    { 0,  1}, // bottom
+    {-1,  1}, // bottom-left
+    {-1,  0}, // left
+    {-1, -1}, // top-left
+    { 0, -1}, // top
+    { 1, -1}  // top-right
+};
+
+/**
+ * @param apply If false just read, without modify member variable
+ */
+long Grid::handleCaptures(unsigned const id, bool const apply) {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return false;
     const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
-
     const unsigned d = boardDimension;
-    const std::initializer_list<Coord> extremities = { // TODO: CAN BE A GLOBAL
-        { 1,  0}, // right
-        { 1,  1}, // bottom-right
-        { 0,  1}, // bottom
-        {-1,  1}, // bottom-left
-        {-1,  0}, // left
-        {-1, -1}, // top-left
-        { 0, -1}, // top
-        { 1, -1}  // top-right
-    };
 
     long c = 0;
     const long cx = id % d;
@@ -78,44 +80,63 @@ bool Grid::isDoubleThree(unsigned id) const {
         if (grid[nid1] != enemyColor) continue;
         const long nid2 = (cy + oy * 2) * d + (cx + ox * 2);
         if (grid[nid2] != enemyColor) continue;
+        if (apply) {
+            setEmpty(static_cast<unsigned>(nid1));
+            setEmpty(static_cast<unsigned>(nid2));
+        }
         c++;
     }
+    return c;
+}
+
+long Grid::calcAlignedCells(unsigned const id, long const i, Cell &bc,
+                        std::set<long> *alignedCells, long const offset) const {
+    const Cell myColor = grid[id];
+    if (myColor == Cell::EMPTY) return false;
+    const unsigned d = boardDimension;
+
+    long c = 0;
+    long nid = 0;
+    const long cx = id % d;
+    const long cy = id / d;
+    do {
+        const long ox = (extremities.begin() + i + offset)->first;
+        const long oy = (extremities.begin() + i + offset)->second;
+        const long nx = cx + ox * (c + 1);
+        const long ny = cy + oy * (c + 1);
+        if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
+        nid = ny * d + nx;
+        bc = grid[nid];
+        if (bc != myColor) break;
+        if (alignedCells) alignedCells->insert(nid);
+    } while (++c <= d);
+    return c;
+}
+
+bool Grid::isDoubleThree(unsigned const id) const {
+    std::cout << "== isDoubleThree ==" << std::endl;
+    const Cell myColor = grid[id];
+    if (myColor == Cell::EMPTY) return false;
+
+    long c = const_cast<Grid*>(this)->handleCaptures(id);
     if (c > 0) {
         std::cout << "It is a capture ! (" << c << ")" << std::endl;
     }
 
-    for (long i = 0, nid = 0; i < 4; i++) {
+    const unsigned d = boardDimension;
+    for (long i = 0; i < 4; i++) {
         std::set<long> alignedCells = { id };
-        const char* spinner[] = {"—", "\\", "|", "/"};
-        long l = 0;
+
         Cell lc = Cell::OUTSIDE;
-        do {
-            const long ox = (extremities.begin() + i)->first;
-            const long oy = (extremities.begin() + i)->second;
-            const long nx = cx + ox * (l + 1);
-            const long ny = cy + oy * (l + 1);
-            if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
-            nid = ny * d + nx;
-            lc = grid[nid];
-            if (lc != myColor) break;
-            alignedCells.insert(nid);
-        } while (++l <= d);
-        long r = 0;
+        long l = calcAlignedCells(id, i, lc, &alignedCells);
+
         Cell rc = Cell::OUTSIDE;
-        do { // TODO: CAN BE REFACTORED
-            const long ox = (extremities.begin() + i + 4)->first;
-            const long oy = (extremities.begin() + i + 4)->second;
-            const long nx = cx + ox * (r + 1);
-            const long ny = cy + oy * (r + 1);
-            if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
-            nid = ny * d + nx;
-            rc = grid[nid];
-            if (rc != myColor) break;
-            alignedCells.insert(nid);
-        } while (++r <= d);
+        long r = calcAlignedCells(id, i, rc, &alignedCells, 4);
+
+        const char* spinner[] = {"—", "\\", "|", "/"};
         if (l + r >= 2) {
-            std::cout << "[" << (myColor == Cell::BLACK ? "BLACK" : "WHITE") << "] ";
-            std::cout << "[DIR: " << spinner[i % 4] << "] ";
+            std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[i % 4] << "] ";
+            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << std::endl;
         }
         if (l + r >= 4) {
             std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " it is a win ! (98%, 2\% for capture)" << std::endl;
@@ -125,9 +146,7 @@ bool Grid::isDoubleThree(unsigned id) const {
         } else if (l + r == 3) {
             std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " you will win !? Not sure because can be blocked :(" << std::endl;
         } else if (l + r == 2 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
-            // std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " it is a free-three." << std::endl;
-            MQ << "IT's a single free three";
-            return 1;
+            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " it is a free-three." << std::endl;
 
             std::set<long> adjacentCells;
 
@@ -150,8 +169,6 @@ bool Grid::isDoubleThree(unsigned id) const {
             // const Vector2D p2 = { nid2 % d, nid2 / d };
             // const Vector2D v1 = p2 - p1;
             for (auto acid : adjacentCells) { // TODO: CAN BE REFACTORED
-                const long acx = acid % d;
-                const long acy = acid / d;
                 // const Vector2D p3 = { acid % d, acid / d };
                 // const Vector2D v2 = p3 - p1;
                 if (alignedCells.find(acid) != alignedCells.end())
@@ -162,38 +179,22 @@ bool Grid::isDoubleThree(unsigned id) const {
                 //     continue;
                 // }
 
-                for (long j = 0, nid2 = 0; j < 4; j++) {
+                for (long j = 0; j < 4; j++) {
                     if (i == j) continue;
-                    long l2 = 0;
+
                     Cell lc2 = Cell::OUTSIDE;
-                    do {
-                        const long ox = (extremities.begin() + j)->first;
-                        const long oy = (extremities.begin() + j)->second;
-                        const long nx = acx + ox * (l2 + 1);
-                        const long ny = acy + oy * (l2 + 1);
-                        if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
-                        nid2 = ny * d + nx;
-                        lc2 = grid[nid2];
-                        if (lc2 != myColor) break;
-                    } while (++l2 <= d);
-                    long r2 = 0;
+                    long l2 = calcAlignedCells(acid, j, lc2, NULL);
+
                     Cell rc2 = Cell::OUTSIDE;
-                    do { // TODO: CAN BE REFACTORED
-                        const long ox = (extremities.begin() + j + 4)->first;
-                        const long oy = (extremities.begin() + j + 4)->second;
-                        const long nx = acx + ox * (r2 + 1);
-                        const long ny = acy + oy * (r2 + 1);
-                        if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
-                        nid2 = ny * d + nx;
-                        rc2 = grid[nid2];
-                        if (rc2 != myColor) break;
-                    } while (++r2 <= d);
-                    if (l2 + r2 > 2) {
+                    long r2 = calcAlignedCells(acid, j, rc2, NULL, 4);
+
+
+                    if (l2 + r2 >= 2) {
                         std::cout << "[" << acid << "] ";
-                        std::cout << "[DIR: " << spinner[j % 4] << "] [SCORE: " << (l2+r2+1) << "] ";
-                        if (lc2 == Cell::EMPTY && rc2 == Cell::EMPTY) {
-                            std::cout << l2 << " + " << r2 << " + 1 = " << (l2+r2+1) << " it is a DOUBLE free-three." << std::endl;
-                            MQ << "IT's a dobble free three";
+                        std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[j % 4] << "] ";
+                        std::cout << l2 << " + " << r2 << " + 1 = " << (l2+r2+1) << std::endl;
+                        if (lc2 == Cell::EMPTY && rc2 == Cell::EMPTY && l2 + r2 == 2) {
+                            std::cout << " it is a DOUBLE free-three." << std::endl;
                             return true; // WE END AT FIRST DFT FOUND
                         } else {
                             std::cout << std::endl;

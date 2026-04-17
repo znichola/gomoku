@@ -46,44 +46,18 @@ bool Board::isValidMove(unsigned id) {
 void Board::doCaptures(unsigned id) {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return;
-    const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
-    const unsigned d = grid.boardDimension;
-    const std::initializer_list<Coord> extremities = {
-        { 1,  0}, // right
-        { 1,  1}, // bottom-right
-        { 0,  1}, // bottom
-        {-1,  1}, // bottom-left
-        {-1,  0}, // left
-        {-1, -1}, // top-left
-        { 0, -1}, // top
-        { 1, -1}  // top-right
-    };
 
-    const long cx = id % d;
-    const long cy = id / d;
-    for (auto [ox, oy] : extremities) {
-        const long nx = cx + ox * 3;
-        const long ny = cy + oy * 3;
-        const long nid = ny * d + nx;
-        if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
-        if (grid[nid] != myColor) continue;
-        const long nid1 = (cy + oy * 1) * d + (cx + ox * 1);
-        if (grid[nid1] != enemyColor) continue;
-        const long nid2 = (cy + oy * 2) * d + (cx + ox * 2);
-        if (grid[nid2] != enemyColor) continue;
-        grid.setEmpty(static_cast<unsigned>(nid1));
-        grid.setEmpty(static_cast<unsigned>(nid2));
+    long c = grid.handleCaptures(id, true);
+    for (long i = 0; i < c; i++)
         addCapture(myColor);
-    }
 }
 
 void Board::addCapture(Cell color) {
-    if (color == Cell::EMPTY) return;
     if (color == Cell::BLACK) {
         blackCaptured += 2;
-        return;
+    } else if (color == Cell::WHITE) {
+        whiteCaptured += 2;
     }
-    whiteCaptured += 2;
 }
 
 Cell Board::isVictory() {
