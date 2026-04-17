@@ -9,8 +9,8 @@ const aiGame = computed(() => gameStore.gameState.isAIGame)
 onMounted(() => window.addEventListener('click', click, true))
 onUnmounted(() => window.removeEventListener('click', click, true))
 
-async function click(event: Event) {
-  if (!event.target || !gameStore.watcherState.edition)
+async function click(event: MouseEvent) {
+  if (!event.target || !(gameStore.watcherState.edition || (gameStore.watcherState.keymode && event.altKey)))
     return
   const target = (event.target as HTMLElement)
   let element: HTMLElement | null = null
@@ -89,6 +89,9 @@ function watcher(action: string) {
   } else if (action === 'toggle-edit') {
     gameStore.watcherState.edition = !gameStore.watcherState.edition
     console.log('Switch edit mode', gameStore.watcherState.edition)
+  } else if (action === 'toggle-keymode') {
+    gameStore.watcherState.keymode = !gameStore.watcherState.keymode
+    console.log('Switch cheating mode', gameStore.watcherState.keymode)
   } else {
     console.warn('action not found')
   }
@@ -155,6 +158,11 @@ function preview(state: boolean) {
         <button class="debug-btn" @click="watcher('toggle-edit')" :class="{ reverse: gameStore.watcherState.edition }"
             title="Active/Désactive le mode édition au clique. Permet de supprimer une pièce ou de diminuer le score de capture"
           >Toggle Edit</button>
+      </li>
+      <li>
+        <button class="debug-btn" @click="watcher('toggle-keymode')" :class="{ reverse: gameStore.watcherState.keymode }"
+            title="Active/Désactive les modifieurs clavier. SHIFT + CLICK => BLACK - CTRL + CLICK => WHITE - ALT + CLICK => EMPTY"
+          >Key Modifiers</button>
       </li>
     </ul>
   </div>

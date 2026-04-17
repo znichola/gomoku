@@ -21,9 +21,18 @@ void registerRoutes(Server& server, GameState& gs) {
             return Response{400, "missing 'id' query parameter"};
         unsigned id = static_cast<unsigned>(std::stoul(it->second));
         MessageQueue::drain(); // Draing before doing next move and refilling messages TODO: should be an API endpoint
-        if (errno == ERANGE || !(gs.playMove(id) && gs.askAI2Play()))
+        
+        it = req.query.find("force_color");
+        if (it != req.query.end()) // Debug
+            gs.board.isBlackToPlay = (it->second == "black");
+
+        bool played = false;
+        if (errno == ERANGE || !(played = gs.playMove(id)))
             MQ << "INVALID MOVE";
             // return Response{400, "{\"error\": \"invalid move\"}"};
+        if (played && !gs.askAI2Play())
+            MQ << "INVALID MOVE FROM AI";
+
         return Response{200, gs.serialize()};
     });
 
@@ -31,6 +40,7 @@ void registerRoutes(Server& server, GameState& gs) {
         (void)req;
         MQ << "";
         gs.reset();
+        MessageQueue::drain();
         gs.askAI2Play();
         return Response{200, gs.serialize()};
     });
@@ -39,6 +49,7 @@ void registerRoutes(Server& server, GameState& gs) {
         Server::QueryMap::const_iterator it;
         if ((it = req.query.find("isAIGame")) != req.query.end()) {
             gs.isAIGame = parseCell(it->second);
+            MessageQueue::drain();
             gs.askAI2Play();
         } else {
             return Response{400, "{ \"error\": \"invalid action\" }"};

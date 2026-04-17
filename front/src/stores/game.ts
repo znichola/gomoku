@@ -8,7 +8,8 @@ export const useGameStore = defineStore('game', () => {
     enabled: false,
     preview_state: [] as Cell[],
     preview: false,
-    edition: false
+    edition: false,
+    keymode: false
   })
 
   function updateGameState(newgameState: GameState) {

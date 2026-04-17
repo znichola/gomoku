@@ -124,6 +124,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
     }
 
     const unsigned d = boardDimension;
+    c = 0;
     for (long i = 0; i < 4; i++) {
         std::set<long> alignedCells = { id };
 
@@ -136,17 +137,19 @@ bool Grid::isDoubleThree(unsigned const id) const {
         const char* spinner[] = {"—", "\\", "|", "/"};
         if (l + r >= 2) {
             std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[i % 4] << "] ";
-            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << std::endl;
+            std::cout << l << " + " << r << " + 1 = " << (l+r+1);
         }
         if (l + r >= 4) {
-            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " it is a win ! (98%, 2\% for capture)" << std::endl;
-            // TODO: ~~CHECK FOR CAPTURE~~ DO WE REALLY NEED IT ?
+            std::cout << " 5: Probably a win." << std::endl;
+            return false;
         } else if (l + r == 3 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
-            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " you will win ! Cannot be blocked !" << std::endl;
+            std::cout << " 4: Cannot be blocked !" << std::endl;
         } else if (l + r == 3) {
-            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " you will win !? Not sure because can be blocked :(" << std::endl;
+            std::cout << " 4: Can be blocked :(" << std::endl;
         } else if (l + r == 2 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
-            std::cout << l << " + " << r << " + 1 = " << (l+r+1) << " it is a free-three." << std::endl;
+            std::cout << " 3: it is a free-three." << std::endl;
+            c++;
+            continue ;
 
             std::set<long> adjacentCells;
 
@@ -192,7 +195,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
                     if (l2 + r2 >= 2) {
                         std::cout << "[" << acid << "] ";
                         std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[j % 4] << "] ";
-                        std::cout << l2 << " + " << r2 << " + 1 = " << (l2+r2+1) << std::endl;
+                        std::cout << l2 << " + " << r2 << " + 1 = " << (l2+r2+1);
                         if (lc2 == Cell::EMPTY && rc2 == Cell::EMPTY && l2 + r2 == 2) {
                             std::cout << " it is a DOUBLE free-three." << std::endl;
                             return true; // WE END AT FIRST DFT FOUND
@@ -202,8 +205,12 @@ bool Grid::isDoubleThree(unsigned const id) const {
                     }
                 }
             }
+        } else if (l + r >= 2) {
+            std::cout << std::endl;
         }
     }
 
+    if (c > 1)
+        return true;
     return false;
 }

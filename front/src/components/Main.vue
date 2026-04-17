@@ -64,11 +64,20 @@ h1::after {
   transition: all 0.5s ease-in-out;
 }
 
+h1::before {
+  content: '⌨️';
+  position: absolute;
+  font-size: 1.8rem;
+  left: 0rem;
+  bottom: 6rem;
+  transition: all 0.5s ease-in-out;
+}
+
 .editMode h1::after {
   top: 0;
 }
 
-.turnlog {
+.keyMode h1::before {
+  bottom: -1rem;
 }
-
 </style>

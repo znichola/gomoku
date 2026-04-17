@@ -96,6 +96,7 @@ void registerRoutes_Arbiter(Server& server, GameState& gs) {
 			if (gstatus == "playing" && gs.moveHistory.size() != 0)
 				return Response{400, "missing 'move' query parameter"};
 		} else {
+      MessageQueue::drain();
 			unsigned mid = static_cast<unsigned>(std::stoul(it->second));
 			if (!gs.playMove(mid))
 				return Response{200, "{\"as_played\": false, \"because\": \"foe_wrongmove\", \"msglog\": \"wrong move\"}"};

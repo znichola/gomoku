@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RefStringOrNull } from '@/types/vue'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import type { Cell } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
 import { useGameStore } from '@/stores/game'
@@ -55,8 +55,22 @@ async function move(event: MouseEvent) {
   const cellId = target.id
   errorMessage.value = ''
   console.log(`Clicked on cell ${cellId}`)
+  let color: string | null = null
+  if (gameStore.watcherState.keymode) {
+    if (event.shiftKey && !event.ctrlKey) {
+      color = 'black'
+    } else if (!event.shiftKey && event.ctrlKey) {
+      color = 'white'
+    }
+  }
   try {
-    const resp = await fetch(`http://${window.location.hostname}:9012/move?id=${cellId}`)
+    const objQuery: { id: string, force_color?: string } = {
+      id: cellId.toString()
+    }
+    if (color)
+      objQuery.force_color = color
+    const query = new URLSearchParams(objQuery).toString()
+    const resp = await fetch(`http://${window.location.hostname}:9012/move?${query}`)
     if (resp.status == 400) {
       errorMessage.value = (await resp.json()).error || 'Invalid move.'
       return
@@ -71,6 +85,35 @@ async function move(event: MouseEvent) {
   }
 }
 
+const keyDown = reactive({
+  shiftKey: false,
+  ctrlKey: false,
+  altKey: false
+})
+
+onMounted(() => {
+  window.addEventListener('keydown', keyMode, true)
+  window.addEventListener('keyup', keyMode, true)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', keyMode, true)
+  window.removeEventListener('keyup', keyMode, true)
+})
+
+function keyMode(event: KeyboardEvent) {
+  const pressed = (event.type === 'keydown') && gameStore.watcherState.keymode
+  switch (event.key) {
+    case 'Shift': keyDown.shiftKey = pressed; break
+    case 'Control': keyDown.ctrlKey = pressed; break;
+    case 'Alt': keyDown.altKey = pressed; break;
+    default:
+      return
+  }
+  console.log(event.key, event.type)
+  event.stopPropagation()
+  event.preventDefault()
+}
+
 </script>
 
 <template>
@@ -80,9 +123,9 @@ async function move(event: MouseEvent) {
     </div>
     <!-- Gameboard -->
     <div class="board"
-      :class="{ iso3D }"
+      :class="{ iso3D, editMode: keyDown.altKey }"
       :style="{
-        '--turn-color': gameStore.gameState.board?.isBlackToPlay
+        '--turn-color': (gameStore.gameState.board?.isBlackToPlay || keyDown.shiftKey) && !keyDown.ctrlKey
           ? 'var(--black-color)'
           : 'var(--white-color)'}"
       >
@@ -250,6 +293,11 @@ div.board {
   div.line:nth-child(1) > div.cell {
     border-right: none;
   }
+}
+
+.editMode div.circle[data-type=white]:hover,
+.editMode div.circle[data-type=black]:hover {
+  opacity: 0.4;
 }
 
 div.board {
