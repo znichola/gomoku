@@ -26,7 +26,7 @@ constexpr unsigned& operator|=(unsigned& a, AiState b) {
 
 void registerRoutes_Arbiter(Server& server, GameState& gs) {
 	static bool inGame = false;
-	static std::string sessionid;
+	static std::string sessionid = "";
 
 	server.get("/arbiter/ping", [&gs](const Request& req) -> Response {
 		(void)req;
@@ -130,6 +130,21 @@ void registerRoutes_Arbiter(Server& server, GameState& gs) {
 			case Cell::WHITE: out << "\"white_win\"\n"; break;
 			case Cell::OUTSIDE: out << "\"draw\"\n"; break;
 		}
+		out << "}";
+		return Response{200, out.str()};
+	});
+
+	server.get("/arbiter/stop", [&gs](const Request& req) -> Response {
+		(void)req;
+		(void)gs;
+
+		inGame = true;
+		sessionid = "";
+
+		std::ostringstream out;
+
+		out << "{\n";
+		out << "\"done\": \"OK\"\n";
 		out << "}";
 		return Response{200, out.str()};
 	});
