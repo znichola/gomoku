@@ -58,6 +58,10 @@ const std::initializer_list<Vector2D> extremities = {
     { 1, -1}  // top-right
 };
 
+Cell Grid::getWinningLineColor() const {
+    return Cell::EMPTY;
+}
+
 /**
  * @param apply If false just read, without modify member variable
  */
@@ -70,7 +74,7 @@ long Grid::handleCaptures(unsigned const id, bool const apply) {
     long c = 0;
     const long cx = id % d;
     const long cy = id / d;
-    for (auto [ox, oy] : extremities) { // TODO: CAN BE REFACTORED with `void Board::doCaptures(unsigned id)`;
+    for (auto [ox, oy] : extremities) {
         const long nx = cx + ox * 3;
         const long ny = cy + oy * 3;
         const long nid = ny * d + nx;
@@ -113,7 +117,6 @@ long Grid::calcAlignedCells(unsigned const id, long const i, Cell &bc,
 }
 
 bool Grid::isDoubleThree(unsigned const id) const {
-    std::cout << "== isDoubleThree ==" << std::endl;
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return false;
 

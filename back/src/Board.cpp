@@ -64,10 +64,7 @@ Cell Board::isVictory() {
     if ((isBlackToPlay && blackCaptured >= 10)) return Cell::BLACK;
     else if ((!isBlackToPlay && whiteCaptured >= 10)) return Cell::WHITE;
 
-    // check 5 in a row
-    /// check no captures possible on 5 in a row
-
-    return Cell::EMPTY;
+    return grid.getWinningLineColor();
 }
 
 std::string Board::serialize() const {

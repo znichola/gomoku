@@ -28,6 +28,7 @@ struct Grid {
     Grid &setWhite(std::initializer_list<unsigned> ids);
     Grid &setEmpty(unsigned id);
 
+    Cell getWinningLineColor() const;
     long handleCaptures(unsigned const id, bool const apply = false);
     long calcAlignedCells(unsigned const id, long const i, Cell &bc,
                     std::set<long> *alignedCells, long const offset = 0, long c = 0) const;
