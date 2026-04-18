@@ -77,16 +77,17 @@ bool GameState::makeDoubleTree() {
 
     unsigned lastMove = moveHistory.back();
     std::cout << "lastMove: " << lastMove << std::endl;
+    Cell cellColor = grid.grid[lastMove];
     const std::initializer_list<std::tuple<long, long, Cell>> cells = {
-        {-1,  0, Cell::WHITE},
-        { 0,  0, Cell::WHITE},
+        {-1,  0, cellColor},
+        { 0,  0, cellColor},
         { 1,  0, Cell::EMPTY},
         { 1,  1, Cell::EMPTY},
-        { 3, -2, Cell::WHITE},
-        { 4, -3, Cell::WHITE},
+        { 3, -2, cellColor},
+        { 4, -3, cellColor},
     };
     int rotation = dist(gen);
-    auto rotatePoint = [](long x, long y, int rotations) -> Coord {
+    auto rotatePoint = [](long x, long y, int rotations) -> Vector2D {
         for (int i = 0; i < rotations; ++i) {
             auto temp = x;
             x = -y;
@@ -102,10 +103,7 @@ bool GameState::makeDoubleTree() {
         const long ny = cy + ry;
         const long id = ny * d + nx;
         if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
-        if (content == Cell::WHITE)
-            grid.setWhite(id);
-        else if (content == Cell::EMPTY)
-            grid.setEmpty(id);
+        grid.grid[id] = content;
     }
     return false;
 }

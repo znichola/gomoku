@@ -47,7 +47,7 @@ Grid &Grid::setEmpty(unsigned id) {
     return *this;
 }
 
-const std::initializer_list<Coord> extremities = {
+const std::initializer_list<Vector2D> extremities = {
     { 1,  0}, // right
     { 1,  1}, // bottom-right
     { 0,  1}, // bottom
@@ -90,18 +90,17 @@ long Grid::handleCaptures(unsigned const id, bool const apply) {
 }
 
 long Grid::calcAlignedCells(unsigned const id, long const i, Cell &bc,
-                        std::set<long> *alignedCells, long const offset) const {
+                        std::set<long> *alignedCells, long const offset, long c) const {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return false;
     const unsigned d = boardDimension;
 
-    long c = 0;
     long nid = 0;
     const long cx = id % d;
     const long cy = id / d;
     do {
-        const long ox = (extremities.begin() + i + offset)->first;
-        const long oy = (extremities.begin() + i + offset)->second;
+        const long ox = (extremities.begin() + i + offset)->x;
+        const long oy = (extremities.begin() + i + offset)->y;
         const long nx = cx + ox * (c + 1);
         const long ny = cy + oy * (c + 1);
         if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
@@ -121,36 +120,62 @@ bool Grid::isDoubleThree(unsigned const id) const {
     long c = const_cast<Grid*>(this)->handleCaptures(id);
     if (c > 0) {
         std::cout << "It is a capture ! (" << c << ")" << std::endl;
+        return false;
     }
 
-    const unsigned d = boardDimension;
+    const char* spinner[] = {"—", "\\", "|", "/"};
+
     c = 0;
     for (long i = 0; i < 4; i++) {
-        std::set<long> alignedCells = { id };
+        // std::set<long> alignedCells = { id };
 
         Cell lc = Cell::OUTSIDE;
-        long l = calcAlignedCells(id, i, lc, &alignedCells);
+        long l = calcAlignedCells(id, i, lc, NULL); //&alignedCells);
 
         Cell rc = Cell::OUTSIDE;
-        long r = calcAlignedCells(id, i, rc, &alignedCells, 4);
+        long r = calcAlignedCells(id, i, rc, NULL, 4); //&alignedCells, 4);
 
-        const char* spinner[] = {"—", "\\", "|", "/"};
-        if (l + r >= 2) {
+        bool specialThree = false;
+        if (l + r <= 1 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
+            long needed = (l + r == 0) ? 2 : 1;
+            Cell lc2 = Cell::OUTSIDE;
+            long l2 = calcAlignedCells(id, i, lc2, NULL, 0, l + 1) - l - 1;
+            Cell rc2 = Cell::OUTSIDE;
+            long r2 = calcAlignedCells(id, i, rc2, NULL, 4, r + 1) - r - 1;
+            if ((needed == l2 && lc2 == Cell::EMPTY) || (needed == r2 && rc2 == Cell::EMPTY)) {
+                specialThree = true;
+            }
+        }
+        const bool bool1 = l + r >= 2 || specialThree;
+        if (bool1) {
             std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[i % 4] << "] ";
             std::cout << l << " + " << r << " + 1 = " << (l+r+1);
         }
-        if (l + r >= 4) {
+        if (specialThree) {
+            std::cout << " 3s: it is a special free-three." << std::endl;
+            c++;
+        } else if (l + r >= 4) {
             std::cout << " 5: Probably a win." << std::endl;
             return false;
         } else if (l + r == 3 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
             std::cout << " 4: Cannot be blocked !" << std::endl;
+            return false;
         } else if (l + r == 3) {
             std::cout << " 4: Can be blocked :(" << std::endl;
+            return false;
         } else if (l + r == 2 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
             std::cout << " 3: it is a free-three." << std::endl;
             c++;
-            continue ;
+        } else if (bool1) {
+            std::cout << std::endl;
+        }
+    }
 
+    if (c > 1)
+        return true;
+    return false;
+}
+            /* JE NE SAIS PAS SI CE CODE PEUT NOUS SERVIR POUR L'IA ???
             std::set<long> adjacentCells;
 
             for (auto acid : alignedCells) {
@@ -204,13 +229,4 @@ bool Grid::isDoubleThree(unsigned const id) const {
                         }
                     }
                 }
-            }
-        } else if (l + r >= 2) {
-            std::cout << std::endl;
-        }
-    }
-
-    if (c > 1)
-        return true;
-    return false;
-}
+            }*/

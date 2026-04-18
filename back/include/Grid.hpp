@@ -5,10 +5,9 @@
 #include <set>
 
 #include "Cell.hpp"
+#include "Vector2D.hpp"
 
-typedef std::pair<long, long> Coord;
-
-extern const std::initializer_list<Coord> extremities;
+extern const std::initializer_list<Vector2D> extremities;
 
 struct Grid {
     std::vector<Cell> grid;
@@ -31,6 +30,6 @@ struct Grid {
 
     long handleCaptures(unsigned const id, bool const apply = false);
     long calcAlignedCells(unsigned const id, long const i, Cell &bc,
-                    std::set<long> *alignedCells, long const offset = 0) const;
+                    std::set<long> *alignedCells, long const offset = 0, long c = 0) const;
     bool isDoubleThree(unsigned const id) const;
 };

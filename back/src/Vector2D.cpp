@@ -1,38 +1,44 @@
 #include <iostream>
+#include <Vector2D.hpp>
 
-struct Vector2D {
-    long x, y;
+Vector2D::Vector2D(long x, long y) : x(x), y(y) {
 
-    // Constructeur
-    Vector2D(long x = 0, long y = 0) : x(x), y(y) {}
+}
 
-    // Addition
-    Vector2D operator+(const Vector2D& other) const {
-        return {x + other.x, y + other.y};
-    }
+Vector2D::Vector2D(const Vector2D& other) {
+    *this = other;
+}
 
-    // Soustraction
-    Vector2D operator-(const Vector2D& other) const {
-        return {x - other.x, y - other.y};
-    }
+Vector2D& Vector2D::operator=(const Vector2D& other) {
+    this->x = other.x;
+    this->y = other.y;
+    return (*this);
+}
 
-    // Multiplication par un scalaire
-    Vector2D operator*(long k) const {
-        return {x * k, y * k};
-    }
+Vector2D::~Vector2D() {
 
-    // Produit scalaire
-    long dot(const Vector2D& other) const {
-        return x * other.x + y * other.y;
-    }
+}
 
-    // Déterminant (utile pour colinéarité)
-    long cross(const Vector2D& other) const {
-        return x * other.y - y * other.x;
-    }
+Vector2D Vector2D::operator+(const Vector2D& other) const {
+    return {x + other.x, y + other.y};
+}
 
-    // Affichage
-    friend std::ostream& operator<<(std::ostream& os, const Vector2D& v) {
-        return os << "(" << v.x << ", " << v.y << ")";
-    }
-};
+Vector2D Vector2D::operator-(const Vector2D& other) const {
+    return {x - other.x, y - other.y};
+}
+
+Vector2D Vector2D::operator*(long k) const {
+    return {x * k, y * k};
+}
+
+long Vector2D::dot(const Vector2D& other) const {
+    return x * other.x + y * other.y;
+}
+
+long Vector2D::cross(const Vector2D& other) const {
+    return x * other.y - y * other.x;
+}
+
+std::ostream& operator<<(std::ostream& os, const Vector2D& v) {
+    return os << "(" << v.x << ", " << v.y << ")";
+}
