@@ -20,8 +20,18 @@ const grids = computed(() => {
   return arr
 })
 
+const overlayMap = computed(() => {
+  const map = new Map<number, string>()
+  for (const m of gameStore.overlayMessages) {
+    map.set(m.id, m.msg)
+  }
+  return map
+})
+
+
 const previewGrid = computed(() => gameStore.watcherState.preview_state)
-const iso3D = ref(true)
+const iso3D = ref(false)
+const overlay = ref(true)
 
 onMounted(load)
 onUnmounted(() => {
@@ -145,17 +155,21 @@ function keyMode(event: KeyboardEvent) {
         <div v-for="(line, y) in grids" :key="y" class="line">
           <div v-for="(cid, x) in line" :key="x" class="cell">
             <div class="circle"
-            :class="{ highlight: gameStore.highlight.get() == cid }"
+            :class="{ 
+              highlight: gameStore.highlight.get() == cid,
+              overlay: overlay && overlayMap.has(cid)
+            }"
             :data-type="getCellClass(gameStore.gameState.board?.grid[cid] as Cell)"
             :title="`[${x}; ${y}] - id: ${cid}`"
             :id="cid.toString()"
             @click="move"
-              ></div>
+              >{{overlay ? overlayMap.get(cid) : ""}}</div>
           </div>
         </div>
       </template>
     </div>
     <button id="isoButton" @click="() => iso3D = !iso3D">iso3D</button>
+    <button id="overlayButton" @click="() => overlay = !overlay">overlay</button>
   </section>
 </template>
 
@@ -276,6 +290,13 @@ div.board {
         opacity: 0;
         transition: all 0.2s ease-in;
       }
+      &.overlay {
+        color: black;
+        // font-weight: bold;
+        opacity: 1;
+        font-family: sans-serif;
+        font-size: calc(var(--cellsize) * 0.8);
+      }
       &[data-type=empty]:hover {
         opacity: 1;
       }
@@ -343,5 +364,15 @@ div.board.iso3D {
   position: fixed;
   bottom: 0;
   left: 0;
+}
+
+#overlayButton {
+  background: none;
+  color: var(--white-color);
+  z-index: 1000;
+  cursor: pointer;
+  position: fixed;
+  bottom: 0;
+  right: 0;
 }
 </style>

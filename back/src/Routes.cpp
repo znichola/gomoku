@@ -38,7 +38,6 @@ void registerRoutes(Server& server, GameState& gs) {
 
     server.get("/reset", [&gs](const Request& req) -> Response {
         (void)req;
-        MQ << "";
         gs.reset();
         MessageQueue::drain();
         gs.askAI2Play();

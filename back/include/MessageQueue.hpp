@@ -5,6 +5,7 @@
 #include <sstream>
 
 #define MQ MessageQueue::out()
+#define MBQ(id, msg) MessageQueue::boardMessage((id), (msg))
 
 namespace MessageQueue
 {
@@ -69,5 +70,12 @@ namespace MessageQueue
         }
 
         return out;
+    }
+
+    inline void boardMessage(unsigned id, const std::string &msg) {
+        std::stringstream ss;
+        ss << "{\"id\":" << id
+        << ",\"msg\":\"" << json_escape(msg) << "\"}";
+        push(ss.str());
     }
 }

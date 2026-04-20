@@ -12,11 +12,41 @@ export const useGameStore = defineStore('game', () => {
     keymode: false
   })
 
+  const overlayMessages = ref<{ id: number; msg: string }[]>([])
+
+  function tryParseOverlayMessage(raw: string) {
+    try {
+      const obj = JSON.parse(raw)
+      if (
+        obj &&
+        typeof obj === 'object' &&
+        typeof obj.id === 'number' &&
+        typeof obj.msg === 'string'
+      ) {
+        return obj as { id: number; msg: string }
+      }
+    } catch {}
+    return null
+  }
+
+  function processMessages(messages: string[]) {
+    const remaining: string[] = []
+
+    overlayMessages.value = []
+    for (const m of messages) {
+      const parsed = tryParseOverlayMessage(m)
+      if (parsed) overlayMessages.value.push(parsed)
+      else remaining.push(m)
+    }
+
+    return remaining
+  }
+
   function updateGameState(newgameState: GameState) {
     gameState.board = newgameState.board
     gameState.isAIGame = newgameState.isAIGame
     gameState.moveHistory = newgameState.moveHistory
-    gameState.messages = newgameState.messages
+    gameState.messages = processMessages(newgameState.messages)
   }
 
   /* >> DEBUG BACK WATCHER */
@@ -158,7 +188,7 @@ export const useGameStore = defineStore('game', () => {
   /* << */
 
   return {
-    gameState, updateGameState, backWatcher, watcherState,
+    gameState, updateGameState, backWatcher, watcherState, overlayMessages,
     highlight: {
       get: () => highlightCircle.value,
       set: setHighlightCircle
