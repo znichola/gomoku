@@ -4,6 +4,7 @@
 
 #include "Grid.hpp"
 #include "MessageQueue.hpp"
+#include <assert.h>
 
 std::string Grid::serialize() const {
     std::ostringstream out;
@@ -47,16 +48,24 @@ Grid &Grid::setEmpty(unsigned id) {
     return *this;
 }
 
-const std::initializer_list<Vector2D> extremities = {
-    { 1,  0}, // right
-    { 1,  1}, // bottom-right
-    { 0,  1}, // bottom
-    {-1,  1}, // bottom-left
-    {-1,  0}, // left
-    {-1, -1}, // top-left
-    { 0, -1}, // top
-    { 1, -1}  // top-right
-};
+Vector2D Grid::idToVec(unsigned id) const {
+    assert(id < grid.size());
+    return Vector2D{
+        static_cast<long>(id % boardDimension),
+        static_cast<long>(id / boardDimension)
+    };
+}
+
+unsigned Grid::vecToId(const Vector2D& vec) const {
+    assert(isInside(vec));
+    return vec.y * boardDimension + vec.x;
+}
+
+bool Grid::isInside(const Vector2D& vec) const {
+    return vec.x >= 0 && vec.y >= 0 &&
+           vec.x < boardDimension &&
+           vec.y < boardDimension;
+}
 
 Cell Grid::getWinningLineColor() const {
     return Cell::EMPTY;
@@ -64,17 +73,18 @@ Cell Grid::getWinningLineColor() const {
 
 /**
  * @param apply If false just read, without modify member variable
+ * @return number of pairs captured (1 for two stones captured)
  */
 long Grid::handleCaptures(unsigned const id, bool const apply) {
     const Cell myColor = grid[id];
-    if (myColor == Cell::EMPTY) return false;
+    if (myColor == Cell::EMPTY) return 0;
     const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
     const unsigned d = boardDimension;
 
     long c = 0;
     const long cx = id % d;
     const long cy = id / d;
-    for (auto [ox, oy] : extremities) {
+    for (auto [ox, oy] : EXTREMITIES) {
         const long nx = cx + ox * 3;
         const long ny = cy + oy * 3;
         const long nid = ny * d + nx;
@@ -103,8 +113,8 @@ long Grid::calcAlignedCells(unsigned const id, long const i, Cell &bc,
     const long cx = id % d;
     const long cy = id / d;
     do {
-        const long ox = (extremities.begin() + i + offset)->x;
-        const long oy = (extremities.begin() + i + offset)->y;
+        const long ox = (EXTREMITIES.begin() + i + offset)->x;
+        const long oy = (EXTREMITIES.begin() + i + offset)->y;
         const long nx = cx + ox * (c + 1);
         const long ny = cy + oy * (c + 1);
         if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
@@ -184,7 +194,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
             for (auto acid : alignedCells) {
                 const long acx = acid % d;
                 const long acy = acid / d;
-                for (auto [ox, oy] : extremities) {
+                for (auto [ox, oy] : EXTREMITIES) {
                     const long nx = acx + ox;
                     const long ny = acy + oy;
                     const long nid = ny * d + nx;

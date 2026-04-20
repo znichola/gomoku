@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include "Board.hpp"
 
@@ -14,4 +15,6 @@ namespace AI {
     std::vector<std::pair<unsigned, double>>heuristic(const Board &board);
 
     unsigned play(const Board &board, unsigned lastMove);
+
+    std::set<unsigned>getCandidateMoves(const Grid &grid);
 };

@@ -7,8 +7,6 @@
 #include "Cell.hpp"
 #include "Vector2D.hpp"
 
-extern const std::initializer_list<Vector2D> extremities;
-
 struct Grid {
     std::vector<Cell> grid;
     unsigned boardDimension;
@@ -19,6 +17,10 @@ struct Grid {
     Cell operator[](unsigned id) const { return grid[id]; }
     Cell& operator[](unsigned id) { return grid[id]; }
     size_t size() const { return grid.size(); }
+
+    Vector2D idToVec(unsigned id) const;
+    unsigned vecToId(const Vector2D &vec) const;
+    bool isInside(const Vector2D& vec) const;
 
     std::string serialize() const;
 
