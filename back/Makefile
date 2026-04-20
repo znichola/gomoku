@@ -98,11 +98,11 @@ run: all
 # Tests
 
 TEST_DIR       = test/
-TEST_OBJ_PATH = test/$(OBJ_PATH)
+TEST_OBJ_PATH  = test/$(OBJ_PATH)
 TEST_FILES     = moves
 
 TEST_OBJ = $(addprefix $(TEST_DIR)obj/, $(addsuffix .o, $(TEST_FILES)))
-TEST_MAIN_OBJ  = $(addprefix $(OBJ_PATH), $(addsuffix .o, $(FILES)))
+TEST_MAIN_OBJ  = $(addprefix $(OBJ_PATH), $(addsuffix .o, $(FILES) RoutesArbiter)) # add the CXX files with no header
 TEST_BINS = $(TEST_FILES)
 
 $(TEST_OBJ_PATH)%.o: $(TEST_DIR)%.cpp
