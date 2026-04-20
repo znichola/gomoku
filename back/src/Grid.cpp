@@ -1,6 +1,7 @@
 #include <sstream>
 #include <cmath>
 #include <iostream>
+#include <deque>
 
 #include "Grid.hpp"
 #include "MessageQueue.hpp"
@@ -67,7 +68,132 @@ bool Grid::isInside(const Vector2D& vec) const {
            vec.y < boardDimension;
 }
 
+// Level2Death
+enum class StepLOD: char {
+    LOOKING = 1U,
+    BOILING = 2U,
+    DEATH = 3U
+};
+
+struct NodeCellRow {
+    Cell owner = Cell::EMPTY; 
+    Cell type = Cell::EMPTY;
+    long originId = 0;
+    char ext = 0;
+    int potential = 0;
+    int size = 0;
+    int nbDeadCell = 0;
+    NodeCellRow *prev;
+    NodeCellRow *next;
+};
+
+struct NodeLOD {
+    Cell type = Cell::EMPTY;
+    StepLOD step = StepLOD::LOOKING;
+};
+
+template <typename Node> 
+struct AdjacentNode {
+    Node* v[4] = { NULL, NULL, NULL, NULL }; // v[0]=right, v[1]=bottomRight, v[2]=bottom, v[3]=bottomLeft
+    constexpr Node*& operator[](size_t i) { return v[i]; }
+};
+
 Cell Grid::getWinningLineColor() const {
+    const unsigned d = boardDimension;
+
+    std::deque<NodeLOD> nodeLODsGarbage;
+    std::vector<AdjacentNode<NodeLOD>> gridLOD;
+
+    gridLOD.reserve(d * d);
+
+    const int dmax = d * d;
+    for (int id = 0; id < dmax; id++) {
+        gridLOD.push_back({});
+    }
+    for (int id = 0, ext = 0; id < dmax; id++, ext = 0) {
+        const long cx = id % d;
+        const long cy = id / d;
+        for (long ext = 0; ext < 4; ext++) {
+            const long ox = (extptr + ext)->x;
+            const long oy = (extptr + ext)->y;
+            const long nx = cx + ox;
+            const long ny = cy + oy;
+            if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
+            const long nid = ny * d + nx;
+
+            /**
+             * X . . .    . . . .    O . . .    . . . .
+             * . O . .    . O . .    . X . .    . X . .
+             * . . O .    . . O .    . . X .    . . X .
+             * . . . .    . . . X    . . . .    . . . O
+             * 
+             * PHASE 1 (on a cell == NULL, car première fois parcouru)
+             * step = 0
+             *(0). . .  <-- X, O, .         def:   NODE.type = N0
+             * . 1 . .  <-- X, O            verif: N1 != . et N0 != N1 (next)
+             * . . 2 .
+             * . . . 3
+             * 
+             * PHASE 2 (on a cell != NULL et step = 1)
+             * step = 1 LOOKING
+             * 0 . . .
+             * .(1). .                      verif: N1 == N2 (next)
+             * . . 2 .  <-- X, O
+             * . . . 3
+             * 
+             * PHASE 3
+             * step = 2 BOILING
+             * 0 . . .
+             * . 1 . .                      verif: N2 != N3 && NODE.type != N3 (next) 
+             * . .(2).  <-- X, O 
+             * . . . 3
+             */
+
+            NodeLOD*& cell = gridLOD[id][ext];
+            NodeLOD*& next = gridLOD[nid][ext];
+
+            if (cell == NULL) {
+
+            } else if (cell->step == StepLOD::LOOKING) {
+                // std::cout << "step1 " << spinner[ext] << " id: " << id << " nid: " << nid
+                //     << " grid[id]: " << grid[id] << " grid[nid]: " << grid[nid] << std::endl;
+                if (grid[id] == grid[nid]) {
+                    cell->step = StepLOD::BOILING;
+                    next = cell;
+                    continue ;
+                }
+            } else if (cell->step == StepLOD::BOILING) {
+                // std::cout << "step2 " << spinner[ext] << " id: " << id << " nid: " << nid
+                //     << " grid[id]: " << grid[id] << " grid[nid]: " << grid[nid] 
+                //     << " cell->type: " << cell->type << std::endl;
+                if (grid[id] != grid[nid] && cell->type != grid[nid]) {
+                    cell->step = StepLOD::DEATH;
+                    // std::cout << "death! " << spinner[ext] << " id: " << id << " nid: " << nid << std::endl;
+                }
+            }
+            if (grid[nid] != Cell::EMPTY && grid[id] != grid[nid]) {
+                // std::cout << "new node " << spinner[ext] << " id:" << id << " nid:" << nid << std::endl;
+                nodeLODsGarbage.push_back({});
+                next = &nodeLODsGarbage.back();
+                next->type = grid[id];
+                next->step = StepLOD::LOOKING;
+            }
+        }
+    }
+    for (int id = 0; id < dmax; id++) {
+        for (long ext = 0; ext < 4; ext++) {
+            NodeLOD*& cellLOD = gridLOD[id][ext];
+            // if (cellLOD != NULL) {
+            //     std::cout << "R " << spinner[ext] << " id: " << id
+            //         << " grid[id]: " << grid[id] << " cellLOD->step: " << static_cast<int>(cellLOD->step) << std::endl;
+            // }
+            if (cellLOD != NULL && cellLOD->step == StepLOD::DEATH) {
+                std::cout << "death! id: " << id << std::endl;
+                break ;
+            }
+        }
+    }
+
     return Cell::EMPTY;
 }
 
@@ -87,8 +213,8 @@ long Grid::handleCaptures(unsigned const id, bool const apply) {
     for (auto [ox, oy] : EXTREMITIES) {
         const long nx = cx + ox * 3;
         const long ny = cy + oy * 3;
-        const long nid = ny * d + nx;
         if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
+        const long nid = ny * d + nx;
         if (grid[nid] != myColor) continue;
         const long nid1 = (cy + oy * 1) * d + (cx + ox * 1);
         if (grid[nid1] != enemyColor) continue;
@@ -109,16 +235,15 @@ long Grid::calcAlignedCells(unsigned const id, long const i, Cell &bc,
     if (myColor == Cell::EMPTY) return false;
     const unsigned d = boardDimension;
 
-    long nid = 0;
     const long cx = id % d;
     const long cy = id / d;
+    const long ox = (EXTREMITIES.begin() + i + offset)->x;
+    const long oy = (EXTREMITIES.begin() + i + offset)->y;
     do {
-        const long ox = (EXTREMITIES.begin() + i + offset)->x;
-        const long oy = (EXTREMITIES.begin() + i + offset)->y;
         const long nx = cx + ox * (c + 1);
         const long ny = cy + oy * (c + 1);
         if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
-        nid = ny * d + nx;
+        const long nid = ny * d + nx;
         bc = grid[nid];
         if (bc != myColor) break;
         if (alignedCells) alignedCells->insert(nid);
