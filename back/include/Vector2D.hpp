@@ -20,7 +20,7 @@ struct Vector2D {
     long cross(const Vector2D& other) const;
 };
 
-inline const char* spinner[4] = {"—", "\\", "|", "/"};
+inline const char* SPINNER[4] = {"—", "\\", "|", "/"};
 inline const std::array<Vector2D, 8> EXTREMITIES = {{
     { 1,  0}, // right
     { 1,  1}, // bottom-right

@@ -177,7 +177,7 @@ Cell Grid::getWinningLineColor() const {
             if (cell == NULL) {
 
             } else if (cell->step == NodeStep::LOOKING) {
-                // std::cout << "step1 " << spinner[ext] << " id: " << id << " nid: " << nid
+                // std::cout << "step1 " << SPINNER[ext] << " id: " << id << " nid: " << nid
                 //     << " grid[id]: " << grid[id] << " grid[nid]: " << grid[nid] << std::endl;
                 if (grid[id] == grid[nid]) {
                     cell->step = NodeStep::BOILING;
@@ -185,16 +185,16 @@ Cell Grid::getWinningLineColor() const {
                     continue ;
                 }
             } else if (cell->step == NodeStep::BOILING) {
-                // std::cout << "step2 " << spinner[ext] << " id: " << id << " nid: " << nid
+                // std::cout << "step2 " << SPINNER[ext] << " id: " << id << " nid: " << nid
                 //     << " grid[id]: " << grid[id] << " grid[nid]: " << grid[nid] 
                 //     << " cell->type: " << cell->type << std::endl;
                 if (grid[id] != grid[nid] && cell->type != grid[nid]) {
                     cell->step = NodeStep::DEATH;
-                    // std::cout << "death! " << spinner[ext] << " id: " << id << " nid: " << nid << std::endl;
+                    // std::cout << "death! " << SPINNER[ext] << " id: " << id << " nid: " << nid << std::endl;
                 }
             }
             if (grid[nid] != Cell::EMPTY && grid[id] != grid[nid]) {
-                // std::cout << "new node " << spinner[ext] << " id:" << id << " nid:" << nid << std::endl;
+                // std::cout << "new node " << SPINNER[ext] << " id:" << id << " nid:" << nid << std::endl;
                 nodeLODsGarbage.push_back({});
                 next = &nodeLODsGarbage.back();
                 next->type = grid[id];
@@ -206,7 +206,7 @@ Cell Grid::getWinningLineColor() const {
         for (long ext = 0; ext < 4; ++ext) {
             NodeLOD*& cellLOD = gridLOD[id][ext];
             // if (cellLOD != NULL) {
-            //     std::cout << "R " << spinner[ext] << " id: " << id
+            //     std::cout << "R " << SPINNER[ext] << " id: " << id
             //         << " grid[id]: " << grid[id] << " cellLOD->step: " << static_cast<int>(cellLOD->step) << std::endl;
             // }
             if (cellLOD != NULL && cellLOD->step == NodeStep::DEATH) {
@@ -296,7 +296,7 @@ Cell Grid::getWinningLineColor() const {
                     cell->step = NodeStep::END;
                 }
             }
-            // std::cout << "new node " << spinner[ext] << " id:" << id << " nid:" << nid << std::endl;
+            // std::cout << "new node " << SPINNER[ext] << " id:" << id << " nid:" << nid << std::endl;
             cellRowsGarbage.push_back({});
             next = &cellRowsGarbage.back(); // TODO : Make a function
             next->step = (grid[nid] == Cell::EMPTY) ? NodeStep::LOOKING : NodeStep::BOILING;
@@ -399,7 +399,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
         }
         const bool bool1 = l + r >= 2 || specialThree;
         if (bool1) {
-            std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[ext % 4] << "] ";
+            std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << SPINNER[ext % 4] << "] ";
             std::cout << l << " + " << r << " + 1 = " << (l+r+1);
         }
         if (specialThree) {
@@ -470,7 +470,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
 
                     if (l2 + r2 >= 2) {
                         std::cout << "[" << acid << "] ";
-                        std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[ext2 % 4] << "] ";
+                        std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << SPINNER[ext2 % 4] << "] ";
                         std::cout << l2 << " + " << r2 << " + 1 = " << (l2+r2+1);
                         if (lc2 == Cell::EMPTY && rc2 == Cell::EMPTY && l2 + r2 == 2) {
                             std::cout << " it is a DOUBLE free-three." << std::endl;
