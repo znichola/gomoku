@@ -278,7 +278,9 @@ Cell Grid::getWinningLineColor() const {
                         ++(cell->prev);
                     continue;
                 } else {
-                    throw std::runtime_error("Wrong step, should be handled before");
+                    std::cout << "Wrong step, should be handled before";
+                    cell->step = NodeStep::BOILING;
+                    //throw std::runtime_error("Wrong step, should be handled before");
                 }
                 if (grid[nid] != Cell::EMPTY) {
                     cell->step = NodeStep::BOILING;
