@@ -120,8 +120,35 @@ Cell Grid::getWinningLineColor() const {
 
     std::deque<NodeLOD> nodeLODsGarbage;
     std::vector<AdjacentNode<NodeLOD>> gridLOD;
-
     gridLOD.reserve(d * d);
+
+    /**
+     * X . . .    . . . .    O . . .    . . . .
+     * . O . .    . O . .    . X . .    . X . .
+     * . . O .    . . O .    . . X .    . . X .
+     * . . . .    . . . X    . . . .    . . . O
+     * 
+     * PHASE 1 (on a cell == NULL, car première fois parcouru)
+     * step = 0
+     *(0). . .  <-- X, O, .         def:   NODE.type = N0
+        * . 1 . .  <-- X, O            verif: N1 != . et N0 != N1 (next)
+        * . . 2 .
+        * . . . 3
+        * 
+        * PHASE 2 (on a cell != NULL et step = 1)
+        * step = 1 LOOKING
+        * 0 . . .
+        * .(1). .                      verif: N1 == N2 (next)
+        * . . 2 .  <-- X, O
+        * . . . 3
+        * 
+        * PHASE 3
+        * step = 2 BOILING
+        * 0 . . .
+        * . 1 . .                      verif: N2 != N3 && NODE.type != N3 (next) 
+        * . .(2).  <-- X, O 
+        * . . . 3
+        */
 
     const int dmax = d * d;
     for (int id = 0; id < dmax; ++id) {
@@ -134,58 +161,23 @@ Cell Grid::getWinningLineColor() const {
             if (!isInside(newPoint)) continue;
             const long nid = newPoint.toIndex(d);
 
-            /**
-             * X . . .    . . . .    O . . .    . . . .
-             * . O . .    . O . .    . X . .    . X . .
-             * . . O .    . . O .    . . X .    . . X .
-             * . . . .    . . . X    . . . .    . . . O
-             * 
-             * PHASE 1 (on a cell == NULL, car première fois parcouru)
-             * step = 0
-             *(0). . .  <-- X, O, .         def:   NODE.type = N0
-             * . 1 . .  <-- X, O            verif: N1 != . et N0 != N1 (next)
-             * . . 2 .
-             * . . . 3
-             * 
-             * PHASE 2 (on a cell != NULL et step = 1)
-             * step = 1 LOOKING
-             * 0 . . .
-             * .(1). .                      verif: N1 == N2 (next)
-             * . . 2 .  <-- X, O
-             * . . . 3
-             * 
-             * PHASE 3
-             * step = 2 BOILING
-             * 0 . . .
-             * . 1 . .                      verif: N2 != N3 && NODE.type != N3 (next) 
-             * . .(2).  <-- X, O 
-             * . . . 3
-             */
-
             NodeLOD*& cell = gridLOD[id][ext];
             NodeLOD*& next = gridLOD[nid][ext];
 
             if (cell == NULL) {
 
             } else if (cell->step == NodeStep::LOOKING) {
-                // std::cout << "step1 " << SPINNER[ext] << " id: " << id << " nid: " << nid
-                //     << " grid[id]: " << grid[id] << " grid[nid]: " << grid[nid] << std::endl;
                 if (grid[id] == grid[nid]) {
                     cell->step = NodeStep::BOILING;
                     next = cell;
                     continue ;
                 }
             } else if (cell->step == NodeStep::BOILING) {
-                // std::cout << "step2 " << SPINNER[ext] << " id: " << id << " nid: " << nid
-                //     << " grid[id]: " << grid[id] << " grid[nid]: " << grid[nid] 
-                //     << " cell->type: " << cell->type << std::endl;
                 if (grid[id] != grid[nid] && cell->type != grid[nid]) {
                     cell->step = NodeStep::DEATH;
-                    // std::cout << "death! " << SPINNER[ext] << " id: " << id << " nid: " << nid << std::endl;
                 }
             }
             if (grid[nid] != Cell::EMPTY && grid[id] != grid[nid]) {
-                // std::cout << "new node " << SPINNER[ext] << " id:" << id << " nid:" << nid << std::endl;
                 nodeLODsGarbage.push_back({});
                 next = &nodeLODsGarbage.back();
                 next->type = grid[id];
@@ -211,8 +203,31 @@ Cell Grid::getWinningLineColor() const {
 
     std::deque<NodeCellRow> cellRowsGarbage;
     std::vector<AdjacentNode<NodeCellRow>> gridCR;
-
     gridCR.reserve(d * d);
+
+    /**
+     * X . . .    . . . .    O . . .    . . . .    . . . .
+     * . O . .    . O . .    . X . .    . . . .    . X . .
+     * . . O .    . . O .    . . X .    . . X .    . . X .
+     * . . . ?    . . . ?    . . . ?    . . . ?    . . . ?  etc...
+     *
+     * 
+     * PHASE 1 (on a cell == NULL ou cell == '.')
+     * step = 0 ou 1 LOOKING
+     *(¤). . . .  <-- .
+        * .(¤). . .
+        * . . N . .
+        * . . . N .
+        * . . . . ?
+        * PHASE 2 (on a cell != NULL et size > 1)
+        * step = 2 BOILING
+        * ¤ . . . .
+        * . ¤ . . .
+        * . .(N). .  <-- X, O
+        * . . .(N).
+        * . . . . ?
+        */
+
     for (int id = 0; id < dmax; ++id) {
         gridCR.push_back({});
     }
@@ -226,30 +241,7 @@ Cell Grid::getWinningLineColor() const {
             NodeCellRow*& cell = gridCR[id][ext];
             NodeCellRow*& next = gridCR[nid][ext];
             NodeLOD*& cellLOD = gridLOD[id][ext];
-            // NodeLOD*& nextLOD = gridLOD[nid][ext];
 
-            /**
-             * X . . .    . . . .    O . . .    . . . .    . . . .
-             * . O . .    . O . .    . X . .    . . . .    . X . .
-             * . . O .    . . O .    . . X .    . . X .    . . X .
-             * . . . ?    . . . ?    . . . ?    . . . ?    . . . ?  etc...
-             *
-             * 
-             * PHASE 1 (on a cell == NULL ou cell == '.')
-             * step = 0 ou 1 LOOKING
-             *(¤). . . .  <-- .
-             * .(¤). . .
-             * . . N . .
-             * . . . N .
-             * . . . . ?
-             * PHASE 2 (on a cell != NULL et size > 1)
-             * step = 2 BOILING
-             * ¤ . . . .
-             * . ¤ . . .
-             * . .(N). .  <-- X, O
-             * . . .(N).
-             * . . . . ?
-             */
             if (cell == NULL) {
                 cellRowsGarbage.push_back({});
                 cell = &cellRowsGarbage.back();
