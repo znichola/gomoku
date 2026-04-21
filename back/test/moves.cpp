@@ -47,11 +47,11 @@ void isValidMove() {
         bool result = board.isValidMove(moveToPlay);
         if (result == expected) {
             std::cout << std::setw(2) << test_count - before_test_count << " [OK]\n";
-            num_passed_tests++;
+            ++num_passed_tests;
         } else {
             std::cout << std::setw(2) << test_count - before_test_count << " [KO] " << (description ? *description : "No description") << "\n";
         }
-        test_count++;
+        ++test_count;
     }
 
     std::cout << "Result: " << num_passed_tests - before_passed_tests<< "/" << test_count - before_test_count << "\n";
@@ -108,13 +108,13 @@ void isDoubleThree() {
         unsigned result = grid.isDoubleThree(moveToPlay);
         if (result == expected) {
             std::cout << std::setw(2) << test_count - before_test_count << " [OK]\n";
-            num_passed_tests++;
+            ++num_passed_tests;
         } else {
             std::cout << std::setw(2) << test_count - before_test_count << " [KO] " 
                       << "Exp:" << expected << " Res:" << result << " - "
                       << (description ? *description : "No description") << "\n";
         }
-        test_count++;
+        ++test_count;
     }
 
     std::cout << "Result: " << num_passed_tests - before_passed_tests<< "/" << test_count - before_test_count << "\n";

@@ -48,7 +48,7 @@ void Board::doCaptures(unsigned id) {
     if (myColor == Cell::EMPTY) return;
 
     long c = grid.handleCaptures(id, true);
-    for (long i = 0; i < c; i++)
+    for (long i = 0; i < c; ++i)
         addCapture(myColor);
 }
 

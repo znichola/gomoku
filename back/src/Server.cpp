@@ -185,7 +185,7 @@ Server::QueryMap Server::parseQueryString(const std::string &request) const {
     std::string val;
     bool hasEquals = false;
 
-    for (size_t i = start; i < stop; i++) {
+    for (size_t i = start; i < stop; ++i) {
         char c = request[i];
         if (c == '&' || c == '\0') {
             if (!key.empty())
@@ -222,13 +222,13 @@ std::string Server::decodeURIComponent(std::string str) const {
     int num;
     char repl[2] = {0};
 
-    for (it = str.begin(); it != str.end(); it++) {
+    for (it = str.begin(); it != str.end(); ++it) {
         if (*it == '%') {
             start = it;
             mode = 1;
         }
         else if (isxdigit(*it) && 1 <= mode && mode < 3) {
-            mode++;
+            ++mode;
             if (mode == 3) {
                 num = strtol(std::string(start + 1, it + 1).c_str(), NULL, 16);
                 if (32 <= num && num <= 126) {

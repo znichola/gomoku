@@ -18,7 +18,7 @@ unsigned AI::play(const Board &board, unsigned lastMove) {
     long i = 0;
     while (board.grid.grid[id] != Cell::EMPTY && i < d * d) {
         id = d * d / 2 - (i / 2) * ((i % 2) ? -1 : 1);
-        i++;
+        ++i;
     }
     return id;
 }

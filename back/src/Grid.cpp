@@ -107,13 +107,13 @@ Cell Grid::getWinningLineColor() const {
     gridLOD.reserve(d * d);
 
     const int dmax = d * d;
-    for (int id = 0; id < dmax; id++) {
+    for (int id = 0; id < dmax; ++id) {
         gridLOD.push_back({});
     }
-    for (int id = 0, ext = 0; id < dmax; id++, ext = 0) {
+    for (int id = 0, ext = 0; id < dmax; ++id, ext = 0) {
         const long cx = id % d;
         const long cy = id / d;
-        for (long ext = 0; ext < 4; ext++) {
+        for (long ext = 0; ext < 4; ++ext) {
             const long ox = (extptr + ext)->x;
             const long oy = (extptr + ext)->y;
             const long nx = cx + ox;
@@ -180,8 +180,8 @@ Cell Grid::getWinningLineColor() const {
             }
         }
     }
-    for (int id = 0; id < dmax; id++) {
-        for (long ext = 0; ext < 4; ext++) {
+    for (int id = 0; id < dmax; ++id) {
+        for (long ext = 0; ext < 4; ++ext) {
             NodeLOD*& cellLOD = gridLOD[id][ext];
             // if (cellLOD != NULL) {
             //     std::cout << "R " << spinner[ext] << " id: " << id
@@ -224,7 +224,7 @@ long Grid::handleCaptures(unsigned const id, bool const apply) {
             setEmpty(static_cast<unsigned>(nid1));
             setEmpty(static_cast<unsigned>(nid2));
         }
-        c++;
+        ++c;
     }
     return c;
 }
@@ -262,7 +262,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
     }
 
     c = 0;
-    for (long ext = 0; ext < 4; ext++) {
+    for (long ext = 0; ext < 4; ++ext) {
         // std::set<long> alignedCells = { id };
 
         Cell lc = Cell::OUTSIDE;
@@ -289,7 +289,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
         }
         if (specialThree) {
             std::cout << " 3s: it is a special free-three." << std::endl;
-            c++;
+            ++c;
         } else if (l + r >= 4) {
             std::cout << " 5: Probably a win." << std::endl;
             return false;
@@ -301,7 +301,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
             return false;
         } else if (l + r == 2 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
             std::cout << " 3: it is a free-three." << std::endl;
-            c++;
+            ++c;
         } else if (bool1) {
             std::cout << std::endl;
         }
@@ -343,7 +343,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
                 //     continue;
                 // }
 
-                for (long ext2 = 0; ext2 < 4; ext2++) {
+                for (long ext2 = 0; ext2 < 4; ++ext2) {
                     if (ext == ext2) continue;
 
                     Cell lc2 = Cell::OUTSIDE;
