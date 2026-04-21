@@ -229,26 +229,26 @@ long Grid::handleCaptures(unsigned const id, bool const apply) {
     return c;
 }
 
-long Grid::calcAlignedCells(unsigned const id, long const i, Cell &bc,
-                        std::set<long> *alignedCells, long const offset, long c) const {
+long Grid::calcAlignedCells(unsigned const id, long const ext, Cell &bc,
+                        std::set<long> *alignedCells, long const offset, long count) const {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return false;
     const unsigned d = boardDimension;
 
     const long cx = id % d;
     const long cy = id / d;
-    const long ox = (EXTREMITIES.begin() + i + offset)->x;
-    const long oy = (EXTREMITIES.begin() + i + offset)->y;
+    const long ox = (extptr + ext + offset)->x;
+    const long oy = (extptr + ext + offset)->y;
     do {
-        const long nx = cx + ox * (c + 1);
-        const long ny = cy + oy * (c + 1);
+        const long nx = cx + ox * (count + 1);
+        const long ny = cy + oy * (count + 1);
         if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
         const long nid = ny * d + nx;
         bc = grid[nid];
         if (bc != myColor) break;
         if (alignedCells) alignedCells->insert(nid);
-    } while (++c <= d);
-    return c;
+    } while (++count <= d);
+    return count;
 }
 
 bool Grid::isDoubleThree(unsigned const id) const {
@@ -261,32 +261,30 @@ bool Grid::isDoubleThree(unsigned const id) const {
         return false;
     }
 
-    const char* spinner[] = {"—", "\\", "|", "/"};
-
     c = 0;
-    for (long i = 0; i < 4; i++) {
+    for (long ext = 0; ext < 4; ext++) {
         // std::set<long> alignedCells = { id };
 
         Cell lc = Cell::OUTSIDE;
-        long l = calcAlignedCells(id, i, lc, NULL); //&alignedCells);
+        long l = calcAlignedCells(id, ext, lc, NULL); //&alignedCells);
 
         Cell rc = Cell::OUTSIDE;
-        long r = calcAlignedCells(id, i, rc, NULL, 4); //&alignedCells, 4);
+        long r = calcAlignedCells(id, ext, rc, NULL, 4); //&alignedCells, 4);
 
         bool specialThree = false;
         if (l + r <= 1 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
             long needed = (l + r == 0) ? 2 : 1;
             Cell lc2 = Cell::OUTSIDE;
-            long l2 = calcAlignedCells(id, i, lc2, NULL, 0, l + 1) - l - 1;
+            long l2 = calcAlignedCells(id, ext, lc2, NULL, 0, l + 1) - l - 1;
             Cell rc2 = Cell::OUTSIDE;
-            long r2 = calcAlignedCells(id, i, rc2, NULL, 4, r + 1) - r - 1;
+            long r2 = calcAlignedCells(id, ext, rc2, NULL, 4, r + 1) - r - 1;
             if ((needed == l2 && lc2 == Cell::EMPTY) || (needed == r2 && rc2 == Cell::EMPTY)) {
                 specialThree = true;
             }
         }
         const bool bool1 = l + r >= 2 || specialThree;
         if (bool1) {
-            std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[i % 4] << "] ";
+            std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[ext % 4] << "] ";
             std::cout << l << " + " << r << " + 1 = " << (l+r+1);
         }
         if (specialThree) {
@@ -345,19 +343,19 @@ bool Grid::isDoubleThree(unsigned const id) const {
                 //     continue;
                 // }
 
-                for (long j = 0; j < 4; j++) {
-                    if (i == j) continue;
+                for (long ext2 = 0; ext2 < 4; ext2++) {
+                    if (ext == ext2) continue;
 
                     Cell lc2 = Cell::OUTSIDE;
-                    long l2 = calcAlignedCells(acid, j, lc2, NULL);
+                    long l2 = calcAlignedCells(acid, ext2, lc2, NULL);
 
                     Cell rc2 = Cell::OUTSIDE;
-                    long r2 = calcAlignedCells(acid, j, rc2, NULL, 4);
+                    long r2 = calcAlignedCells(acid, ext2, rc2, NULL, 4);
 
 
                     if (l2 + r2 >= 2) {
                         std::cout << "[" << acid << "] ";
-                        std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[j % 4] << "] ";
+                        std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << spinner[ext2 % 4] << "] ";
                         std::cout << l2 << " + " << r2 << " + 1 = " << (l2+r2+1);
                         if (lc2 == Cell::EMPTY && rc2 == Cell::EMPTY && l2 + r2 == 2) {
                             std::cout << " it is a DOUBLE free-three." << std::endl;

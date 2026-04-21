@@ -32,7 +32,7 @@ struct Grid {
 
     Cell getWinningLineColor() const;
     long handleCaptures(unsigned const id, bool const apply = false);
-    long calcAlignedCells(unsigned const id, long const i, Cell &bc,
-                    std::set<long> *alignedCells, long const offset = 0, long c = 0) const;
+    long calcAlignedCells(unsigned const id, long const ext, Cell &bc,
+                    std::set<long> *alignedCells, long const offset = 0, long count = 0) const;
     bool isDoubleThree(unsigned const id) const;
 };
