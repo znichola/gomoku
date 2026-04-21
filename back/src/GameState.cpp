@@ -46,7 +46,7 @@ bool GameState::askAI2Play() {
     if (isAIGame == activePlayer) {
         MQ << "AI is thinking of a good move";
         std::cout << "[AI] ";
-        return playMove(AI::play(board, moveHistory.empty() ? 180 : moveHistory.back()));
+        return playMove(AI::play(board, activePlayer == Cell::WHITE));
     }
     return true;
 }

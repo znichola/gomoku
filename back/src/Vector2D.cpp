@@ -61,6 +61,6 @@ long Vector2D::cross(const Vector2D& other) const {
     return x * other.y - y * other.x;
 }
 
-constexpr std::ostream& operator<<(std::ostream& os, const Vector2D& v) {
+std::ostream& operator<<(std::ostream& os, const Vector2D& v) {
     return os << "(" << v.x << ", " << v.y << ")";
 }

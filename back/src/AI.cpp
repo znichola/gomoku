@@ -1,45 +1,101 @@
 #include <iostream>
+#include <limits>
 
 #include "AI.hpp"
 #include "MessageQueue.hpp"
 
-// https://en.wikipedia.org/wiki/Minimax#Pseudocode
-unsigned AI::play(const Board &board, unsigned lastMove) {
-    auto h = heuristic(board);
-    if (h.size() > 0) {
-        // for (auto [id, hh ] : h) MBQ(id, std::to_string(hh));
-    } else {
-        MQ << "heuristic is empty :(";
-    }
-    (void)board;
-    const unsigned d = board.grid.boardDimension;
-    const long nid = d * d - lastMove;
-    long id = nid;
-    long i = 0;
-    while (board.grid.grid[id] != Cell::EMPTY && i < d * d) {
-        id = d * d / 2 - (i / 2) * ((i % 2) ? -1 : 1);
-        ++i;
-    }
-    return id;
-}
+enum class Player {WHITE, BLACK};
 
-std::vector<std::pair<unsigned, double>>AI::heuristic(const Board &board) {
-    std::set<unsigned> cm = getCandidateMoves(board.grid);
-    std::vector<std::pair<unsigned, double>> result;
-    for (auto id: cm) {
-        result.push_back({id, 3});
-    }
-    std::cout << "FOOOO " << result.size(); 
-    return result;
+static constexpr float INF = std::numeric_limits<float>::infinity();
+
+// https://en.wikipedia.org/wiki/Minimax#Pseudocode
+unsigned AI::play(const Board &board, bool isWhite) {
+    unsigned move = bestMove(board, isWhite);
+    if (move == Board::FIRSTMOVE) return 180;
+    return move;
 }
 
 /*
-unsigned AI::minMax(const Board &board, int depth, bool maximizingPlayer) {
-    if (depth == 0 || board.isWin()) {
-        return heuristic(board);
-    } 
-}
+    MinMax algo - minimizing possible losses
+    https://en.wikipedia.org/wiki/Minimax#Pseudocode
+
+    maximisingPlayer is a flag to toggle searching for
+    lowest score or highest score possible
+    black likes low scores, so it should be called with a false here
+
+    TODO see negamax for simpler version of the function, and alpha-beta pruning for more optimised one
 */
+float AI::minMax(const Board &board, int depth, bool maximizingPlayer) {
+    Cell victory = board.isVictory();
+    if (depth == 0 || victory != Cell::EMPTY) {
+        return evaluate(board, victory); // evaluation/heuristic is only run for terminal nodes
+    }
+    if (maximizingPlayer) {
+        float best = -INF;
+        for (auto move : getCandidateMoves(board.grid)) {
+            Board newBoard(board); // Optimise, maybe with an undoMove, to remove the constructor/destructor in a loop
+            if (newBoard.playMove(move) == false) continue; // skip illegal moves
+            float score = minMax(newBoard, depth-1, false);
+            best = std::max(score, best);
+        }
+        return best;
+    } else {
+        float best = INF;
+        for (auto move : getCandidateMoves(board.grid)) {
+            Board newBoard(board);
+            if (newBoard.playMove(move) == false) continue;
+            float score = minMax(newBoard, depth-1, true);
+            best = std::min(score, best);
+        }
+        return best;
+    }
+}
+
+
+/*
+    Choosing the best move by using minMax
+*/
+unsigned AI::bestMove(const Board &board, bool isWhite) {
+    float bestScore = isWhite ? -INF : INF;
+    unsigned bestMove = Board::FIRSTMOVE;
+    for (auto move : getCandidateMoves(board.grid)) {
+        Board newBoard(board);
+        if (newBoard.playMove(move) == false) continue;
+        float score = minMax(newBoard, AI::depth, !isWhite);
+        if (isWhite ? score > bestScore : score < bestScore) { // if white we look for highest score, if black we look for lowest
+            bestMove = move;
+            bestScore = score;
+        }
+
+    }
+    if (bestMove == Board::FIRSTMOVE) {
+        MQ << "[AI] No best move found";
+        std::cout << "[AI] No best move found\n";
+    }
+    return bestMove;
+}
+
+/*
+    This is an evaluation of the entire board state. 
+    return a score of the position: - for black and + for white
+    This function is only called at terminal nodes of the tree (see subject p5)
+*/
+float AI::evaluate(const Board &board, Cell winningPlayer) {
+    if (winningPlayer == Cell::WHITE) return INF;
+    if (winningPlayer == Cell::BLACK) return -INF;
+    if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size()) {
+        return 0;
+    }
+    // A basic heuristic for now, all can be thrown away.
+    int blackCount = 0;
+    int whiteCount = 0;
+    for (size_t id = 0; id < board.grid.size(); id++) {
+        auto piece = board.grid[id];
+        if (piece == Cell::BLACK) blackCount++;
+        if (piece == Cell::WHITE) whiteCount++;
+    }
+    return whiteCount - blackCount; // If black has more pieces, it's better for them
+}
 
 std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
     std::set<unsigned> cm;

@@ -22,6 +22,7 @@ bool Board::playMove(unsigned id) {
         MQ << "It's a win for " << (victory == Cell::BLACK ? "BLACK" : "WHITE") << "\n";
     }
 
+    lastMove = id;
     isBlackToPlay = !isBlackToPlay;
     return true;
 }
@@ -60,11 +61,14 @@ void Board::addCapture(Cell color) {
     }
 }
 
-Cell Board::isVictory() {
+Cell Board::isVictory() const {
     if ((isBlackToPlay && blackCaptured >= 10)) return Cell::BLACK;
     else if ((!isBlackToPlay && whiteCaptured >= 10)) return Cell::WHITE;
-
     return grid.getWinningLineColor();
+}
+
+bool Board::isGameOver() const {
+    return Cell::EMPTY != isVictory();
 }
 
 std::string Board::serialize() const {
