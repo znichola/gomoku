@@ -51,21 +51,16 @@ Grid &Grid::setEmpty(unsigned id) {
 
 Vector2D Grid::idToVec(unsigned id) const {
     assert(id < grid.size());
-    return Vector2D{
-        static_cast<long>(id % boardDimension),
-        static_cast<long>(id / boardDimension)
-    };
+    return Vector2D::createFromIndex(id, boardDimension);
 }
 
 unsigned Grid::vecToId(const Vector2D& vec) const {
     assert(isInside(vec));
-    return vec.y * boardDimension + vec.x;
+    return vec.toIndex(boardDimension);
 }
 
 bool Grid::isInside(const Vector2D& vec) const {
-    return vec.x >= 0 && vec.y >= 0 &&
-           vec.x < boardDimension &&
-           vec.y < boardDimension;
+    return vec >= 0 && vec < boardDimension;
 }
 
 // Level2Death : 1) LOOKING > 2) BOILING > 3) END
@@ -132,16 +127,12 @@ Cell Grid::getWinningLineColor() const {
     for (int id = 0; id < dmax; ++id) {
         gridLOD.push_back({});
     }
-    for (int id = 0, ext = 0; id < dmax; ++id, ext = 0) {
-        const long cx = id % d;
-        const long cy = id / d;
+    for (long id = 0, ext = 0; id < dmax; ++id, ext = 0) {
+        const Vector2D cellPoint = Vector2D::createFromIndex(id, d);
         for (long ext = 0; ext < 4; ++ext) {
-            const long ox = (extptr + ext)->x;
-            const long oy = (extptr + ext)->y;
-            const long nx = cx + ox;
-            const long ny = cy + oy;
-            if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
-            const long nid = ny * d + nx;
+            const Vector2D newPoint = cellPoint + *(extptr + ext);
+            if (!isInside(newPoint)) continue;
+            const long nid = newPoint.toIndex(d);
 
             /**
              * X . . .    . . . .    O . . .    . . . .
@@ -225,16 +216,12 @@ Cell Grid::getWinningLineColor() const {
     for (int id = 0; id < dmax; ++id) {
         gridCR.push_back({});
     }
-    for (int id = 0, ext = 0; id < dmax; ++id, ext = 0) {
-        const long cx = id % d;
-        const long cy = id / d;
+    for (long id = 0, ext = 0; id < dmax; ++id, ext = 0) {
+        const Vector2D cellPoint = Vector2D::createFromIndex(id, d);
         for (long ext = 0; ext < 4; ++ext) {
-            const long ox = (extptr + ext)->x;
-            const long oy = (extptr + ext)->y;
-            const long nx = cx + ox;
-            const long ny = cy + oy;
-            if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
-            const long nid = ny * d + nx;
+            const Vector2D newPoint = cellPoint + *(extptr + ext);
+            if (!isInside(newPoint)) continue;
+            const long nid = newPoint.toIndex(d);
 
             NodeCellRow*& cell = gridCR[id][ext];
             NodeCellRow*& next = gridCR[nid][ext];
@@ -325,17 +312,15 @@ long Grid::handleCaptures(unsigned const id, bool const apply) {
     const unsigned d = boardDimension;
 
     long c = 0;
-    const long cx = id % d;
-    const long cy = id / d;
-    for (auto [ox, oy] : EXTREMITIES) {
-        const long nx = cx + ox * 3;
-        const long ny = cy + oy * 3;
-        if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
-        const long nid = ny * d + nx;
+    const Vector2D cellPoint = Vector2D::createFromIndex(id, d);
+    for (Vector2D offsetPoint : EXTREMITIES) {
+        const Vector2D newPoint = cellPoint + offsetPoint * 3;
+        if (!isInside(newPoint)) continue;
+        const long nid = newPoint.toIndex(d);
         if (grid[nid] != myColor) continue;
-        const long nid1 = (cy + oy * 1) * d + (cx + ox * 1);
+        const long nid1 = (cellPoint + offsetPoint).toIndex(d);
         if (grid[nid1] != enemyColor) continue;
-        const long nid2 = (cy + oy * 2) * d + (cx + ox * 2);
+        const long nid2 = (cellPoint + offsetPoint * 2).toIndex(d);
         if (grid[nid2] != enemyColor) continue;
         if (apply) {
             setEmpty(static_cast<unsigned>(nid1));
@@ -352,15 +337,12 @@ long Grid::calcAlignedCells(unsigned const id, long const ext, Cell &bc,
     if (myColor == Cell::EMPTY) return false;
     const unsigned d = boardDimension;
 
-    const long cx = id % d;
-    const long cy = id / d;
-    const long ox = (extptr + ext + offset)->x;
-    const long oy = (extptr + ext + offset)->y;
+    const Vector2D cellPoint = Vector2D::createFromIndex(id, d);
+    const Vector2D offsetPoint = *(extptr + ext + offset);
     do {
-        const long nx = cx + ox * (count + 1);
-        const long ny = cy + oy * (count + 1);
-        if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) break;
-        const long nid = ny * d + nx;
+        const Vector2D newPoint = cellPoint + offsetPoint * (count + 1);
+        if (!isInside(newPoint)) break;
+        const long nid = newPoint.toIndex(d);
         bc = grid[nid];
         if (bc != myColor) break;
         if (alignedCells) alignedCells->insert(nid);

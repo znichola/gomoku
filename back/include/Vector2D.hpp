@@ -6,15 +6,21 @@ struct Vector2D {
     long x, y;
 
     Vector2D(long x, long y);
-
     Vector2D(const Vector2D& other);
-    constexpr Vector2D(int x_, int y_) : x(x_), y(y_) {}
     Vector2D& operator=(const Vector2D& other);
     ~Vector2D();
+
+    static Vector2D createFromIndex(long id, unsigned width);
+    long toIndex(unsigned width) const;
 
     Vector2D operator+(const Vector2D& other) const;
     Vector2D operator-(const Vector2D& other) const;
     Vector2D operator*(long k) const;
+
+    bool operator>(long value) const;
+    bool operator<(long value) const;
+    bool operator>=(long value) const;
+    bool operator<=(long value) const;
 
     long dot(const Vector2D& other) const;
     long cross(const Vector2D& other) const;
