@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <deque>
+#include <functional>
 
 #include "Grid.hpp"
 #include "MessageQueue.hpp"
@@ -74,53 +75,43 @@ enum class NodeStep: char {
 
 struct NodeLOD {
     Cell type = Cell::EMPTY;
-    NodeStep step = NodeStep::LOOKING;
+    NodeStep step = NodeStep::NONE;
 };
 
 struct NodeCellRow: NodeLOD {
     long originId = 0;
-    char ext = 0;
+    int ext = 0;
 
-    int potential = 0;
     int size = 0;
     int score = 0;
     int tmpscr = 0;
 
-    NodeCellRow operator<<(NodeStep step) {
+    void incrementSize(bool cellIsDead) {
         ++size;
-        if (step == NodeStep::DEATH) {
+        if (cellIsDead || type == Cell::EMPTY) {
             tmpscr = 0;
         } else {
             if (score < ++tmpscr)
                 score = tmpscr;
         }
-        return *this;
     }
 
-    // Increment potential
-    NodeCellRow operator++() {
-        ++potential;
-        return *this;
-    }
-
-    NodeCellRow *prev;
-    NodeCellRow *next;
+    NodeCellRow *prev = 0;
+    NodeCellRow *next = 0;
 
     ~NodeCellRow() {}
 };
 
 template <typename Node> 
 struct AdjacentNode {
+    bool dead = false;
+
     Node* v[4] = { NULL, NULL, NULL, NULL }; // v[0]=right, v[1]=bottomRight, v[2]=bottom, v[3]=bottomLeft
     constexpr Node*& operator[](size_t i) { return v[i]; }
 };
 
 Cell Grid::getWinningLineColor() const {
     const unsigned d = boardDimension;
-
-    std::deque<NodeLOD> nodeLODsGarbage;
-    std::vector<AdjacentNode<NodeLOD>> gridLOD;
-    gridLOD.reserve(d * d);
 
     /**
      * X . . .    . . . .    O . . .    . . . .
@@ -150,6 +141,18 @@ Cell Grid::getWinningLineColor() const {
      * . . . 3
      */
 
+    std::deque<NodeLOD> nodeLODsGarbage;
+    std::vector<AdjacentNode<NodeLOD>> gridLOD;
+    gridLOD.reserve(d * d);
+
+    std::function<NodeLOD*(Cell)> createLOD = [&nodeLODsGarbage](Cell type) {
+        nodeLODsGarbage.push_back(NodeLOD{});
+        NodeLOD *next =  &nodeLODsGarbage.back();
+        next->type = type;
+        next->step = NodeStep::LOOKING;
+        return next;
+    };
+
     const int dmax = d * d;
     for (int id = 0; id < dmax; ++id) {
         gridLOD.push_back({});
@@ -164,35 +167,29 @@ Cell Grid::getWinningLineColor() const {
             NodeLOD*& cell = gridLOD[id][ext];
             NodeLOD*& next = gridLOD[nid][ext];
 
-            if (cell == NULL) {
+            if (cell == NULL) { // COMPARE FIRST & SECOND PIECE
 
-            } else if (cell->step == NodeStep::LOOKING) {
+            } else if (cell->step == NodeStep::LOOKING) { // COMPARE SECOND & THIRD PIECE
                 if (grid[id] == grid[nid]) {
                     cell->step = NodeStep::BOILING;
                     next = cell;
                     continue ;
                 }
-            } else if (cell->step == NodeStep::BOILING) {
+            } else if (cell->step == NodeStep::BOILING) { // COMPARE THIRD & FOURTH PIECE
                 if (grid[id] != grid[nid] && cell->type != grid[nid]) {
                     cell->step = NodeStep::DEATH;
                 }
             }
             if (grid[nid] != Cell::EMPTY && grid[id] != grid[nid]) {
-                nodeLODsGarbage.push_back({});
-                next = &nodeLODsGarbage.back();
-                next->type = grid[id];
-                next->step = NodeStep::LOOKING;
+                next = createLOD(grid[id]);
             }
         }
     }
     for (int id = 0; id < dmax; ++id) {
         for (long ext = 0; ext < 4; ++ext) {
             NodeLOD*& cellLOD = gridLOD[id][ext];
-            // if (cellLOD != NULL) {
-            //     std::cout << "R " << SPINNER[ext] << " id: " << id
-            //         << " grid[id]: " << grid[id] << " cellLOD->step: " << static_cast<int>(cellLOD->step) << std::endl;
-            // }
             if (cellLOD != NULL && cellLOD->step == NodeStep::DEATH) {
+                gridLOD[id].dead = true;
                 std::cout << "death! id: " << id << std::endl;
                 break ;
             }
@@ -201,9 +198,6 @@ Cell Grid::getWinningLineColor() const {
 
     // TODO: Refactor in another function or reuse last loop ?
 
-    std::deque<NodeCellRow> cellRowsGarbage;
-    std::vector<AdjacentNode<NodeCellRow>> gridCR;
-    gridCR.reserve(d * d);
 
     /**
      * X . . .    . . . .    O . . .    . . . .    . . . .
@@ -215,18 +209,29 @@ Cell Grid::getWinningLineColor() const {
      * PHASE 1 (on a cell == NULL ou cell == '.')
      * step = 0 ou 1 LOOKING
      *(¤). . . .  <-- .
-        * .(¤). . .
-        * . . N . .
-        * . . . N .
-        * . . . . ?
-        * PHASE 2 (on a cell != NULL et size > 1)
-        * step = 2 BOILING
-        * ¤ . . . .
-        * . ¤ . . .
-        * . .(N). .  <-- X, O
-        * . . .(N).
-        * . . . . ?
-        */
+     * .(¤). . .
+     * . . N . .
+     * . . . N .
+     * . . . . ?
+     * PHASE 2 (on a cell != NULL et size > 1)
+     * step = 2 BOILING
+     * ¤ . . . .
+     * . ¤ . . .
+     * . .(N). .  <-- X, O
+     * . . .(N).
+     * . . . . ?
+     */
+
+    std::deque<NodeCellRow> cellRowsGarbage;
+    std::vector<AdjacentNode<NodeCellRow>> gridCR;
+    gridCR.reserve(d * d);
+
+    std::function<NodeCellRow*()> createCell = [&cellRowsGarbage]() {
+        cellRowsGarbage.push_back(NodeCellRow{});
+        NodeCellRow *cell = &cellRowsGarbage.back();
+        cell->step = NodeStep::LOOKING;
+        return cell;
+    };
 
     for (int id = 0; id < dmax; ++id) {
         gridCR.push_back({});
@@ -240,54 +245,35 @@ Cell Grid::getWinningLineColor() const {
 
             NodeCellRow*& cell = gridCR[id][ext];
             NodeCellRow*& next = gridCR[nid][ext];
-            NodeLOD*& cellLOD = gridLOD[id][ext];
 
-            if (cell == NULL) {
-                cellRowsGarbage.push_back({});
-                cell = &cellRowsGarbage.back();
-                cell->step = (grid[id] == Cell::EMPTY) ? NodeStep::LOOKING : NodeStep::BOILING;
-
-                cell->originId = id;
-                cell->ext = ext;
+            // Init
+            if (cell == NULL) { // cell->step == NodeStep::LOOKING
+                cell = createCell();
             }
             if (cell->step == NodeStep::LOOKING) {
-                if (grid[id] == Cell::EMPTY) {
-                    ++cell;
-                    if (cell->prev != NULL)
-                        ++(cell->prev);
-                    continue;
-                } else {
-                    std::cout << "Wrong step, should be handled before";
-                    cell->step = NodeStep::BOILING;
-                    //throw std::runtime_error("Wrong step, should be handled before");
-                }
-                if (grid[nid] != Cell::EMPTY) {
-                    cell->step = NodeStep::BOILING;
-                    continue;
-                }
-            } else if (cell->step == NodeStep::BOILING) {
-                if (cell->size == 0) {
-                    cell->originId = id;
-                    cell->type = grid[id];
-                }
-                if (grid[id] == grid[nid]) {
-                    (*cell) << ((cellLOD != NULL) ? cellLOD->step : NodeStep::NONE);
-                    continue ;
-                } else {
-                    cell->step = NodeStep::END;
-                }
+                cell->originId = id;
+                cell->type = grid[id];
+                cell->ext = ext;
+                cell->step = NodeStep::BOILING;
             }
-            // std::cout << "new node " << SPINNER[ext] << " id:" << id << " nid:" << nid << std::endl;
-            cellRowsGarbage.push_back({});
-            next = &cellRowsGarbage.back(); // TODO : Make a function
-            next->step = (grid[nid] == Cell::EMPTY) ? NodeStep::LOOKING : NodeStep::BOILING;
+            // Increment, link and detect the end of the line 
+            if (cell->step == NodeStep::BOILING) {
+                cell->incrementSize(gridLOD[id].dead);
 
-            next->originId = id;
-            next->ext = ext;
-            if (cell != NULL) {
-                cell->next = next;
-                next->prev = cell;
+                if (grid[id] == grid[nid]) {
+                    next = cell; // Link the next grid cell to this Node
+                } else { // End of the line
+                    next = createCell();
+                    // Link next & prev
+                    cell->next = next;
+                    next->prev = cell;
+                }
             }
+        }
+    }
+    for (const NodeCellRow& cellRows : cellRowsGarbage) {
+        if (cellRows.score >= 5 && cellRows.type != Cell::EMPTY) {
+            return cellRows.type;
         }
     }
     return Cell::EMPTY;
