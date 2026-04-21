@@ -68,28 +68,50 @@ bool Grid::isInside(const Vector2D& vec) const {
            vec.y < boardDimension;
 }
 
-// Level2Death
-enum class StepLOD: char {
+// Level2Death : 1) LOOKING > 2) BOILING > 3) END
+enum class NodeStep: char {
+    NONE = 0U, // ALIVE
     LOOKING = 1U,
     BOILING = 2U,
-    DEATH = 3U
-};
-
-struct NodeCellRow {
-    Cell owner = Cell::EMPTY; 
-    Cell type = Cell::EMPTY;
-    long originId = 0;
-    char ext = 0;
-    int potential = 0;
-    int size = 0;
-    int nbDeadCell = 0;
-    NodeCellRow *prev;
-    NodeCellRow *next;
+    DEATH = 3U,
+    END = 4U
 };
 
 struct NodeLOD {
     Cell type = Cell::EMPTY;
-    StepLOD step = StepLOD::LOOKING;
+    NodeStep step = NodeStep::LOOKING;
+};
+
+struct NodeCellRow: NodeLOD {
+    long originId = 0;
+    char ext = 0;
+
+    int potential = 0;
+    int size = 0;
+    int score = 0;
+    int tmpscr = 0;
+
+    NodeCellRow operator<<(NodeStep step) {
+        ++size;
+        if (step == NodeStep::DEATH) {
+            tmpscr = 0;
+        } else {
+            if (score < ++tmpscr)
+                score = tmpscr;
+        }
+        return *this;
+    }
+
+    // Increment potential
+    NodeCellRow operator++() {
+        ++potential;
+        return *this;
+    }
+
+    NodeCellRow *prev;
+    NodeCellRow *next;
+
+    ~NodeCellRow() {}
 };
 
 template <typename Node> 
@@ -154,20 +176,20 @@ Cell Grid::getWinningLineColor() const {
 
             if (cell == NULL) {
 
-            } else if (cell->step == StepLOD::LOOKING) {
+            } else if (cell->step == NodeStep::LOOKING) {
                 // std::cout << "step1 " << spinner[ext] << " id: " << id << " nid: " << nid
                 //     << " grid[id]: " << grid[id] << " grid[nid]: " << grid[nid] << std::endl;
                 if (grid[id] == grid[nid]) {
-                    cell->step = StepLOD::BOILING;
+                    cell->step = NodeStep::BOILING;
                     next = cell;
                     continue ;
                 }
-            } else if (cell->step == StepLOD::BOILING) {
+            } else if (cell->step == NodeStep::BOILING) {
                 // std::cout << "step2 " << spinner[ext] << " id: " << id << " nid: " << nid
                 //     << " grid[id]: " << grid[id] << " grid[nid]: " << grid[nid] 
                 //     << " cell->type: " << cell->type << std::endl;
                 if (grid[id] != grid[nid] && cell->type != grid[nid]) {
-                    cell->step = StepLOD::DEATH;
+                    cell->step = NodeStep::DEATH;
                     // std::cout << "death! " << spinner[ext] << " id: " << id << " nid: " << nid << std::endl;
                 }
             }
@@ -176,7 +198,7 @@ Cell Grid::getWinningLineColor() const {
                 nodeLODsGarbage.push_back({});
                 next = &nodeLODsGarbage.back();
                 next->type = grid[id];
-                next->step = StepLOD::LOOKING;
+                next->step = NodeStep::LOOKING;
             }
         }
     }
@@ -187,13 +209,106 @@ Cell Grid::getWinningLineColor() const {
             //     std::cout << "R " << spinner[ext] << " id: " << id
             //         << " grid[id]: " << grid[id] << " cellLOD->step: " << static_cast<int>(cellLOD->step) << std::endl;
             // }
-            if (cellLOD != NULL && cellLOD->step == StepLOD::DEATH) {
+            if (cellLOD != NULL && cellLOD->step == NodeStep::DEATH) {
                 std::cout << "death! id: " << id << std::endl;
                 break ;
             }
         }
     }
 
+    // TODO: Refactor in another function or reuse last loop ?
+
+    std::deque<NodeCellRow> cellRowsGarbage;
+    std::vector<AdjacentNode<NodeCellRow>> gridCR;
+
+    gridCR.reserve(d * d);
+    for (int id = 0; id < dmax; ++id) {
+        gridCR.push_back({});
+    }
+    for (int id = 0, ext = 0; id < dmax; ++id, ext = 0) {
+        const long cx = id % d;
+        const long cy = id / d;
+        for (long ext = 0; ext < 4; ++ext) {
+            const long ox = (extptr + ext)->x;
+            const long oy = (extptr + ext)->y;
+            const long nx = cx + ox;
+            const long ny = cy + oy;
+            if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
+            const long nid = ny * d + nx;
+
+            NodeCellRow*& cell = gridCR[id][ext];
+            NodeCellRow*& next = gridCR[nid][ext];
+            NodeLOD*& cellLOD = gridLOD[id][ext];
+            // NodeLOD*& nextLOD = gridLOD[nid][ext];
+
+            /**
+             * X . . .    . . . .    O . . .    . . . .    . . . .
+             * . O . .    . O . .    . X . .    . . . .    . X . .
+             * . . O .    . . O .    . . X .    . . X .    . . X .
+             * . . . ?    . . . ?    . . . ?    . . . ?    . . . ?  etc...
+             *
+             * 
+             * PHASE 1 (on a cell == NULL ou cell == '.')
+             * step = 0 ou 1 LOOKING
+             *(¤). . . .  <-- .
+             * .(¤). . .
+             * . . N . .
+             * . . . N .
+             * . . . . ?
+             * PHASE 2 (on a cell != NULL et size > 1)
+             * step = 2 BOILING
+             * ¤ . . . .
+             * . ¤ . . .
+             * . .(N). .  <-- X, O
+             * . . .(N).
+             * . . . . ?
+             */
+            if (cell == NULL) {
+                cellRowsGarbage.push_back({});
+                cell = &cellRowsGarbage.back();
+                cell->step = (grid[id] == Cell::EMPTY) ? NodeStep::LOOKING : NodeStep::BOILING;
+
+                cell->originId = id;
+                cell->ext = ext;
+            }
+            if (cell->step == NodeStep::LOOKING) {
+                if (grid[id] == Cell::EMPTY) {
+                    ++cell;
+                    if (cell->prev != NULL)
+                        ++(cell->prev);
+                    continue;
+                } else {
+                    throw std::runtime_error("Wrong step, should be handled before");
+                }
+                if (grid[nid] != Cell::EMPTY) {
+                    cell->step = NodeStep::BOILING;
+                    continue;
+                }
+            } else if (cell->step == NodeStep::BOILING) {
+                if (cell->size == 0) {
+                    cell->originId = id;
+                    cell->type = grid[id];
+                }
+                if (grid[id] == grid[nid]) {
+                    (*cell) << ((cellLOD != NULL) ? cellLOD->step : NodeStep::NONE);
+                    continue ;
+                } else {
+                    cell->step = NodeStep::END;
+                }
+            }
+            // std::cout << "new node " << spinner[ext] << " id:" << id << " nid:" << nid << std::endl;
+            cellRowsGarbage.push_back({});
+            next = &cellRowsGarbage.back(); // TODO : Make a function
+            next->step = (grid[nid] == Cell::EMPTY) ? NodeStep::LOOKING : NodeStep::BOILING;
+
+            next->originId = id;
+            next->ext = ext;
+            if (cell != NULL) {
+                cell->next = next;
+                next->prev = cell;
+            }
+        }
+    }
     return Cell::EMPTY;
 }
 
