@@ -4,6 +4,7 @@
 
 #include "Grid.hpp"
 #include "MessageQueue.hpp"
+#include "Utils.hpp"
 #include <assert.h>
 
 Grid::Grid(unsigned width) : grid(width * width, Cell::EMPTY), width(width), size(width * width) {
@@ -32,15 +33,68 @@ const std::vector<Cell>& Grid::getGrid() const {
 void Grid::setGrid(const std::vector<Cell>& newGrid) {
     grid = newGrid;
     cleanCache();
+    generateHash();
 }
 
 Cell Grid::operator[](unsigned id) const {
     return grid[id];
 }
 
-Cell& Grid::operator[](unsigned id) {
+Grid &Grid::set(unsigned id, Cell value) {
     cleanCache();
+    updateHash(id, value);
+    grid[id] = value;
+    return *this;
+}
+
+/* Cell& Grid::operator[](unsigned id) {
+    cleanCache();
+    generateHash();
     return grid[id];
+} */
+
+Grid &Grid::setBlack(unsigned id) {
+    return set(id, Cell::BLACK);
+}
+
+Grid &Grid::setBlack(std::initializer_list<unsigned> ids) {
+    for (auto id : ids) {
+        set(id, Cell::BLACK);
+    }
+    return *this;
+}
+
+Grid &Grid::setWhite(unsigned id) {
+    return set(id, Cell::WHITE);
+}
+
+Grid &Grid::setWhite(std::initializer_list<unsigned> ids) {
+    for (auto id : ids) {
+        set(id, Cell::WHITE);
+    }
+    return *this;
+}
+
+Grid &Grid::setEmpty(unsigned id) {
+    return set(id, Cell::EMPTY);
+    return *this;
+}
+
+void Grid::generateHash() {
+    uint64_t h = 0;
+    for (unsigned id = 0; id < 361; ++id) {
+        h ^= zob[id][static_cast<int>(grid[id])];
+    }
+    hash = h;
+}
+
+uint64_t Grid::getHash() const {
+    return hash;
+}
+
+void Grid::updateHash(unsigned id, Cell newValue) {
+    hash ^= zob[id][static_cast<int>(grid[id])];
+    hash ^= zob[id][static_cast<int>(newValue)];
 }
 
 GridTraversal const& Grid::nodes() {
@@ -59,36 +113,6 @@ std::string Grid::serialize() const {
     }
     out << "]\n";
     return out.str();
-}
-
-Grid &Grid::setBlack(unsigned id) {
-    (*this)[id] = Cell::BLACK;
-    return *this;
-}
-
-Grid &Grid::setBlack(std::initializer_list<unsigned> ids) {
-    for (auto id : ids) {
-        (*this)[id] = Cell::BLACK;
-    }
-    return *this;
-}
-
-
-Grid &Grid::setWhite(unsigned id) {
-    (*this)[id] = Cell::WHITE;
-    return *this;
-}
-
-Grid &Grid::setWhite(std::initializer_list<unsigned> ids) {
-    for (auto id : ids) {
-        (*this)[id] = Cell::WHITE;
-    }
-    return *this;
-}
-
-Grid &Grid::setEmpty(unsigned id) {
-    (*this)[id] = Cell::EMPTY;
-    return *this;
 }
 
 Vector2D Grid::idToVec(unsigned id) const {

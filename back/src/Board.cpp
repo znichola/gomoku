@@ -17,7 +17,7 @@ bool Board::playMove(unsigned id) {
     if (!isValidMove(id))
         return false;
 
-    grid[id] = isBlackToPlay ? Cell::BLACK : Cell::WHITE;
+    grid.set(id, isBlackToPlay ? Cell::BLACK : Cell::WHITE);
 
     doCaptures(id);
 

@@ -4,7 +4,8 @@
 #include "Server.hpp"
 #include "GameState.hpp"
 
-uint64_t zob[361][3];
+extern uint64_t zob[361][3];
+
 void init_zobrist(uint64_t seed);
 
 Cell parseCell(const std::string& s);

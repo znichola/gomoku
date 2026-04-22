@@ -1,5 +1,10 @@
 #include "GridTraversal.hpp"
+
 #include <iostream>
+#include <unordered_map>
+#include <cstring>
+
+std::unordered_map<uint64_t, GridTraversal> table;
 
 void NodeCellRow::incrementSize(bool cellIsDead){
 	++size;
@@ -131,6 +136,15 @@ void GridTraversal::populateCellRow(long id, long nid, long ext) {
 void GridTraversal::generateCellRow() {
 	if (isCellRowGenerated)
 		return ;
+
+	/*auto it = table.find(grid.getHash());
+	if (it != table.end()
+			// && memcmp(it->second.grid.getGrid().data(), grid.getGrid().data(), 361) == 0
+			) {
+		*this = it->second;
+		return ;
+	}*/
+
 	generateLOD();
 
 	const unsigned size = grid.size;
@@ -152,6 +166,7 @@ void GridTraversal::generateCellRow() {
 
 	iterateNode(&GridTraversal::populateCellRow);
 	isCellRowGenerated = true;
+	//table.try_emplace(grid.getHash(), *this);
 }
 
 void GridTraversal::generate() {

@@ -13,6 +13,7 @@ class Grid {
 private:
     std::vector<Cell> grid;
     GridTraversal *gridTraversal = nullptr;
+    uint64_t hash = 0;
 
 public:
     unsigned width;
@@ -29,7 +30,18 @@ public:
     void setGrid(const std::vector<Cell>& newGrid);
 
     Cell operator[](unsigned id) const;
-    Cell& operator[](unsigned id);
+    // Cell& operator[](unsigned id); => Incompatible avec updateHash()
+    Grid &set(unsigned id, Cell value);
+
+    Grid &setBlack(unsigned id);
+    Grid &setBlack(std::initializer_list<unsigned> ids);
+    Grid &setWhite(unsigned id);
+    Grid &setWhite(std::initializer_list<unsigned> ids);
+    Grid &setEmpty(unsigned id);
+
+    void generateHash();
+    void updateHash(unsigned id, Cell newValue);
+    uint64_t getHash() const;
 
     GridTraversal const& nodes();
 
@@ -38,12 +50,6 @@ public:
     bool isInside(const Vector2D& vec) const;
 
     std::string serialize() const;
-
-    Grid &setBlack(unsigned id);
-    Grid &setBlack(std::initializer_list<unsigned> ids);
-    Grid &setWhite(unsigned id);
-    Grid &setWhite(std::initializer_list<unsigned> ids);
-    Grid &setEmpty(unsigned id);
 
     Cell getWinningLineColor() const;
     long handleCaptures(unsigned const id, bool const apply = false);

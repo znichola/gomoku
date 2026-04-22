@@ -106,7 +106,7 @@ bool GameState::makeDoubleTree() {
         const long ny = cy + ry;
         const long id = ny * d + nx;
         if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
-        grid[id] = content;
+        grid.set(id, content);
     }
     return false;
 }

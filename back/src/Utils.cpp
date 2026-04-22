@@ -1,5 +1,21 @@
 #include "Utils.hpp"
 
+uint64_t zob[361][3];
+
+/**
+ * Init Zobrist Hashing
+ * https://www.chessprogramming.org/Zobrist_Hashing
+ */
+void init_zobrist(uint64_t seed = 0xF2D3FAF467E04098) {
+    std::mt19937_64 rng(seed);
+
+    for (int i = 0; i < 361; i++) {
+        for (int v = 0; v < 3; v++) {
+            zob[i][v] = rng();
+        }
+    }
+}
+
 Cell parseCell(const std::string& s) {
     if (s == "0") return Cell::EMPTY;
     if (s == "1") return Cell::BLACK;
