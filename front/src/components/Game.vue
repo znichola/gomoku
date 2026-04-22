@@ -62,7 +62,7 @@ async function load(error: boolean = false) {
 
 async function move(event: MouseEvent) {
   const target = event.target as HTMLElement
-  const cellId = target.id
+  const cellId = target.hasAttribute('id') ? target.id : (target.parentElement as HTMLElement).id
   errorMessage.value = ''
   console.log(`Clicked on cell ${cellId}`)
   let color: string | null = null
@@ -155,7 +155,7 @@ function keyMode(event: KeyboardEvent) {
         <div v-for="(line, y) in grids" :key="y" class="line">
           <div v-for="(cid, x) in line" :key="x" class="cell">
             <div class="circle"
-            :class="{ 
+            :class="{
               highlight: gameStore.highlight.get() == cid,
               overlay: overlay && overlayMap.has(cid)
             }"
@@ -163,7 +163,7 @@ function keyMode(event: KeyboardEvent) {
             :title="`[${x}; ${y}] - id: ${cid}`"
             :id="cid.toString()"
             @click="move"
-              >{{overlay ? overlayMap.get(cid) : ""}}</div>
+              ><span v-if="overlay">{{ overlayMap.get(cid) }}</span></div>
           </div>
         </div>
       </template>
@@ -239,7 +239,7 @@ div.board {
       color: var(--text-color);
       text-align: center;
       cursor: pointer;
-      z-index: 200;
+      z-index: 20;
       &:hover {
         background-color: var(--turn-color);
       }
@@ -279,7 +279,7 @@ div.board {
           border-radius: var(--celsize);
           box-sizing: border-box;
           content: ' ';
-          z-index: 201;
+          z-index: 21;
         }
       }
       &[data-type=black] {
@@ -291,15 +291,37 @@ div.board {
         transition: all 0.2s ease-in;
       }
       &.overlay {
-        color: black;
-        // font-weight: bold;
         opacity: 1;
-        font-family: sans-serif;
-        font-size: calc(var(--cellsize) * 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        z-index: 24;
+        span {
+          margin: -4px 0;
+          color: var(--white-color);
+          font-family: sans-serif;
+          font-size: calc(var(--celsize) * 0.3);
+          display: block;
+          width: max-content;
+          height: min-content;
+          line-height: normal;
+          z-index: 40;
+          text-shadow: var(--bg-color) 1px 0 0px,
+                        var(--bg-color) -1px 0 0px,
+                        var(--bg-color) 0 1px 0px,
+                        var(--bg-color) 0 -1px 0px;
+        }
+        &[data-type=white] span {
+          color: var(--black-color);
+        }
       }
       &[data-type=empty]:hover {
         opacity: 1;
       }
+    }
+
+    &:nth-child(even) div.circle.overlay {
+      align-items: flex-end;
     }
   }
 
@@ -353,6 +375,18 @@ div.board.iso3D {
       5px 5px 0px 0px var(--black-color),
       -1px 0 28px 0 rgba(34, 33, 81, 0.01),
       28px 28px 28px 0 rgba(34, 33, 81, 0.25);
+  }
+  div.line div.circle.overlay {
+    align-items: center !important;
+  }
+  div.circle.overlay span {
+    transform: rotateZ(-45deg);
+  }
+  div.cell:nth-child(even) div.circle.overlay span {
+    padding-top: 10px;
+  }
+  div.cell:nth-child(odd) div.circle.overlay span {
+    padding-bottom: 10px;
   }
 }
 
