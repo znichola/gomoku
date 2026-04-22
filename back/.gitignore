@@ -3,6 +3,7 @@
 /gobj
 gomoku
 /gomoku_*
+*.out
 
 test/obj
 test/moves

@@ -45,3 +45,11 @@ get /abandonGame
  - https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.0
  - https://clickhouse.com/docs/knowledgebase/profiling-clickhouse-with-llvm-xray
  - https://stackoverflow.com/questions/73922182/how-to-do-profiling-using-clang-compiler-and-cmake
+
+
+## TODO
+
+- evaluate (heurisic) function (big work) whole board state score, think like chess
+- candidate moves sorting funciton (medium work) which moves to look at first must be fast
+- is_game_over funciton (small work) must be very fast, called or every boardstate exolored.
+- is_legal_move function
