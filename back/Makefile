@@ -31,7 +31,7 @@ $(OBJ_PATH)main_$(PORT).o: $(SRC_PATH)main.cpp $(HDEP)
 
 $(GOBJ_PATH)main_$(PORT).o: $(SRC_PATH)main.cpp $(HDEP)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -D PORT=$(PORT) $(LIBS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -D PORT=$(PORT) $(LIBS) -g -c $< -o $@
 
 $(SRC_PATH)main_$(PORT).cpp: $(SRC_PATH)main.cpp $(HDEP)
 	@mkdir -p $(@D)
