@@ -39,3 +39,9 @@ get /move?id
 get /abandonGame
     response is ok
 ```
+
+## Profiler
+
+ - https://github.com/llvm/llvm-project/releases/tag/llvmorg-22.1.0
+ - https://clickhouse.com/docs/knowledgebase/profiling-clickhouse-with-llvm-xray
+ - https://stackoverflow.com/questions/73922182/how-to-do-profiling-using-clang-compiler-and-cmake
