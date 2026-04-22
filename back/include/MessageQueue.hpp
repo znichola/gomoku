@@ -3,17 +3,24 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 #define MQ MessageQueue::out()
 #define MBQ(id, msg) MessageQueue::boardMessage((id), (msg))
+#define COUT MessageQueue::ConsoleSink{}
+#define ENABLE_LOG MessageQueue::enabled = true;
+#define DISABLE_LOG MessageQueue::enabled = false;
 
 namespace MessageQueue
 {
     std::string json_escape(const std::string &s);
 
+    inline bool enabled = true;
+
     inline std::vector<std::string> messages;
 
     inline void push(const std::string &msg) {
+        if (!enabled) return;
         messages.push_back(json_escape(msg));
     }
 
@@ -23,16 +30,30 @@ namespace MessageQueue
         return out;
     }
 
+    class ConsoleSink {
+    public:
+        template <typename T>
+        ConsoleSink &operator<<(const T &v) {
+            if (enabled) std::cout << v;
+            return *this;
+        }
+
+        ConsoleSink &operator<<(std::ostream &(*manip)(std::ostream &)) {
+            if (enabled) manip(std::cout);
+            return *this;
+        }
+    };
+
     class Stream {
     public:
         template <typename T>
         Stream &operator<<(const T &v) {
-            ss << v;
+            if (enabled) ss << v;
             return *this;
         }
 
         ~Stream() {
-            if (!ss.str().empty())
+            if (enabled && !ss.str().empty())
                 push(ss.str());
         }
 
@@ -62,8 +83,7 @@ namespace MessageQueue
                     char buf[7];
                     snprintf(buf, sizeof(buf), "\\u%04x", c);
                     out += buf;
-                }
-                else {
+                } else {
                     out += c;
                 }
             }
@@ -73,9 +93,10 @@ namespace MessageQueue
     }
 
     inline void boardMessage(unsigned id, const std::string &msg) {
+        if (!enabled) return;
         std::stringstream ss;
         ss << "{\"id\":" << id
-        << ",\"msg\":\"" << json_escape(msg) << "\"}";
+           << ",\"msg\":\"" << json_escape(msg) << "\"}";
         push(ss.str());
     }
 }

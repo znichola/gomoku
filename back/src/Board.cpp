@@ -15,10 +15,10 @@ bool Board::playMove(unsigned id) {
 
     Cell victory = isVictory();
     if (victory == Cell::OUTSIDE) {
-        std::cout << "It's a draw" << std::endl;
+        COUT << "It's a draw" << std::endl;
         MQ << "It's a draw" << "\n";
     } else if (victory != Cell::EMPTY) {
-        std::cout << "It's a win for " << (victory == Cell::BLACK ? "BLACK" : "WHITE") << std::endl;
+        COUT << "It's a win for " << (victory == Cell::BLACK ? "BLACK" : "WHITE") << std::endl;
         MQ << "It's a win for " << (victory == Cell::BLACK ? "BLACK" : "WHITE") << "\n";
     }
 

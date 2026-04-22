@@ -32,7 +32,7 @@ std::string GameState::serialize() const {
 
 bool GameState::playMove(unsigned id) {
     bool res = false;
-    std::cout << "Playing move: " << id << std::endl;
+    COUT << "Playing move: " << id << std::endl;
     res = board.playMove(id);
     if (res) moveHistory.push_back(id);
     return res;
@@ -45,8 +45,11 @@ bool GameState::askAI2Play() {
     const Cell activePlayer = board.isBlackToPlay ? Cell::BLACK : Cell::WHITE;
     if (isAIGame == activePlayer) {
         MQ << "AI is thinking of a good move";
-        std::cout << "[AI] ";
-        return playMove(AI::play(board, activePlayer == Cell::WHITE));
+        COUT << "[AI] ";
+        DISABLE_LOG
+        auto res = playMove(AI::play(board, activePlayer == Cell::WHITE));
+        ENABLE_LOG
+        return res;
     }
     return true;
 }
@@ -76,7 +79,7 @@ bool GameState::makeDoubleTree() {
     const unsigned d = grid.boardDimension;
 
     unsigned lastMove = moveHistory.back();
-    std::cout << "lastMove: " << lastMove << std::endl;
+    COUT << "lastMove: " << lastMove << std::endl;
     Cell cellColor = grid.grid[lastMove];
     const std::initializer_list<std::tuple<long, long, Cell>> cells = {
         {-1,  0, cellColor},

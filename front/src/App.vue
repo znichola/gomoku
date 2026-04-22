@@ -34,7 +34,7 @@ body {
   --ui-font: bold 1.4rem var(--ui-font-family);
 
   --board-dimention: 19;
-  --celsize: min(40px, calc(100vw / var(--board-dimention)));
+  --celsize: min(40px, calc(90vw / var(--board-dimention)));
   --content-width: calc(var(--celsize)*var(--board-dimention));
 }
 

@@ -119,7 +119,7 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
         case SearchFunction::ALPHABETA:
             score = alphaBetaNegaMax(newBoard, AI::maxDepth, -INF, INF, isWhite ? 1 : -1);
         }
-        MBQ(move, std::to_string(score));
+        ENABLE_LOG MBQ(move, std::to_string(score)); DISABLE_LOG
         if (isWhite ? score > bestScore : score < bestScore) { // if white we look for highest score, if black we look for lowest
             bestMove = move;
             bestScore = score;
@@ -127,7 +127,8 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
     }
     if (bestMove == Board::FIRSTMOVE) {
         MQ << "[AI] No best move found";
-        std::cout << "[AI] No best move found\n";
+        COUT << "[AI] No best move found\n";
+        DISABLE_LOG
     }
     return bestMove;
 }
