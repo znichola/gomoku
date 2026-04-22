@@ -82,7 +82,7 @@ sanitize: $(NAME)_sanitize
 sanitize3: $(NAME)_sanitize3
 
 clean:
-	$(RM) $(OBJ_PATH)main.o $(OBJ) $(GOBJ) $(TEST_OBJ)
+	$(RM) $(OBJ_PATH)main*.o $(GOBJ_PATH)main*.o $(OBJ) $(GOBJ) $(TEST_OBJ)
 
 bclean:
 	$(RM) $(NAME) $(NAME)_debug $(NAME)_sanitize $(NAME)_sanitize3 $(NAME)_9*
