@@ -82,17 +82,19 @@ struct NodeCellRow: NodeLOD {
     long originId = 0;
     int ext = 0;
 
+    // Length of the stone line
     int size = 0;
+    // Score of living stone
     int score = 0;
-    int tmpscr = 0;
+    int _tmpscr = 0;
 
     void incrementSize(bool cellIsDead) {
         ++size;
         if (cellIsDead || type == Cell::EMPTY) {
-            tmpscr = 0;
+            _tmpscr = 0;
         } else {
-            if (score < ++tmpscr)
-                score = tmpscr;
+            if (score < ++_tmpscr)
+                score = _tmpscr;
         }
     }
 
@@ -165,21 +167,20 @@ Cell Grid::getWinningLineColor() const {
     };
 
     iterateNode(populateLOD);
-    for (int id = 0; id < dmax; ++id) {
-        for (long ext = 0; ext < 4; ++ext) {
-            NodeLOD*& cellLOD = gridLOD[id][ext];
-            if (cellLOD != NULL && cellLOD->step == NodeStep::DEATH) {
-                gridLOD[id].dead = true;
-                break ;
-            }
-        }
-    }
 
     std::deque<NodeCellRow> cellRowsGarbage;
     std::vector<AdjacentNode<NodeCellRow>> gridCR;
     gridCR.reserve(d * d);
-    for (int id = 0; id < dmax; ++id)
+    for (int id = 0; id < dmax; ++id) {
         gridCR.push_back({});
+        for (long ext = 0; ext < 4; ++ext) {
+            NodeLOD*& cellLOD = gridLOD[id][ext];
+            if (cellLOD != NULL && cellLOD->step == NodeStep::DEATH) {
+                gridCR[id].dead = true;
+                break ;
+            }
+        }
+    }
 
     std::function<NodeCellRow*()> createCell = [&cellRowsGarbage]() {
         cellRowsGarbage.push_back(NodeCellRow{});
@@ -189,7 +190,7 @@ Cell Grid::getWinningLineColor() const {
     };
 
     std::function<void(long, long, long)> populateCell =
-    [this, &gridLOD, &gridCR, &createCell](long id, long nid, long ext) {
+    [this, &gridCR, &createCell](long id, long nid, long ext) {
         NodeCellRow*& cell = gridCR[id][ext];
         NodeCellRow*& next = gridCR[nid][ext];
 
@@ -205,7 +206,7 @@ Cell Grid::getWinningLineColor() const {
         }
         // Increment, link and detect the end of the line 
         if (cell->step == NodeStep::BOILING) {
-            cell->incrementSize(gridLOD[id].dead);
+            cell->incrementSize(gridCR[id].dead);
 
             if (grid[id] == grid[nid]) {
                 next = cell; // Link the next grid cell to this Node
@@ -282,10 +283,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
     if (myColor == Cell::EMPTY) return false;
 
     long c = const_cast<Grid*>(this)->handleCaptures(id);
-    if (c > 0) {
-        std::cout << "It is a capture ! (" << c << ")" << std::endl;
-        return false;
-    }
+    if (c > 0) return false; // It's a capture
 
     c = 0;
     for (long ext = 0; ext < 4; ++ext) {
@@ -308,28 +306,12 @@ bool Grid::isDoubleThree(unsigned const id) const {
                 specialThree = true;
             }
         }
-        const bool bool1 = l + r >= 2 || specialThree;
-        if (bool1) {
-            std::cout << "[" << (myColor == Cell::BLACK ? "B" : "W") << " " << SPINNER[ext % 4] << "] ";
-            std::cout << l << " + " << r << " + 1 = " << (l+r+1);
-        }
         if (specialThree) {
-            std::cout << " 3s: it is a special free-three." << std::endl;
             ++c;
-        } else if (l + r >= 4) {
-            std::cout << " 5: Probably a win." << std::endl;
-            return false;
-        } else if (l + r == 3 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
-            std::cout << " 4: Cannot be blocked !" << std::endl;
-            return false;
-        } else if (l + r == 3) {
-            std::cout << " 4: Can be blocked :(" << std::endl;
+        } else if (l + r >= 3) {
             return false;
         } else if (l + r == 2 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
-            std::cout << " 3: it is a free-three." << std::endl;
             ++c;
-        } else if (bool1) {
-            std::cout << std::endl;
         }
     }
 
@@ -338,6 +320,14 @@ bool Grid::isDoubleThree(unsigned const id) const {
     return false;
 }
             /* JE NE SAIS PAS SI CE CODE PEUT NOUS SERVIR POUR L'IA ???
+            std::set<long> alignedCells = { id };
+
+            Cell lc = Cell::OUTSIDE;
+            long l = calcAlignedCells(id, ext, lc, NULL, &alignedCells);
+
+            Cell rc = Cell::OUTSIDE;
+            long r = calcAlignedCells(id, ext, rc, NULL, 4, &alignedCells, 4);
+
             std::set<long> adjacentCells;
 
             for (auto acid : alignedCells) {
