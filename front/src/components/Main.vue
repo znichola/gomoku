@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useGameStore } from '@/stores/game'
 
 const gameStore = useGameStore()
@@ -8,8 +9,11 @@ import game from "./Game.vue"
 import hud from './Hud.vue'
 import turnlog from './TurnLog.vue'
 import messages from './Messages.vue'
+import RulesModal from './RulesModal.vue'
 
 const reload = () => window.location.reload()
+
+const rulesOpen = ref(false)
 </script>
 
 <template>
@@ -18,7 +22,10 @@ const reload = () => window.location.reload()
     <div id="logo">
       <h1 @click="reload">Gomoku</h1>
       <span class="desc" v-if="gameStore.watcherState.enabled">[DEBUG] Watcher is enabled</span>
+      <!-- Bouton règles -->
+      <span class="rules" type="button" @click="rulesOpen = true">?</span>
     </div>
+
     <controles />
     <hud />
     <messages />
@@ -26,6 +33,7 @@ const reload = () => window.location.reload()
   <game class="game" />
   <turnlog class="turnlog" />
 </div>
+<RulesModal :open="rulesOpen" @close="rulesOpen = false" />
 </template>
 
 <style scoped lang="less">
@@ -53,6 +61,17 @@ h1 {
     bottom: -0.2rem;
     color: var(--white-color);
   }
+}
+
+.header .rules {
+  cursor: pointer;
+  position: absolute;
+  top: 0px;
+  left: -20px;
+  padding: 5px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--text-color);
 }
 
 h1::after {
