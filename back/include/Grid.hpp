@@ -5,18 +5,33 @@
 #include <set>
 
 #include "Cell.hpp"
+#include "GridTraversal.hpp"
 #include "Vector2D.hpp"
 
-struct Grid {
+class GridTraversal;
+class Grid {
+private:
     std::vector<Cell> grid;
-    unsigned boardDimension;
+    GridTraversal *gridTraversal = nullptr;
 
-    Grid(unsigned board_size=19) : grid(board_size * board_size, Cell::EMPTY), boardDimension(board_size) {}
-    Grid(const std::vector<Cell> &grid) : grid(std::move(grid)), boardDimension(static_cast<unsigned>(std::sqrt(grid.size()))) {}
+public:
+    unsigned width;
+    unsigned size;
 
-    Cell operator[](unsigned id) const { return grid[id]; }
-    Cell& operator[](unsigned id) { return grid[id]; }
-    size_t size() const { return grid.size(); }
+    Grid(unsigned width=19);
+    Grid(const Grid &grid);
+
+    ~Grid();
+
+    void cleanCache();
+
+	const std::vector<Cell>& getGrid() const;
+    void setGrid(const std::vector<Cell>& newGrid);
+
+    Cell operator[](unsigned id) const;
+    Cell& operator[](unsigned id);
+
+    GridTraversal const& nodes();
 
     Vector2D idToVec(unsigned id) const;
     unsigned vecToId(const Vector2D &vec) const;

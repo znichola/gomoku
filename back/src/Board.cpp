@@ -5,6 +5,14 @@
 #include "Cell.hpp"
 #include "MessageQueue.hpp"
 
+Board::Board(unsigned width) {
+    grid = Grid{width};
+}
+
+Board::Board(const Grid &grid) : grid(grid) {
+
+}
+
 bool Board::playMove(unsigned id) {
     if (!isValidMove(id))
         return false;
@@ -28,7 +36,7 @@ bool Board::playMove(unsigned id) {
 }
 
 bool Board::isValidMove(unsigned id) {
-    if (id >= grid.size())
+    if (id >= grid.size)
         return false;
 
     if (grid[id] != Cell::EMPTY)
@@ -75,7 +83,7 @@ std::string Board::serialize() const {
     std::ostringstream out;
 
     out << "{\n";
-    out << "\"boardDimension\": " << grid.boardDimension << ",\n";
+    out << "\"width\": " << grid.width << ",\n";
     out << "\"blackCaptured\": " << blackCaptured << ",\n";
     out << "\"whiteCaptured\": " << whiteCaptured << ",\n";
     out << "\"isBlackToPlay\": " << (isBlackToPlay ? "true" : "false") << ",\n";

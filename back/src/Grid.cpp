@@ -1,12 +1,53 @@
 #include <sstream>
 #include <cmath>
 #include <iostream>
-#include <deque>
-#include <functional>
 
 #include "Grid.hpp"
 #include "MessageQueue.hpp"
 #include <assert.h>
+
+Grid::Grid(unsigned width) : grid(width * width, Cell::EMPTY), width(width), size(width * width) {
+
+}
+
+Grid::Grid(const Grid &grid) : grid(std::move(grid.grid)), width(grid.width), size(width * width) {
+
+}
+
+Grid::~Grid() {
+    if (gridTraversal != nullptr)
+        delete gridTraversal;
+}
+
+void Grid::cleanCache() {
+    if (gridTraversal != nullptr) {
+        gridTraversal->clean();
+    }
+}
+
+const std::vector<Cell>& Grid::getGrid() const {
+    return grid;
+}
+
+void Grid::setGrid(const std::vector<Cell>& newGrid) {
+    grid = newGrid;
+    cleanCache();
+}
+
+Cell Grid::operator[](unsigned id) const {
+    return grid[id];
+}
+
+Cell& Grid::operator[](unsigned id) {
+    cleanCache();
+    return grid[id];
+}
+
+GridTraversal const& Grid::nodes() {
+    if (gridTraversal == nullptr)
+        gridTraversal = new GridTraversal(*this);
+    return *gridTraversal;
+}
 
 std::string Grid::serialize() const {
     std::ostringstream out;
@@ -21,209 +62,54 @@ std::string Grid::serialize() const {
 }
 
 Grid &Grid::setBlack(unsigned id) {
-    grid[id] = Cell::BLACK;
+    (*this)[id] = Cell::BLACK;
     return *this;
 }
 
 Grid &Grid::setBlack(std::initializer_list<unsigned> ids) {
     for (auto id : ids) {
-        grid[id] = Cell::BLACK;
+        (*this)[id] = Cell::BLACK;
     }
     return *this;
 }
 
 
 Grid &Grid::setWhite(unsigned id) {
-    grid[id] = Cell::WHITE;
+    (*this)[id] = Cell::WHITE;
     return *this;
 }
 
 Grid &Grid::setWhite(std::initializer_list<unsigned> ids) {
     for (auto id : ids) {
-        grid[id] = Cell::WHITE;
+        (*this)[id] = Cell::WHITE;
     }
     return *this;
 }
 
 Grid &Grid::setEmpty(unsigned id) {
-    grid[id] = Cell::EMPTY;
+    (*this)[id] = Cell::EMPTY;
     return *this;
 }
 
 Vector2D Grid::idToVec(unsigned id) const {
     assert(id < grid.size());
-    return Vector2D::createFromIndex(id, boardDimension);
+    return Vector2D::createFromIndex(id, width);
 }
 
 unsigned Grid::vecToId(const Vector2D& vec) const {
     assert(isInside(vec));
-    return vec.toIndex(boardDimension);
+    return vec.toIndex(width);
 }
 
 bool Grid::isInside(const Vector2D& vec) const {
-    return vec >= 0 && vec < boardDimension;
+    return vec >= 0 && vec < width;
 }
 
-// Level2Death : 1) LOOKING > 2) BOILING > 3) END
-enum class NodeStep: char {
-    NONE = 0U, // ALIVE
-    LOOKING = 1U,
-    BOILING = 2U,
-    DEATH = 3U,
-    END = 4U
-};
-
-struct NodeLOD {
-    Cell type = Cell::EMPTY;
-    NodeStep step = NodeStep::NONE;
-};
-
-struct NodeCellRow: NodeLOD {
-    long originId = 0;
-    int ext = 0;
-
-    // Length of the stone line
-    int size = 0;
-    // Score of living stone
-    int score = 0;
-    int _tmpscr = 0;
-
-    void incrementSize(bool cellIsDead) {
-        ++size;
-        if (cellIsDead || type == Cell::EMPTY) {
-            _tmpscr = 0;
-        } else {
-            if (score < ++_tmpscr)
-                score = _tmpscr;
-        }
-    }
-
-    NodeCellRow *prev = 0;
-    NodeCellRow *next = 0;
-
-    ~NodeCellRow() {}
-};
-
-template <typename Node> 
-struct AdjacentNode {
-    bool dead = false;
-
-    Node* v[4] = { NULL, NULL, NULL, NULL }; // v[0]=right, v[1]=bottomRight, v[2]=bottom, v[3]=bottomLeft
-    constexpr Node*& operator[](size_t i) { return v[i]; }
-};
-
 Cell Grid::getWinningLineColor() const {
-    const unsigned d = boardDimension;
-    const int dmax = d * d;
-
-    auto iterateNode = [this, &dmax, &d](std::function<void(long, long, long)> &populateNode) {
-        for (long id = 0; id < dmax; ++id) {
-            const Vector2D cellPoint = Vector2D::createFromIndex(id, d);
-            for (long ext = 0; ext < 4; ++ext) {
-                const Vector2D newPoint = cellPoint + *(extptr + ext);
-                if (!isInside(newPoint)) continue;
-                const long nid = newPoint.toIndex(d);
-
-                populateNode(id, nid, ext);
-            }
-        }
-    };
-
-    std::deque<NodeLOD> nodeLODsGarbage;
-    std::vector<AdjacentNode<NodeLOD>> gridLOD;
-    gridLOD.reserve(d * d);
-    for (int id = 0; id < dmax; ++id)
-        gridLOD.push_back({});
-
-    std::function<NodeLOD*(Cell)> createLOD = [&nodeLODsGarbage](Cell type) {
-        nodeLODsGarbage.push_back(NodeLOD{});
-        NodeLOD *next =  &nodeLODsGarbage.back();
-        next->type = type;
-        next->step = NodeStep::LOOKING;
-        return next;
-    };
-
-    std::function<void(long, long, long)> populateLOD =
-    [this, &gridLOD, &createLOD](long id, long nid, long ext) {
-        NodeLOD*& cell = gridLOD[id][ext];
-        NodeLOD*& next = gridLOD[nid][ext];
-
-        if (cell == NULL) { // COMPARE FIRST & SECOND PIECE
-
-        } else if (cell->step == NodeStep::LOOKING) { // COMPARE SECOND & THIRD PIECE
-            if (grid[id] == grid[nid]) {
-                cell->step = NodeStep::BOILING;
-                next = cell;
-                return ;
-            }
-        } else if (cell->step == NodeStep::BOILING) { // COMPARE THIRD & FOURTH PIECE
-            if (grid[id] != grid[nid] && cell->type != grid[nid]) {
-                cell->step = NodeStep::DEATH;
-            }
-        }
-        if (grid[nid] != Cell::EMPTY && grid[id] != grid[nid]) {
-            next = createLOD(grid[id]);
-        }
-    };
-
-    iterateNode(populateLOD);
-
-    std::deque<NodeCellRow> cellRowsGarbage;
-    std::vector<AdjacentNode<NodeCellRow>> gridCR;
-    gridCR.reserve(d * d);
-    for (int id = 0; id < dmax; ++id) {
-        gridCR.push_back({});
-        for (long ext = 0; ext < 4; ++ext) {
-            NodeLOD*& cellLOD = gridLOD[id][ext];
-            if (cellLOD != NULL && cellLOD->step == NodeStep::DEATH) {
-                gridCR[id].dead = true;
-                break ;
-            }
-        }
-    }
-
-    std::function<NodeCellRow*()> createCell = [&cellRowsGarbage]() {
-        cellRowsGarbage.push_back(NodeCellRow{});
-        NodeCellRow *cell = &cellRowsGarbage.back();
-        cell->step = NodeStep::LOOKING;
-        return cell;
-    };
-
-    std::function<void(long, long, long)> populateCell =
-    [this, &gridCR, &createCell](long id, long nid, long ext) {
-        NodeCellRow*& cell = gridCR[id][ext];
-        NodeCellRow*& next = gridCR[nid][ext];
-
-        // Init
-        if (cell == NULL) { // cell->step == NodeStep::LOOKING
-            cell = createCell();
-        }
-        if (cell->step == NodeStep::LOOKING) {
-            cell->originId = id;
-            cell->type = grid[id];
-            cell->ext = ext;
-            cell->step = NodeStep::BOILING;
-        }
-        // Increment, link and detect the end of the line 
-        if (cell->step == NodeStep::BOILING) {
-            cell->incrementSize(gridCR[id].dead);
-
-            if (grid[id] == grid[nid]) {
-                next = cell; // Link the next grid cell to this Node
-            } else { // End of the line
-                next = createCell();
-                // Link next & prev
-                cell->next = next;
-                next->prev = cell;
-            }
-        }
-    };
-
-    iterateNode(populateCell);
-
-    for (const NodeCellRow& cellRows : cellRowsGarbage) {
-        if (cellRows.score >= 5 && cellRows.type != Cell::EMPTY) {
-            return cellRows.type;
+    GridTraversal& gridTraversal = const_cast<GridTraversal&>(const_cast<Grid*>(this)->nodes());
+    for (const NodeCellRow& cellRow : gridTraversal.getCellRowsGarbage()) {
+        if (cellRow.score >= 5 && cellRow.type != Cell::EMPTY) {
+            return cellRow.type;
         }
     }
     return Cell::EMPTY;
@@ -237,18 +123,17 @@ long Grid::handleCaptures(unsigned const id, bool const apply) {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return 0;
     const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
-    const unsigned d = boardDimension;
 
     long c = 0;
-    const Vector2D cellPoint = Vector2D::createFromIndex(id, d);
+    const Vector2D cellPoint = Vector2D::createFromIndex(id, width);
     for (Vector2D offsetPoint : EXTREMITIES) {
         const Vector2D newPoint = cellPoint + offsetPoint * 3;
         if (!isInside(newPoint)) continue;
-        const long nid = newPoint.toIndex(d);
+        const long nid = newPoint.toIndex(width);
         if (grid[nid] != myColor) continue;
-        const long nid1 = (cellPoint + offsetPoint).toIndex(d);
+        const long nid1 = (cellPoint + offsetPoint).toIndex(width);
         if (grid[nid1] != enemyColor) continue;
-        const long nid2 = (cellPoint + offsetPoint * 2).toIndex(d);
+        const long nid2 = (cellPoint + offsetPoint * 2).toIndex(width);
         if (grid[nid2] != enemyColor) continue;
         if (apply) {
             setEmpty(static_cast<unsigned>(nid1));
@@ -263,18 +148,17 @@ long Grid::calcAlignedCells(unsigned const id, long const ext, Cell &bc,
                         std::set<long> *alignedCells, long const offset, long count) const {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return false;
-    const unsigned d = boardDimension;
 
-    const Vector2D cellPoint = Vector2D::createFromIndex(id, d);
+    const Vector2D cellPoint = Vector2D::createFromIndex(id, width);
     const Vector2D offsetPoint = *(extptr + ext + offset);
     do {
         const Vector2D newPoint = cellPoint + offsetPoint * (count + 1);
         if (!isInside(newPoint)) break;
-        const long nid = newPoint.toIndex(d);
+        const long nid = newPoint.toIndex(width);
         bc = grid[nid];
         if (bc != myColor) break;
         if (alignedCells) alignedCells->insert(nid);
-    } while (++count <= d);
+    } while (++count <= width);
     return count;
 }
 

@@ -73,8 +73,8 @@ static std::vector<unsigned> parseMoveHistoryCSV(const std::string& s) {
 void handleLoadGameState(const Server::QueryMap& query, GameState& gs) {
     const Cell isAIGame = parseCell(getQueryRequired(query, "isAIGame"));
     const std::vector<unsigned> moveHistory = parseMoveHistoryCSV(getQueryRequired(query, "moveHistory"));
-    const unsigned boardDimension =
-        static_cast<unsigned>(std::stoul(getQueryRequired(query, "board_boardDimension")));
+    const unsigned width =
+        static_cast<unsigned>(std::stoul(getQueryRequired(query, "board_width")));
     const unsigned blackCaptured =
         static_cast<unsigned>(std::stoul(getQueryRequired(query, "board_blackCaptured")));
     const unsigned whiteCaptured =
@@ -82,5 +82,5 @@ void handleLoadGameState(const Server::QueryMap& query, GameState& gs) {
     const bool isBlackToPlay = parseBool(getQueryRequired(query, "board_isBlackToPlay"));
     const std::vector<Cell> grid = parseGridCSV(getQueryRequired(query, "board_grid"));
 
-    gs.reload(grid, blackCaptured, whiteCaptured, isBlackToPlay, boardDimension, moveHistory, isAIGame);
+    gs.reload(grid, blackCaptured, whiteCaptured, isBlackToPlay, width, moveHistory, isAIGame);
 }

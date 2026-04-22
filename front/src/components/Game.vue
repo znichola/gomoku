@@ -8,13 +8,13 @@ import { useGameStore } from '@/stores/game'
 const errorMessage: RefStringOrNull = ref(null)
 const gameStore = useGameStore()
 
-const boardDimension = computed(() => gameStore.gameState.board?.boardDimension || 19)
+const width = computed(() => gameStore.gameState.board?.width || 19)
 const grids = computed(() => {
   const arr: number[][] = []
-  for (let y = 0; y < boardDimension.value; y++) {
+  for (let y = 0; y < width.value; y++) {
     arr[y] = []
-    for (let x = 0; x < boardDimension.value; x++) {
-      arr[y]![x] = x + y * boardDimension.value
+    for (let x = 0; x < width.value; x++) {
+      arr[y]![x] = x + y * width.value
     }
   }
   return arr

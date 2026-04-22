@@ -57,7 +57,7 @@ bool GameState::askAI2Play() {
 static Grid* rGrid = nullptr;
 
 void GameState::reset() {
-    board = Board(board.grid.boardDimension);
+    board = Board(board.grid.width);
     if (rGrid != nullptr && moveHistory.size() >= 1)
         board.grid = *rGrid;
     moveHistory.clear();
@@ -76,11 +76,11 @@ static std::uniform_int_distribution<int> dist(0, 3);
 bool GameState::makeDoubleTree() {
     auto &grid = board.grid;
     if (moveHistory.size() <= 0) return false;
-    const unsigned d = grid.boardDimension;
+    const unsigned d = grid.width;
 
     unsigned lastMove = moveHistory.back();
     COUT << "lastMove: " << lastMove << std::endl;
-    Cell cellColor = grid.grid[lastMove];
+    Cell cellColor = grid[lastMove];
     const std::initializer_list<std::tuple<long, long, Cell>> cells = {
         {-1,  0, cellColor},
         { 0,  0, cellColor},
@@ -106,7 +106,7 @@ bool GameState::makeDoubleTree() {
         const long ny = cy + ry;
         const long id = ny * d + nx;
         if (!(0 <= nx && nx < d && 0 <= ny && ny < d)) continue;
-        grid.grid[id] = content;
+        grid[id] = content;
     }
     return false;
 }
@@ -115,10 +115,10 @@ void GameState::reload(const std::vector<Cell>& newGrid,
                     unsigned blackCaptured,
                     unsigned whiteCaptured,
                     bool isBlackToPlay,
-                    unsigned boardDimension,
+                    unsigned width,
                     const std::vector<unsigned>& newMoveHistory,
                     Cell newisAIGame) {
-    const size_t expected = static_cast<size_t>(boardDimension) * static_cast<size_t>(boardDimension);
+    const size_t expected = static_cast<size_t>(width) * static_cast<size_t>(width);
     if (newGrid.size() != expected) {
         throw std::runtime_error("reload: board_grid size mismatch (expected " +
                                  std::to_string(expected) + ", got " +
@@ -127,8 +127,8 @@ void GameState::reload(const std::vector<Cell>& newGrid,
 
     isAIGame = newisAIGame;
 
-    board.grid = Grid(boardDimension);
-    board.grid.grid = newGrid;
+    board.grid = Grid(width);
+    board.grid.setGrid(newGrid);
 
     board.blackCaptured = blackCaptured;
     board.whiteCaptured = whiteCaptured;

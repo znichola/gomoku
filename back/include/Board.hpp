@@ -16,9 +16,8 @@ struct Board {
     bool isBlackToPlay = true;
     unsigned lastMove = FIRSTMOVE; // TODO only half hartidly implemented, not sure about state reset etc
 
-    Board(unsigned board_size=19) : grid(Grid{board_size}) {}
-    Board(const std::vector<Cell> &grid) : grid(std::move(grid)) {}
-    Board(const Grid &grid) : grid(grid) {}
+    Board(unsigned width=19);
+    Board(const Grid &grid);
 
     bool playMove(unsigned id);
     void doCaptures(unsigned id);

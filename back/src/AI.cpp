@@ -141,13 +141,13 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
 float AI::evaluate(const Board &board, int depth, Cell winningPlayer) {
     if (winningPlayer == Cell::WHITE) return WIN + depth;
     if (winningPlayer == Cell::BLACK) return -WIN - depth;
-    if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size()) {
+    if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {
         return 0;
     }
     // A basic heuristic for now, all can be thrown away.
     int blackCount = 0;
     int whiteCount = 0;
-    for (size_t id = 0; id < board.grid.size(); id++) {
+    for (size_t id = 0; id < board.grid.size; id++) {
         auto piece = board.grid[id];
         if (piece == Cell::BLACK) blackCount++;
         if (piece == Cell::WHITE) whiteCount++;
@@ -157,8 +157,8 @@ float AI::evaluate(const Board &board, int depth, Cell winningPlayer) {
 
 std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
     std::set<unsigned> cm;
-    for (size_t id = 0; id < grid.size(); id++) {
-        if (grid.grid[id] == Cell::EMPTY) continue;
+    for (size_t id = 0; id < grid.size; id++) {
+        if (grid[id] == Cell::EMPTY) continue;
         Vector2D v = grid.idToVec(id);
         for (const Vector2D &e: EXTREMITIES) {
             Vector2D nv = v + e;

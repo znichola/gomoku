@@ -105,7 +105,7 @@ void registerRoutes_Arbiter(Server& server, GameState& gs) {
 			if (it == req.query.end())
 				return Response{400, "missing 'board' query parameter"};
 			std::vector<Cell> oppGrid = parseGridCSV(it->second);
-			if (oppGrid != gs.board.grid.grid)
+			if (oppGrid != gs.board.grid.getGrid())
 				return Response{200, "{\"as_played\": false, \"because\": \"board_doesntmatch\", \"msglog\": \"board state doesn't match\"}"};
 		}
 	
