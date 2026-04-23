@@ -230,7 +230,7 @@ onUnmounted(() => {
 })
 
 function onBackdropClick(e: MouseEvent) {
-  if (e.target === e.currentTarget) emit('close')
+  //if (e.target === e.currentTarget) emit('close')
 }
 </script>
 
