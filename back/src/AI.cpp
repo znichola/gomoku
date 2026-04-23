@@ -176,8 +176,10 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
             break;
         case SearchFunction::ALPHABETA_NEDAMAX:
             score = alphaBetaNegaMax(newBoard, AI::maxDepth, -INF, INF, isWhite ? 1 : -1);
-            case SearchFunction::ALPHABETA_NEDAMAX_NOTT:
+            break;
+        case SearchFunction::ALPHABETA_NEDAMAX_NOTT:
             score = alphaBetaNegaMaxNoTT(newBoard, AI::maxDepth, -INF, INF, isWhite ? 1 : -1);
+            break;
         }
         ENABLE_LOG MBQ(move, std::to_string(score)); DISABLE_LOG
         if (isWhite ? score > bestScore : score < bestScore) { // if white we look for highest score, if black we look for lowest
