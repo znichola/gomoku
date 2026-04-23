@@ -148,9 +148,7 @@ Cell Grid::getWinningLineColor() const {
     return Cell::EMPTY;
 }
 
-long Grid::handleCaptures(unsigned const id) const {
-    const Cell myColor = grid[id];
-    if (myColor == Cell::EMPTY) return 0;
+long Grid::detectCaptures(unsigned const id, const Cell myColor) const {
     const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
 
     long c = 0;
@@ -216,11 +214,10 @@ long Grid::calcAlignedCells(unsigned const id, long const ext, Cell &bc,
     return count;
 }
 
-bool Grid::isDoubleThree(unsigned const id) const {
-    const Cell myColor = grid[id];
+bool Grid::isDoubleThree(unsigned const id, const Cell myColor) const {
     if (myColor == Cell::EMPTY) return false;
 
-    long c = handleCaptures(id);
+    long c = detectCaptures(id, myColor);
     if (c > 0) return false; // It's a capture
 
     c = 0;

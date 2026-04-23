@@ -14,6 +14,7 @@ struct Board {
     unsigned blackCaptured = 0;
     unsigned whiteCaptured = 0;
     bool isBlackToPlay = true;
+    Cell winner = Cell::EMPTY;
     unsigned lastMove = FIRSTMOVE; // TODO only half hartidly implemented, not sure about state reset etc
 
     Board(unsigned width=19);

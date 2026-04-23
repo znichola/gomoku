@@ -9,7 +9,7 @@ const width = computed(() => gameStore.gameState.board?.width || 19)
 
 <template>
   <main :style="{'--board-dimention': `${width}`}"
-        :class="{ editMode: gameStore.watcherState.edition, keyMode: gameStore.watcherState.keymode  }">
+        :class="{ editMode: gameStore.watcherState.edition, keyMode: gameStore.watcherState.keymode, gameEnded: gameStore.gameState.board?.winner }">
     <!-- Page Router view -->
     <router-view />
   </main>

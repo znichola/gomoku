@@ -26,6 +26,11 @@ void registerRoutes(Server& server, GameState& gs) {
         if (it != req.query.end()) // Debug
             gs.board.isBlackToPlay = (it->second == "black");
 
+        if (gs.board.winner != Cell::EMPTY) {
+            MQ << "GAME ENDED !";
+		    return Response{200, gs.serialize()};
+        }
+
         bool played = false;
         if (errno == ERANGE || !(played = gs.playMove(id)))
             MQ << "INVALID MOVE";
@@ -89,6 +94,7 @@ void registerRoutes(Server& server, GameState& gs) {
                 return Response{400, "missing 'id' query parameter"};
             unsigned id = static_cast<unsigned>(std::stoul(it->second));
             gs.board.grid.setEmpty(id);
+            gs.board.winner = gs.board.isVictory();
         } else if (it->second == "minus") {
             Server::QueryMap::const_iterator it = req.query.find("id");
             if (it == req.query.end())

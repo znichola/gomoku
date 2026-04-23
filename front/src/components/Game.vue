@@ -363,6 +363,12 @@ div.board {
   opacity: 0.4;
 }
 
+.gameEnded div.circle[data-type=empty] {
+  opacity: 0;
+  pointer-events:none;
+  cursor: disabled;
+}
+
 div.board {
   transition:
     .4s ease-in-out transform,

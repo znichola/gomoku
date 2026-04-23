@@ -29,6 +29,7 @@ bool Board::playMove(unsigned id) {
         COUT << "It's a win for " << (victory == Cell::BLACK ? "BLACK" : "WHITE") << std::endl;
         MQ << "It's a win for " << (victory == Cell::BLACK ? "BLACK" : "WHITE") << "\n";
     }
+    winner = victory;
 
     lastMove = id;
     isBlackToPlay = !isBlackToPlay;
@@ -42,12 +43,11 @@ bool Board::isValidMove(unsigned id) {
     if (grid[id] != Cell::EMPTY)
         return false;
 
-    if (isBlackToPlay) grid.setBlack(id); else grid.setWhite(id);
-
-    if (grid.isDoubleThree(id)) {
-        grid.setEmpty(id);
+    if (winner != Cell::EMPTY)
         return false;
-    }
+
+    if (grid.isDoubleThree(id, isBlackToPlay ? Cell::BLACK : Cell::WHITE))
+        return false;
 
     return true;
 }
@@ -87,6 +87,7 @@ std::string Board::serialize() const {
     out << "\"blackCaptured\": " << blackCaptured << ",\n";
     out << "\"whiteCaptured\": " << whiteCaptured << ",\n";
     out << "\"isBlackToPlay\": " << (isBlackToPlay ? "true" : "false") << ",\n";
+    out << "\"winner\": " << static_cast<int>(winner) << ",\n";
     out << "\"grid\": " << grid.serialize() << "\n";
     out << "}";
 

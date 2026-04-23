@@ -150,6 +150,7 @@ void GameState::reload(const std::vector<Cell>& newGrid,
     board.blackCaptured = blackCaptured;
     board.whiteCaptured = whiteCaptured;
     board.isBlackToPlay = isBlackToPlay;
+    board.winner = board.isVictory();
 
     moveHistory = newMoveHistory;
 }
