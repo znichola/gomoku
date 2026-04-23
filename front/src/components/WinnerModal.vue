@@ -78,7 +78,7 @@ function getTextTargets(
   ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
   const fontSize = Math.min(canvasWidth / (text.length * 0.65), 160)
-  ctx.font = `bold ${fontSize}px 'Pirata One', Impact, 'Arial Narrow Bold', sans-serif`
+  ctx.font = `400 ${fontSize}px 'Pirata One', Impact, 'Arial Narrow Bold', sans-serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillStyle = '#ffffff'
@@ -102,7 +102,7 @@ function getTextTargets(
 }
 
 async function startAnimation() {
-  if (!canvasEl.value || !winner) return
+  if (!canvasEl.value || !winner.value) return
 
   const canvas = canvasEl.value
   canvas.width = window.innerWidth
@@ -111,7 +111,7 @@ async function startAnimation() {
   await document.fonts.load(`bold 160px 'Pirata One'`).catch(() => {})
 
   const piecePositions = getPiecePositions()
-  const targets = getTextTargets(canvas.width, canvas.height, winner.value === Cell.BLACK ? 'Black' : 'White')
+  const targets = getTextTargets(canvas.width, canvas.height, winner.value === Cell.BLACK ? 'GG Black!' : 'GG White!')
 
   // Fisher-Yates shuffle for uniform distribution of particles across text
   for (let i = targets.length - 1; i > 0; i--) {
