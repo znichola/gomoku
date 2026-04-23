@@ -2,6 +2,7 @@
 #include <iostream>
 #include <random>
 #include <tuple>
+#include <chrono>
 
 #include "GameState.hpp"
 #include "MessageQueue.hpp"
@@ -46,9 +47,22 @@ bool GameState::askAI2Play() {
     if (isAIGame == activePlayer) {
         MQ << "AI is thinking of a good move";
         DISABLE_LOG
-        COUT << "[AI] ";
+        auto start = std::chrono::high_resolution_clock::now();
         auto res = playMove(AI::play(board, activePlayer == Cell::WHITE));
+        auto end = std::chrono::high_resolution_clock::now();
+        auto us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         ENABLE_LOG
+
+        if (us < 1'000) {
+            COUT << "[AI] Move took " << us << " µs\n";
+            MQ   << "[AI] Move took " << us << " µs\n";
+        } else if (us < 1'000'000) {
+            COUT << "[AI] Move took " << us / 1'000.0 << " ms\n";
+            MQ   << "[AI] Move took " << us / 1'000.0 << " ms\n";
+        } else {
+            COUT << "[AI] Move took " << us / 1'000'000.0 << " s\n";
+            MQ   << "[AI] Move took " << us / 1'000'000.0 << " s\n";
+        }
         return res;
     }
     return true;
