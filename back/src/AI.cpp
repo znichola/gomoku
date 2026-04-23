@@ -163,10 +163,10 @@ float AI::evaluate(const Board &board, int depth, Cell winningPlayer) {
     if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {
         return 0;
     }
-    const GridTraversal &gt = const_cast<Board &>(board).grid.nodes();
+    const GridTraversal &gt = board.grid.nodes();
     // const AdjacentNode<NodeCellRow> &adj = gt[board.lastMove];
     // if (!adj[i]) continue ; const NodeCellRow &cr = *adj[i];
-    const std::deque<NodeCellRow> nodes = const_cast<GridTraversal &>(gt).getCellRowsGarbage();
+    const std::deque<NodeCellRow> nodes = gt.getCellRowsGarbage();
 
     float max_black = 0;
     float max_white = 0;

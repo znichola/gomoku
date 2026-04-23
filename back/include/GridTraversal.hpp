@@ -54,31 +54,23 @@ extern std::unordered_map<uint64_t, GridTraversal> tableGridTraversal;
 class Grid;
 class GridTraversal {
 private:
-	bool isLODGenerated = false;
 	std::deque<NodeLOD> nodeLODsGarbage;
 	std::vector<AdjacentNode<NodeLOD>> gridLOD;
-	bool isCellRowGenerated = false;
 	std::deque<NodeCellRow> cellRowsGarbage;
 	std::vector<AdjacentNode<NodeCellRow>> gridCellRow;
-	Grid &grid;
 
-public:
-	GridTraversal(Grid &grid);
-	void clean();
-
-	const AdjacentNode<NodeCellRow> operator[](const unsigned i) const;
-
-	void iterateNode(void (GridTraversal::*populateNode)(long, long, long));
+	void iterateNode(const Grid& grid, void (GridTraversal::*populateNode)(long, long, long, const Grid&));
 
 	NodeLOD* createLOD(Cell type);
-	void populateLOD(long id, long nid, long ext);
-	void generateLOD();
+	void populateLOD(long id, long nid, long ext, const Grid& grid);
 
 	NodeCellRow* createCellRow();
-	void populateCellRow(long id, long nid, long ext);
-	void generateCellRow();
+	void populateCellRow(long id, long nid, long ext, const Grid& grid);
 
-	void generate();
+public:
+	GridTraversal(const Grid &grid);
+
+	const AdjacentNode<NodeCellRow> operator[](const unsigned i) const;
 
 	 const std::deque<NodeLOD>& getNodeLODsGarbage() const;
 	 const std::vector<AdjacentNode<NodeLOD>>& getGridLOD() const;

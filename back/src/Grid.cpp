@@ -107,7 +107,7 @@ const GridTraversal& Grid::nodes() const {
             ) {
         return it->second;
     } else {
-        auto [it, inserted] = tableGridTraversal.try_emplace(hash, *const_cast<Grid *>(this));
+        auto [it, inserted] = tableGridTraversal.try_emplace(hash, *this);
         return it->second;
     }
 }
@@ -139,13 +139,34 @@ bool Grid::isInside(const Vector2D& vec) const {
 }
 
 Cell Grid::getWinningLineColor() const {
-    GridTraversal& gridTraversal = const_cast<GridTraversal&>(const_cast<Grid*>(this)->nodes());
+    const GridTraversal& gridTraversal = this->nodes();
     for (const NodeCellRow& cellRow : gridTraversal.getCellRowsGarbage()) {
         if (cellRow.score >= 5 && cellRow.type != Cell::EMPTY) {
             return cellRow.type;
         }
     }
     return Cell::EMPTY;
+}
+
+long Grid::handleCaptures(unsigned const id) const {
+    const Cell myColor = grid[id];
+    if (myColor == Cell::EMPTY) return 0;
+    const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
+
+    long c = 0;
+    const Vector2D cellPoint = Vector2D::createFromIndex(id, width);
+    for (Vector2D offsetPoint : EXTREMITIES) {
+        const Vector2D newPoint = cellPoint + offsetPoint * 3;
+        if (!isInside(newPoint)) continue;
+        const long nid = newPoint.toIndex(width);
+        if (grid[nid] != myColor) continue;
+        const long nid1 = (cellPoint + offsetPoint).toIndex(width);
+        if (grid[nid1] != enemyColor) continue;
+        const long nid2 = (cellPoint + offsetPoint * 2).toIndex(width);
+        if (grid[nid2] != enemyColor) continue;
+        ++c;
+    }
+    return c;
 }
 
 /**
@@ -199,7 +220,7 @@ bool Grid::isDoubleThree(unsigned const id) const {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return false;
 
-    long c = const_cast<Grid*>(this)->handleCaptures(id);
+    long c = handleCaptures(id);
     if (c > 0) return false; // It's a capture
 
     c = 0;

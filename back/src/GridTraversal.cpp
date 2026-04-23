@@ -4,39 +4,39 @@
 
 std::unordered_map<uint64_t, GridTraversal> tableGridTraversal;
 
-void NodeCellRow::incrementSize(bool cellIsDead){
-	++size;
-	if (cellIsDead || type == Cell::EMPTY) {
-		_tmpscr = 0;
-	} else {
-		if (score < ++_tmpscr)
-			score = _tmpscr;
-	}
-}
+GridTraversal::GridTraversal(const Grid &grid) {
+	const unsigned size = grid.size;
 
-GridTraversal::GridTraversal(Grid &grid): grid(grid) {
+	// NodeLOD
+	gridLOD.reserve(size);
+	gridLOD.insert(gridLOD.end(), size, AdjacentNode<NodeLOD>{});
 
-}
+	iterateNode(grid, &GridTraversal::populateLOD);
 
-void GridTraversal::clean() {
-	if (isLODGenerated) {
-		nodeLODsGarbage.clear();
-		gridLOD.clear();
-		isLODGenerated = false;
+	// NodeCellRow
+	gridCellRow.reserve(size);
+	gridCellRow.insert(gridCellRow.end(), size, AdjacentNode<NodeCellRow>{});
+
+	// Set dead state
+	for (unsigned id = 0; id < size; ++id) {
+		for (long ext = 0; ext < 4; ++ext) {
+			NodeLOD*& cellLOD = gridLOD[id][ext];
+			if (cellLOD != NULL && cellLOD->step == NodeStep::DEATH) {
+				// std::cout << id << " is dead" << std::endl;
+				gridCellRow[id].dead = true;
+				break ;
+			}
+		}
 	}
-	if (isCellRowGenerated) {
-		cellRowsGarbage.clear();
-		gridCellRow.clear();
-		isCellRowGenerated = false;
-	}
+
+	iterateNode(grid, &GridTraversal::populateCellRow);
 }
 
 const AdjacentNode<NodeCellRow> GridTraversal::operator[](unsigned i) const {
-	const_cast<GridTraversal *>(this)->generate();
 	return gridCellRow[i];
 }
 
-void GridTraversal::iterateNode(void (GridTraversal::*populateNode)(long, long, long)) {
+void GridTraversal::iterateNode(const Grid& grid, void (GridTraversal::*populateNode)(long, long, long, const Grid&)) {
 	const unsigned width = grid.width;
 	const unsigned size  = grid.size;
 
@@ -47,7 +47,7 @@ void GridTraversal::iterateNode(void (GridTraversal::*populateNode)(long, long, 
 			if (!grid.isInside(newPoint)) continue;
 			const long nid = newPoint.toIndex(width);
 
-			(this->*populateNode)(id, nid, ext);
+			(this->*populateNode)(id, nid, ext, grid);
 		}
 	}
 };
@@ -61,7 +61,7 @@ NodeLOD* GridTraversal::createLOD(Cell type) {
 	return next;
 }
 
-void GridTraversal::populateLOD(long id, long nid, long ext) {
+void GridTraversal::populateLOD(long id, long nid, long ext, const Grid& grid) {
 	NodeLOD*& cell = gridLOD[id][ext];
 	NodeLOD*& next = gridLOD[nid][ext];
 
@@ -83,18 +83,6 @@ void GridTraversal::populateLOD(long id, long nid, long ext) {
 	}
 }
 
-void GridTraversal::generateLOD() {
-	if (isLODGenerated)
-		return ;
-	const unsigned size = grid.size;
-
-	gridLOD.reserve(size);
-	gridLOD.insert(gridLOD.end(), size, AdjacentNode<NodeLOD>{});
-
-	iterateNode(&GridTraversal::populateLOD);
-	isLODGenerated = true;
-}
-
 NodeCellRow* GridTraversal::createCellRow() {
 	cellRowsGarbage.push_back(NodeCellRow{});
 	NodeCellRow *cell = &cellRowsGarbage.back();
@@ -102,7 +90,7 @@ NodeCellRow* GridTraversal::createCellRow() {
 	return cell;
 };
 
-void GridTraversal::populateCellRow(long id, long nid, long ext) {
+void GridTraversal::populateCellRow(long id, long nid, long ext, const Grid& grid) {
 	NodeCellRow*& cell = gridCellRow[id][ext];
 	NodeCellRow*& next = gridCellRow[nid][ext];
 
@@ -131,53 +119,28 @@ void GridTraversal::populateCellRow(long id, long nid, long ext) {
 	}
 };
 
-void GridTraversal::generateCellRow() {
-	if (isCellRowGenerated)
-		return ;
-
-	generateLOD();
-
-	const unsigned size = grid.size;
-
-	gridCellRow.reserve(size);
-	gridCellRow.insert(gridCellRow.end(), size, AdjacentNode<NodeCellRow>{});
-
-	// Set dead state
-	for (unsigned id = 0; id < size; ++id) {
-		for (long ext = 0; ext < 4; ++ext) {
-			NodeLOD*& cellLOD = gridLOD[id][ext];
-			if (cellLOD != NULL && cellLOD->step == NodeStep::DEATH) {
-				// std::cout << id << " is dead" << std::endl;
-				gridCellRow[id].dead = true;
-				break ;
-			}
-		}
-	}
-
-	iterateNode(&GridTraversal::populateCellRow);
-	isCellRowGenerated = true;
-}
-
-void GridTraversal::generate() {
-	generateCellRow();
-}
-
 const std::deque<NodeLOD>& GridTraversal::getNodeLODsGarbage() const {
-	const_cast<GridTraversal*>(this)->generateLOD();
 	return nodeLODsGarbage;
 };
 
 const std::vector<AdjacentNode<NodeLOD>>& GridTraversal::getGridLOD() const {
-	const_cast<GridTraversal*>(this)->generateLOD();
 	return gridLOD;
 };
 
 const std::deque<NodeCellRow>& GridTraversal::getCellRowsGarbage() const {
-	const_cast<GridTraversal*>(this)->generateCellRow();
 	return cellRowsGarbage;
 };
 
 const std::vector<AdjacentNode<NodeCellRow>>& GridTraversal::getGridCellRow() const {
-	const_cast<GridTraversal*>(this)->generateCellRow();
 	return gridCellRow;
 };
+
+void NodeCellRow::incrementSize(bool cellIsDead){
+	++size;
+	if (cellIsDead || type == Cell::EMPTY) {
+		_tmpscr = 0;
+	} else {
+		if (score < ++_tmpscr)
+			score = _tmpscr;
+	}
+}

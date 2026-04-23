@@ -52,7 +52,8 @@ public:
     std::string serialize() const;
 
     Cell getWinningLineColor() const;
-    long handleCaptures(unsigned const id, bool const apply = false);
+    long handleCaptures(unsigned const id) const;
+    long handleCaptures(unsigned const id, bool const apply);
     long calcAlignedCells(unsigned const id, long const ext, Cell &bc,
                     std::set<long> *alignedCells, long const offset = 0, long count = 0) const;
     bool isDoubleThree(unsigned const id) const;
