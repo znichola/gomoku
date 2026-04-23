@@ -49,7 +49,7 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     float origA = a;
 
     float value = -INF;
-    for (auto move : getOrderedCandidateMoves(board.grid, bestMove)) {
+    for (auto move : getOrderedCandidateMoves(board.grid, bestMove, color == -1.0f ? Cell::BLACK : Cell::WHITE)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
@@ -79,7 +79,7 @@ float AI::alphaBetaNegaMaxNoTT(const Board &board, int16_t depth, float a, float
     }
 
     float value = -INF;
-    for (auto move : getOrderedCandidateMoves(board.grid, Board::FIRSTMOVE)) {
+    for (auto move : getOrderedCandidateMoves(board.grid, Board::FIRSTMOVE, color == -1.0f ? Cell::BLACK : Cell::WHITE)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
@@ -267,15 +267,50 @@ std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
     return cm;
 }
 
-std::vector<unsigned> AI::getOrderedCandidateMoves(const Grid &grid, unsigned bestMove) {
-    auto moves = getCandidateMoves(grid);
-    if (bestMove != Board::FIRSTMOVE && moves.contains(bestMove)) {
-        moves.erase(bestMove);
-        std::vector<unsigned> result{moves.begin(), moves.end()};
-        result.insert(result.begin(), bestMove);
-        return result;
+std::vector<unsigned> AI::getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color) {
+    const GridTraversal &gt = grid.nodes();
+    const std::vector<AdjacentNode<NodeCellRow>> gridCR = gt.getGridCellRow();
+
+    (void) bestMove;
+
+    std::set<unsigned> moves = getCandidateMoves(grid);
+
+    struct Compare {
+        bool operator()(const std::pair<int, int>& a,
+                        const std::pair<int, int>& b) const {
+            if (a.first != b.first)
+                return a.first > b.first; // score décroissant
+            return a.second < b.second;   // tie-break sur id
+        }
+    };
+    std::set<std::pair<unsigned, unsigned>, Compare> stones;
+
+    for (std::set<unsigned>::iterator id = moves.begin(); id != moves.end(); ++id) {
+        const AdjacentNode<NodeCellRow> &adj = gridCR[*id];
+        unsigned score = 0;
+        for (unsigned ext = 0; ext < 4; ++ext) {
+            if (!adj[ext]) continue;
+            const NodeCellRow &cr = *adj[ext];
+            if (cr.prev && cr.prev->type == color && std::abs(cr.prev->originId - *id) <= 1 && cr.size + cr.prev->size > 5)
+                score += 5 + cr.size + cr.prev->size;
+            if (cr.next && cr.next->type == color && std::abs(cr.next->originId - *id) <= 1 && cr.size + cr.next->size > 5) {
+                score += 5 + cr.size + cr.next->size;
+            }
+        }
+        stones.insert({score, *id});
     }
-    return std::vector<unsigned>(moves.begin(), moves.end());
+
+    std::vector<unsigned> result;
+
+    for (const auto& [score, id] : stones) {
+        if (score > 1)
+            result.push_back(id);
+    }
+    if (result.empty()) {
+        result.insert(result.end(), moves.begin(), moves.end());
+    }
+
+    return result;
 }
 
 /*

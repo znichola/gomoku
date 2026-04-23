@@ -27,7 +27,7 @@ namespace AI {
     float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
-    std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove);
+    std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color);
     Eval countGroupsOf(const Board &board, int size);
     bool tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, float &score, unsigned &bestMove);
 };
