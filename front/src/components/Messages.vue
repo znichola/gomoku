@@ -5,7 +5,7 @@ import type { Ref } from 'vue'
 
 const store = useGameStore()
 const container: Ref<HTMLElement | null, HTMLElement | null> = ref(null)
-const position = reactive({ left: false, bottom: false });
+const position = reactive({ left: false, top: false });
 const messages = computed(() => store.gameState.messages)
 
 onMounted(() => window.addEventListener('mousemove', mousemove, true))
@@ -14,12 +14,13 @@ onUnmounted(() => window.removeEventListener('mousemove', mousemove, true))
 function mousemove(event: MouseEvent) {
   if (messages.value.length <= 0)
     return ;
-  const height = (container.value?.offsetHeight || 0) + 100
   const width = (container.value?.offsetWidth || 0) + 100
-  const pageWidth = document.body.offsetWidth
+  const height = (container.value?.offsetHeight || 0) + 100
+  const pageWidth = window.innerWidth
+  const pageHeight = window.innerHeight
 
   //position.left = false
-  position.bottom = (pageWidth - width < event.clientX) && (event.clientY < height)
+  position.top = (pageWidth - width < event.clientX) && (pageHeight - height < event.clientY)
 }
 </script>
 
@@ -48,7 +49,7 @@ function mousemove(event: MouseEvent) {
   transition: max-height 0.25s ease;
 
   position: fixed;
-  top: 2rem;
+  bottom: 2rem;
   right: 2rem;
   z-index: 1000;
 
@@ -57,9 +58,9 @@ function mousemove(event: MouseEvent) {
     left: 2rem;
   }
 
-  &.bottom {
-    top: unset;
-    bottom: 2rem;
+  &.top {
+    bottom: unset;
+    top: 2rem;
   }
 }
 
