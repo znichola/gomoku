@@ -20,6 +20,7 @@ unsigned AI::play(const Board &board, bool isWhite) {
 /*
     AlphaBeta with NegaMax - branch pruning, minimise losses
     https://en.wikipedia.org/wiki/Negamax
+    https://en.wikipedia.org/wiki/Negamax#Negamax_with_alpha_beta_pruning_and_transposition_tables
 
 
     alpha & beta reprisent the search window for the position score.
@@ -29,21 +30,40 @@ unsigned AI::play(const Board &board, bool isWhite) {
 
     Much like negamax, as black pass color=-1 as white color=1.
 */
-float AI::alphaBetaNegaMax(const Board &board, int depth, float a, float b, float color) {
-    nodesExplored[depth] += 1;
+float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color) {
+    nodeVisitCounter[depth] += 1;
+    uint64_t hash = board.grid.getHash();
+
+    // Lookup previous position, either tighten search window (adjust a b bestMove)
+    // or return exact score if it's already stored
+    float ttScore = 0;
+    unsigned bestMove = Board::FIRSTMOVE;
+    if (tryApplyTTBounds(hash, depth, a, b, ttScore, bestMove))
+        return ttScore;
+
     Cell victory = board.isVictory();
     if (depth == 0 || victory != Cell::EMPTY) {
         return color * evaluate(board, depth, victory);
     }
 
+    float origA = a;
+
     float value = -INF;
-    for (auto move : getOrderedCandidateMoves(board.grid)) {
+    for (auto move : getOrderedCandidateMoves(board.grid, bestMove)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
+        float child = -alphaBetaNegaMax(newBoard, depth - 1, -b, -a, -color);
+        if (child > value) { value = child; bestMove = move; }
         value = std::max(value, -alphaBetaNegaMax(newBoard, depth -1, -b, -a, -color));
         a = std::max(a, value);
         if (a >= b) break;
     }
+
+    // Determine bound and store
+    Bound bound = value <= origA ? Bound::UPPER
+                : value >= b     ? Bound::LOWER
+                                 : Bound::EXACT;
+    tt.store(hash, value, depth, bestMove, bound);
     return value;
 }
 
@@ -55,8 +75,8 @@ float AI::alphaBetaNegaMax(const Board &board, int depth, float a, float b, floa
     Evaluation always returns + for white and - for black.
     If black to play, call with color=-1
 */
-float AI::negaMax(const Board &board, int depth, float color) {
-    nodesExplored[depth] += 1;
+float AI::negaMax(const Board &board, int16_t depth, float color) {
+    nodeVisitCounter[depth] += 1;
     Cell victory = board.isVictory();
     if (depth == 0 || victory != Cell::EMPTY) {
         return color * evaluate(board, depth, victory);
@@ -80,8 +100,8 @@ float AI::negaMax(const Board &board, int depth, float color) {
 
     TODO see negamax for simpler version of the function, and alpha-beta pruning for more optimised one
 */
-float AI::minMax(const Board &board, int depth, bool maximizingPlayer) {
-    nodesExplored[depth] += 1;
+float AI::minMax(const Board &board, int16_t depth, bool maximizingPlayer) {
+    nodeVisitCounter[depth] += 1;
     Cell victory = board.isVictory();
     if (depth == 0 || victory != Cell::EMPTY) {
         return evaluate(board, depth, victory); // evaluation/heuristic is only run for terminal nodes
@@ -114,7 +134,7 @@ float AI::minMax(const Board &board, int depth, bool maximizingPlayer) {
 unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
     float bestScore = isWhite ? -INF : INF;
     unsigned bestMove = Board::FIRSTMOVE;
-    AI::nodesExplored.assign(AI::maxDepth + 1, 0);
+    AI::nodeVisitCounter.assign(AI::maxDepth + 1, 0);
     for (auto move : getCandidateMoves(board.grid)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
@@ -141,11 +161,11 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
         MQ << "[AI] No best move found";
         COUT << "[AI] No best move found\n";
     }
-    MQ << "[AI] explored " << std::accumulate(nodesExplored.begin(), nodesExplored.end(), 0) << " nodes\n"
+    MQ << "[AI] explored " << std::accumulate(nodeVisitCounter.begin(), nodeVisitCounter.end(), 0) << " nodes\n"
        << [](){
         std::stringstream ss;
-        for (int i = static_cast<int>(nodesExplored.size()) - 1; 0 <= i; i--) {
-            ss << "Depth: " << maxDepth - i << " - " << nodesExplored[i] << " nodes\n";
+        for (int i = static_cast<int>(nodeVisitCounter.size()) - 1; 0 <= i; i--) {
+            ss << "Depth: " << maxDepth - i << " - " << nodeVisitCounter[i] << " nodes\n";
         }
         return ss.str();}();
     DISABLE_LOG
@@ -157,7 +177,7 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
     return a score of the position: - for black and + for white
     This function is only called at terminal nodes of the tree (see subject p5)
 */
-float AI::evaluate(const Board &board, int depth, Cell winningPlayer) {
+float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
     if (winningPlayer == Cell::WHITE) return WIN + depth;
     if (winningPlayer == Cell::BLACK) return -WIN - depth;
     if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {
@@ -208,7 +228,41 @@ std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
     return cm;
 }
 
-std::vector<unsigned> AI::getOrderedCandidateMoves(const Grid &grid) {
+std::vector<unsigned> AI::getOrderedCandidateMoves(const Grid &grid, unsigned bestMove) {
     auto moves = getCandidateMoves(grid);
+    if (bestMove != Board::FIRSTMOVE && moves.contains(bestMove)) {
+        moves.erase(bestMove);
+        std::vector<unsigned> result{moves.begin(), moves.end()};
+        result.insert(result.begin(), bestMove);
+        return result;
+    }
     return std::vector<unsigned>(moves.begin(), moves.end());
+}
+
+/*
+
+*/
+bool AI::tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, float &score, unsigned &bestMove) {
+    const TTEntry* e = tt.probe(hash);
+    if (!e || e->depth < depth) return false;
+
+    bestMove = e->move;
+    switch (e->bound) {
+        case Bound::EXACT:
+            score = e->score;
+            return true;
+        case Bound::LOWER:
+            alpha = std::max(alpha, e->score);
+            break;
+        case Bound::UPPER:
+            beta = std::min(beta, e->score);
+            break;
+    }
+
+    if (alpha >= beta) {
+        score = e->score;
+        return true;
+    }
+
+    return false;
 }

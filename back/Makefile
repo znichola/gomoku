@@ -6,7 +6,7 @@ CXX       = clang++
 CXXFLAGS  = -Wall -Wextra -Werror
 CXXFLAGS += -std=c++20
 
-FILES     = Board Cell GameState Grid Routes Server Utils MessageQueue AI Vector2D GridTraversal
+FILES     = Board Cell GameState Grid Routes Server Utils MessageQueue AI Vector2D GridTraversal TranspositionTable
 # CXXFILES are files without header (.hpp file) :
 CXXFILES  = RoutesArbiter main_$(PORT) $(FILES)
 
