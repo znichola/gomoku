@@ -11,7 +11,7 @@ struct GameState {
 
     std::string serialize() const;
     bool playMove(unsigned id);
-    bool askAI2Play();
+    Cell askAI2Play();
     void reset();
 
     // debug

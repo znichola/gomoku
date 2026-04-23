@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RefStringOrNull } from '@/types/vue'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import type { Cell } from '@/types/game'
+import type { Cell, GameState } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
 import { useGameStore } from '@/stores/game'
 
@@ -60,6 +60,7 @@ async function load(error: boolean = false) {
   }
 }
 
+let _timeout_delay_ai = 0
 async function move(event: MouseEvent) {
   const target = event.target as HTMLElement
   const cellId = target.hasAttribute('id') ? target.id : (target.parentElement as HTMLElement).id
@@ -74,6 +75,7 @@ async function move(event: MouseEvent) {
     }
   }
   try {
+    clearTimeout(_timeout_delay_ai)
     const objQuery: { id: string, force_color?: string } = {
       id: cellId.toString()
     }
@@ -87,8 +89,22 @@ async function move(event: MouseEvent) {
     } else if (resp.status != 200)
       throw Error('STATUS NOT 200')
     const data = await resp.json()
-    if (gameStore.backWatcher().checkResponse(data, resp))
-      gameStore.updateGameState(data)
+    const updateGS = (data: GameState) => {
+      if (gameStore.backWatcher().checkResponse(data, resp))
+        gameStore.updateGameState(data)
+    }
+    if (data.multiple_action) {
+      updateGS(data.human)
+      if (gameStore.watcherState.speed < 1) {
+        updateGS(data.ai)
+      } else if (!gameStore.watcherState.enabled) {
+        console.log(gameStore.watcherState.speed * 1000)
+        _timeout_delay_ai = setTimeout(updateGS, gameStore.watcherState.speed * 1000, data.ai)
+      }
+    } else {
+      if (gameStore.backWatcher().checkResponse(data, resp))
+        gameStore.updateGameState(data)
+    }
   } catch (err) {
     errorMessage.value = 'Server refused this move.'
     console.warn((err as Error).message)

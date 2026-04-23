@@ -116,6 +116,13 @@ function preview(state: boolean) {
       <li>
         <button class="ai-play" :class="{reverse: aiGame === 2}" @click="toggleAI(2)"
           >AI {{(aiGame === 2) ? 'dis' : 'on'}} White</button></li>
+      <li>
+        <div>
+          <label for="aispeed">Speed ({{ +gameStore.watcherState.speed }}s):</label>
+          <input id="aispeed" type="range" :value="gameStore.watcherState.speed"
+            @input="event => gameStore.watcherState.speed = (event.target as any).value || 0" min="0" max="10">
+        </div>
+      </li>
     </ul>
   </div>
   <div class="menu">
@@ -170,6 +177,9 @@ function preview(state: boolean) {
 </template>
 
 <style scoped lang="less">
+input[type=range]::after {
+  content: attr(value);
+}
 
 .controles {
   padding: 0.3em;
@@ -184,16 +194,29 @@ div.menu {
   ul {
     display: none;
     position: absolute;
-    padding-top: 1rem;
+    padding-top: 0.5rem;
     li {
       width: max-content;
-      padding-bottom: 1rem;
+      padding-bottom: 0.5rem;
     }
   }
   &:hover ul, & ul:hover {
     display: block;
     z-index: 400;
   }
+}
+
+div.menu li > div {
+  cursor: pointer;
+  display: flex;
+  padding: 0.2rem 0.3rem;;
+  border: solid 0.165rem var(--accent-color);
+  border-radius: 1.2rem;
+  background-color: var(--primary-color);
+  color: var(--bg-color);
+  font: var(--ui-font);
+  transition: all 0.3s ease;
+  align-items: center;
 }
 
 button, div.menu span {

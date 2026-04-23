@@ -30,10 +30,27 @@ void registerRoutes(Server& server, GameState& gs) {
         if (errno == ERANGE || !(played = gs.playMove(id)))
             MQ << "INVALID MOVE";
             // return Response{400, "{\"error\": \"invalid move\"}"};
-        if (played && !gs.askAI2Play())
+
+        const std::string& output = gs.serialize();
+
+        if (!played)
+            return Response{200, output};
+        
+        const Cell aiPlayed = gs.askAI2Play();
+        if (aiPlayed == Cell::OUTSIDE)
             MQ << "INVALID MOVE FROM AI";
 
-        return Response{200, gs.serialize()};
+        if (aiPlayed != Cell::BLACK && aiPlayed != Cell::WHITE)
+            return Response{200, output};
+
+		std::ostringstream out;
+
+		out << "{\n";
+		out << "\"multiple_action\": true,\n";
+		out << "\"human\": " << output << ",\n";
+		out << "\"ai\": " << gs.serialize() << "\n";
+		out << "}";
+		return Response{200, out.str()};
     });
 
     server.get("/reset", [&gs](const Request& req) -> Response {

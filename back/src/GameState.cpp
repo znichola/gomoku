@@ -40,9 +40,9 @@ bool GameState::playMove(unsigned id) {
 }
 
 /**
- * @return Return false if error (IA sending a wrong move), true if IA not enabled or has played
+ * @return Return Cell:OUTSIDE if error (IA sending a wrong move), Cell::EMPTY if IA not enabled or Cell::BLACK/WHITE has played
  */
-bool GameState::askAI2Play() {
+Cell GameState::askAI2Play() {
     const Cell activePlayer = board.isBlackToPlay ? Cell::BLACK : Cell::WHITE;
     if (isAIGame == activePlayer) {
         MQ << "AI is thinking of a good move";
@@ -63,9 +63,9 @@ bool GameState::askAI2Play() {
             COUT << "[AI] Move took " << us / 1'000'000.0 << " s\n";
             MQ   << "[AI] Move took " << us / 1'000'000.0 << " s\n";
         }
-        return res;
+        return res ? activePlayer : Cell::OUTSIDE;
     }
-    return true;
+    return Cell::EMPTY;
 }
 
 static Grid* rGrid = nullptr;

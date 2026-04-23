@@ -110,7 +110,7 @@ void registerRoutes_Arbiter(Server& server, GameState& gs) {
 		}
 	
 		unsigned nbMove = gs.moveHistory.size();
-		if (!gs.askAI2Play())
+		if (gs.askAI2Play() == Cell::OUTSIDE)
 			return Response{200, "{\"as_played\": false, \"because\": \"self_error\", \"msglog\": \"wrong move\"}"};
 
 		if (gs.moveHistory.size() == nbMove)

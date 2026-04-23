@@ -9,7 +9,8 @@ export const useGameStore = defineStore('game', () => {
     preview_state: [] as Cell[],
     preview: false,
     edition: false,
-    keymode: false
+    keymode: false,
+    speed: 1
   })
 
   const overlayMessages = ref<{ id: number; msg: string }[]>([])
