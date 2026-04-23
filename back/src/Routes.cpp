@@ -31,7 +31,7 @@ void registerRoutes(Server& server, GameState& gs) {
             MQ << "INVALID MOVE";
             // return Response{400, "{\"error\": \"invalid move\"}"};
 
-        const std::string& output = gs.serialize();
+        const std::string output = gs.serialize();
 
         if (!played)
             return Response{200, output};
