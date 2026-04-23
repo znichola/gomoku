@@ -10,10 +10,23 @@ import hud from './Hud.vue'
 import turnlog from './TurnLog.vue'
 import messages from './Messages.vue'
 import RulesModal from './RulesModal.vue'
+import WinnerModal from './WinnerModal.vue'
 
 const reload = () => window.location.reload()
 
 const rulesOpen = ref(false)
+
+async function reset() {
+  try {
+    const resp = await fetch(`http://${window.location.hostname}:9012/reset`, {
+      method: 'GET',
+    })
+    const data = await resp.json()
+    gameStore.updateGameState(data);
+    } catch (err) {
+    console.warn(err)
+  }
+}
 </script>
 
 <template>
@@ -34,6 +47,7 @@ const rulesOpen = ref(false)
   <turnlog class="turnlog" />
 </div>
 <RulesModal :open="rulesOpen" @close="rulesOpen = false" />
+<WinnerModal @close="reset()" />
 </template>
 
 <style scoped lang="less">
