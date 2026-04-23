@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useGameStore } from '@/stores/game'
+import { Cell } from '@/types/game'
 import { onMounted, onUnmounted, computed } from 'vue'
 
 const gameStore = useGameStore()
@@ -10,8 +11,17 @@ onMounted(() => window.addEventListener('click', click, true))
 onUnmounted(() => window.removeEventListener('click', click, true))
 
 async function click(event: MouseEvent) {
-  if (!event.target || !(gameStore.watcherState.edition || (gameStore.watcherState.keymode && event.altKey)))
+  if (!event.target || !(gameStore.watcherState.edition || (gameStore.watcherState.keymode && event.altKey))) {
+    if (event.ctrlKey) {
+      const target = (event.target as HTMLElement)
+      let element: HTMLElement | null = null
+      if ((element = target.closest('div.capture-card'))) {
+        const cell = element.classList.contains('black') ? Cell.BLACK : Cell.WHITE
+        gameStore.watcherState.human = gameStore.watcherState.human === cell ? 0 : cell
+      }
+    }
     return
+  }
   const target = (event.target as HTMLElement)
   let element: HTMLElement | null = null
   let action: [string, string] | null = null

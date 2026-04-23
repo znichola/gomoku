@@ -1,6 +1,6 @@
 import { reactive, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Cell, GameState } from '../types/game'
+import { Cell, type GameState } from '../types/game'
 
 export const useGameStore = defineStore('game', () => {
   const gameState = reactive<GameState>({ isAIGame: 0, moveHistory: [], board: null, messages: [] })
@@ -10,7 +10,8 @@ export const useGameStore = defineStore('game', () => {
     preview: false,
     edition: false,
     keymode: false,
-    speed: 1
+    speed: 1,
+    human: Cell.EMPTY
   })
 
   const overlayMessages = ref<{ id: number; msg: string }[]>([])

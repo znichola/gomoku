@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RefStringOrNull } from '@/types/vue'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import type { Cell, GameState } from '@/types/game'
+import { Cell, type GameState } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
 import { useGameStore } from '@/stores/game'
 
@@ -74,6 +74,9 @@ async function move(event: MouseEvent) {
       color = 'white'
     }
   }
+  const human = gameStore.watcherState.human
+  if (human !== Cell.EMPTY && (gameStore.gameState.board?.isBlackToPlay && human === Cell.WHITE))
+    return
   try {
     clearTimeout(_timeout_delay_ai)
     const objQuery: { id: string, force_color?: string } = {

@@ -9,18 +9,19 @@ const blackCaptured = computed(() => board.value?.blackCaptured ?? 0)
 const whiteCaptured = computed(() => board.value?.whiteCaptured ?? 0)
 
 const aiGame = computed(() => gameStore.gameState.isAIGame)
+const humanGame = computed(() => gameStore.watcherState.human)
 </script>
 
 <template>
   <div class="hud">
-    <div class="capture-card black" :class="{ai: aiGame === 1}">
+    <div class="capture-card black" :class="{ai: aiGame === 1, human: humanGame === 1 }">
       <div class="capture-bowl">
         <bowlofstones />
         <span class="capture-count">{{ blackCaptured }}</span>
       </div>
     </div>
 
-    <div class="capture-card white" :class="{ai: aiGame === 2}">
+    <div class="capture-card white" :class="{ai: aiGame === 2, human: humanGame === 2}">
       <div class="capture-bowl">
         <bowlofstones />
         <span class="capture-count">{{ whiteCaptured }}</span>
@@ -58,13 +59,18 @@ const aiGame = computed(() => gameStore.gameState.isAIGame)
   }
 
   position: relative;
-  &.ai::after {
-    content: 'AI';
+  &.ai::after, &.human::after {
     font-size: 0.8rem;
     font-weight: bold;
     position: absolute;
     right: 0;
     bottom: -0.2rem;
+  }
+  &.human::after {
+    content: 'H';
+  }
+  &.ai::after {
+    content: 'AI';
   }
 }
 
