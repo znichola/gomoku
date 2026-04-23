@@ -310,6 +310,7 @@ div.board {
                         var(--bg-color) -1px 0 0px,
                         var(--bg-color) 0 1px 0px,
                         var(--bg-color) 0 -1px 0px;
+          pointer-events:none;
         }
         &[data-type=white] span {
           color: var(--black-color);
