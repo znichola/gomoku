@@ -1,13 +1,30 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useGameStore } from '@/stores/game'
+import type { Ref } from 'vue'
 
 const store = useGameStore()
+const container: Ref<HTMLElement | null, HTMLElement | null> = ref(null)
+const position = reactive({ left: false, bottom: false });
 const messages = computed(() => store.gameState.messages)
+
+onMounted(() => window.addEventListener('mousemove', mousemove, true))
+onUnmounted(() => window.removeEventListener('mousemove', mousemove, true))
+
+function mousemove(event: MouseEvent) {
+  if (messages.value.length <= 0)
+    return ;
+  const height = (container.value?.offsetHeight || 0) + 100
+  const width = (container.value?.offsetWidth || 0) + 100
+  const pageWidth = document.body.offsetWidth
+
+  //position.left = false
+  position.bottom = (pageWidth - width < event.clientX) && (event.clientY < height)
+}
 </script>
 
 <template>
-  <div class="message-container">
+  <div id="message-container" :class="position" v-if="messages.length > 0" ref="container">
     <div class="message" v-for="(m, i) in messages" :key="i">
       {{ m }}
     </div>
@@ -15,7 +32,7 @@ const messages = computed(() => store.gameState.messages)
 </template>
 
 <style scoped lang="less">
-.message-container {
+#message-container {
   border: solid 0.165rem var(--accent-color);
   background-color: var(--bg-color);
   border-radius: 1.2rem;
@@ -34,14 +51,24 @@ const messages = computed(() => store.gameState.messages)
   top: 2rem;
   right: 2rem;
   z-index: 1000;
+
+  &.left {
+    right: unset;
+    left: 2rem;
+  }
+
+  &.bottom {
+    top: unset;
+    bottom: 2rem;
+  }
 }
 
-.message-container:hover {
+#message-container:hover {
   // padding: 0.3rem 0;
   max-height: 300px;
 }
 
-.message-container:hover {
+#message-container:hover {
   animation: enableScroll 0s linear 0.25s forwards;
 }
 
