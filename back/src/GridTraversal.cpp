@@ -33,8 +33,8 @@ void GridTraversal::clean() {
 	}
 }
 
-AdjacentNode<NodeCellRow> GridTraversal::operator[](size_t i) {
-	generate();
+const AdjacentNode<NodeCellRow> GridTraversal::operator[](unsigned i) const {
+	const_cast<GridTraversal *>(this)->generate();
 	return gridCellRow[i];
 }
 
@@ -173,22 +173,22 @@ void GridTraversal::generate() {
 	generateCellRow();
 }
 
-const std::deque<NodeLOD>& GridTraversal::getNodeLODsGarbage() {
-	generateLOD();
+const std::deque<NodeLOD>& GridTraversal::getNodeLODsGarbage() const {
+	const_cast<GridTraversal*>(this)->generateLOD();
 	return nodeLODsGarbage;
 };
 
-const std::vector<AdjacentNode<NodeLOD>>& GridTraversal::getGridLOD() {
-	generateLOD();
+const std::vector<AdjacentNode<NodeLOD>>& GridTraversal::getGridLOD() const {
+	const_cast<GridTraversal*>(this)->generateLOD();
 	return gridLOD;
 };
 
-const std::deque<NodeCellRow>& GridTraversal::getCellRowsGarbage() {
-	generateCellRow();
+const std::deque<NodeCellRow>& GridTraversal::getCellRowsGarbage() const {
+	const_cast<GridTraversal*>(this)->generateCellRow();
 	return cellRowsGarbage;
 };
 
-const std::vector<AdjacentNode<NodeCellRow>>& GridTraversal::getGridCellRow() {
-	generateCellRow();
+const std::vector<AdjacentNode<NodeCellRow>>& GridTraversal::getGridCellRow() const {
+	const_cast<GridTraversal*>(this)->generateCellRow();
 	return gridCellRow;
 };

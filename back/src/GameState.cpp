@@ -45,8 +45,8 @@ bool GameState::askAI2Play() {
     const Cell activePlayer = board.isBlackToPlay ? Cell::BLACK : Cell::WHITE;
     if (isAIGame == activePlayer) {
         MQ << "AI is thinking of a good move";
-        COUT << "[AI] ";
         DISABLE_LOG
+        COUT << "[AI] ";
         auto res = playMove(AI::play(board, activePlayer == Cell::WHITE));
         ENABLE_LOG
         return res;

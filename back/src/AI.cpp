@@ -144,6 +144,24 @@ float AI::evaluate(const Board &board, int depth, Cell winningPlayer) {
     if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {
         return 0;
     }
+    const GridTraversal &gt = const_cast<Board &>(board).grid.nodes();
+    // const AdjacentNode<NodeCellRow> &adj = gt[board.lastMove];
+    // if (!adj[i]) continue ; const NodeCellRow &cr = *adj[i];
+    const std::deque<NodeCellRow> nodes = const_cast<GridTraversal &>(gt).getCellRowsGarbage();
+
+    float max_black = 0;
+    float max_white = 0;
+    for (auto node = nodes.begin(); node != nodes.end(); node++) {
+        const NodeCellRow &cr = *node;
+        if (cr.type == Cell::BLACK && cr.score > max_black) {
+            max_black = cr.size;
+        } else if (cr.type == Cell::WHITE && cr.size > max_white) {
+            max_white = cr.size;
+        }
+    }
+    if (max_black > 0 || max_white > 0)
+       return max_white - max_black; // TODO: FREEZE HERE
+
     // A basic heuristic for now, all can be thrown away.
     int blackCount = 0;
     int whiteCount = 0;

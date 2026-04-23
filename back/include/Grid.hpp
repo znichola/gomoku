@@ -43,7 +43,7 @@ public:
     void updateHash(unsigned id, Cell newValue);
     uint64_t getHash() const;
 
-    GridTraversal const& nodes();
+    const GridTraversal& nodes() const;
 
     Vector2D idToVec(unsigned id) const;
     unsigned vecToId(const Vector2D &vec) const;

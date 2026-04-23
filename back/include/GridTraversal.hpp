@@ -44,6 +44,7 @@ struct AdjacentNode {
 
 	Node* v[4] = { NULL, NULL, NULL, NULL }; // v[0]=right, v[1]=bottomRight, v[2]=bottom, v[3]=bottomLeft
 	constexpr Node*& operator[](size_t i) { return v[i]; }
+	constexpr const Node* operator[](size_t i) const { return v[i]; }
 };
 
 class Grid;
@@ -112,7 +113,7 @@ public:
 
 	void clean();
 
-	AdjacentNode<NodeCellRow> operator[](size_t i);
+	const AdjacentNode<NodeCellRow> operator[](const unsigned i) const;
 
 	void iterateNode(void (GridTraversal::*populateNode)(long, long, long));
 
@@ -126,8 +127,8 @@ public:
 
 	void generate();
 
-	 const std::deque<NodeLOD>& getNodeLODsGarbage();
-	 const std::vector<AdjacentNode<NodeLOD>>& getGridLOD();
-	 const std::deque<NodeCellRow>& getCellRowsGarbage();
-	 const std::vector<AdjacentNode<NodeCellRow>>& getGridCellRow();
+	 const std::deque<NodeLOD>& getNodeLODsGarbage() const;
+	 const std::vector<AdjacentNode<NodeLOD>>& getGridLOD() const;
+	 const std::deque<NodeCellRow>& getCellRowsGarbage() const;
+	 const std::vector<AdjacentNode<NodeCellRow>>& getGridCellRow() const;
 };

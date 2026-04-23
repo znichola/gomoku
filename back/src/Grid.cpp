@@ -97,9 +97,9 @@ void Grid::updateHash(unsigned id, Cell newValue) {
     hash ^= zob[id][static_cast<int>(newValue)];
 }
 
-GridTraversal const& Grid::nodes() {
-    if (gridTraversal == nullptr)
-        gridTraversal = new GridTraversal(*this);
+const GridTraversal& Grid::nodes() const {
+    if (gridTraversal == nullptr) // TODO: const_cast<Grid*> ?
+        const_cast<Grid*>(this)->gridTraversal = new GridTraversal(*const_cast<Grid*>(this));
     return *gridTraversal;
 }
 
