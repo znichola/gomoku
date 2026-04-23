@@ -83,7 +83,8 @@ Grid &Grid::setEmpty(unsigned id) {
 void Grid::generateHash() {
     uint64_t h = 0;
     for (unsigned id = 0; id < 361; ++id) {
-        h ^= zob[id][static_cast<int>(grid[id])];
+        if (grid[id] != Cell::EMPTY)
+            h ^= zob[id][static_cast<int>(grid[id])];
     }
     hash = h;
 }
@@ -93,8 +94,10 @@ uint64_t Grid::getHash() const {
 }
 
 void Grid::updateHash(unsigned id, Cell newValue) {
-    hash ^= zob[id][static_cast<int>(grid[id])];
-    hash ^= zob[id][static_cast<int>(newValue)];
+    if (grid[id] != Cell::EMPTY)
+        hash ^= zob[id][static_cast<int>(grid[id])];
+    if (newValue != Cell::EMPTY)
+        hash ^= zob[id][static_cast<int>(newValue)];
 }
 
 const GridTraversal& Grid::nodes() const {
