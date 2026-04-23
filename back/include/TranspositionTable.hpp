@@ -28,6 +28,7 @@ public:
 
     TranspositionTable();
 
+    void resetAge();
     void newSearch();
     void store(uint64_t hash, float score, int16_t depth, int move, Bound bound);
     const TTEntry* probe(uint64_t hash) const;

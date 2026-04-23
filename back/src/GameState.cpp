@@ -75,6 +75,7 @@ void GameState::reset() {
     if (rGrid != nullptr && moveHistory.size() >= 1)
         board.grid = *rGrid;
     moveHistory.clear();
+    AI::tt.resetAge();
 }
 
 void GameState::setReset() {
