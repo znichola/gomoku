@@ -8,7 +8,8 @@
 namespace AI {
     enum class SearchFunction { MINMAX, NEGAMAX, ALPHABETA};
 
-    inline int maxDepth = 1;
+    inline int maxDepth = 2;
+    inline std::vector<int> nodesExplored;
 
     unsigned bestMove(const Board &board, bool isWhite, SearchFunction sf);
     float minMax(const Board &board, int depth, bool maximizingPlayer);

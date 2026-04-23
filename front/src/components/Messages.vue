@@ -33,14 +33,21 @@ const messages = computed(() => store.gameState.messages)
   position: fixed;
   top: 2rem;
   right: 2rem;
+  z-index: 1000;
 }
 
 .message-container:hover {
+  // padding: 0.3rem 0;
   max-height: 300px;
 }
 
 .message-container:hover {
   animation: enableScroll 0s linear 0.25s forwards;
+}
+
+.message {
+  padding: 0.25rem 0;
+  white-space: pre-wrap;
 }
 
 /* To avoid an ugly scroll bar apearing as the div expands */

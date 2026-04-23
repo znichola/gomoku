@@ -1,5 +1,6 @@
 #include <iostream>
 #include <limits>
+#include <numeric>
 
 #include "AI.hpp"
 #include "MessageQueue.hpp"
@@ -20,9 +21,16 @@ unsigned AI::play(const Board &board, bool isWhite) {
     AlphaBeta with NegaMax - branch pruning, minimise losses
     https://en.wikipedia.org/wiki/Negamax
 
-    Much like negamax, as black pass color=-1 as white color=1
+
+    alpha & beta reprisent the search window for the position score.
+
+    alpha is the lower bound, beta the upper,
+    the true score is some where inbetween.
+
+    Much like negamax, as black pass color=-1 as white color=1.
 */
 float AI::alphaBetaNegaMax(const Board &board, int depth, float a, float b, float color) {
+    nodesExplored[depth] += 1;
     Cell victory = board.isVictory();
     if (depth == 0 || victory != Cell::EMPTY) {
         return color * evaluate(board, depth, victory);
@@ -48,6 +56,7 @@ float AI::alphaBetaNegaMax(const Board &board, int depth, float a, float b, floa
     If black to play, call with color=-1
 */
 float AI::negaMax(const Board &board, int depth, float color) {
+    nodesExplored[depth] += 1;
     Cell victory = board.isVictory();
     if (depth == 0 || victory != Cell::EMPTY) {
         return color * evaluate(board, depth, victory);
@@ -72,6 +81,7 @@ float AI::negaMax(const Board &board, int depth, float color) {
     TODO see negamax for simpler version of the function, and alpha-beta pruning for more optimised one
 */
 float AI::minMax(const Board &board, int depth, bool maximizingPlayer) {
+    nodesExplored[depth] += 1;
     Cell victory = board.isVictory();
     if (depth == 0 || victory != Cell::EMPTY) {
         return evaluate(board, depth, victory); // evaluation/heuristic is only run for terminal nodes
@@ -104,6 +114,7 @@ float AI::minMax(const Board &board, int depth, bool maximizingPlayer) {
 unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
     float bestScore = isWhite ? -INF : INF;
     unsigned bestMove = Board::FIRSTMOVE;
+    AI::nodesExplored.assign(AI::maxDepth + 1, 0);
     for (auto move : getCandidateMoves(board.grid)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
@@ -125,11 +136,19 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
             bestScore = score;
         }
     }
+    ENABLE_LOG
     if (bestMove == Board::FIRSTMOVE) {
         MQ << "[AI] No best move found";
         COUT << "[AI] No best move found\n";
-        DISABLE_LOG
     }
+    MQ << "[AI] explored " << std::accumulate(nodesExplored.begin(), nodesExplored.end(), 0) << " nodes\n"
+       << [](){
+        std::stringstream ss;
+        for (int i = static_cast<int>(nodesExplored.size()) - 1; 0 <= i; i--) {
+            ss << "Depth: " << maxDepth - i << " - " << nodesExplored[i] << " nodes\n";
+        }
+        return ss.str();}();
+    DISABLE_LOG
     return bestMove;
 }
 
