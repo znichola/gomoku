@@ -22,7 +22,7 @@ Grid::~Grid() {
 
 void Grid::cleanCache() {
     if (gridTraversal != nullptr) {
-        gridTraversal->clean();
+        gridTraversal = nullptr;
     }
 }
 
@@ -98,9 +98,18 @@ void Grid::updateHash(unsigned id, Cell newValue) {
 }
 
 const GridTraversal& Grid::nodes() const {
-    if (gridTraversal == nullptr) // TODO: const_cast<Grid*> ?
-        const_cast<Grid*>(this)->gridTraversal = new GridTraversal(*const_cast<Grid*>(this));
-    return *gridTraversal;
+    if (gridTraversal != nullptr) 
+        return *gridTraversal;
+
+    auto it = tableGridTraversal.find(hash);
+    if (it != tableGridTraversal.end()
+            // && memcmp(it->second.grid.getGrid().data(), grid.getGrid().data(), 361) == 0
+            ) {
+        return it->second;
+    } else {
+        auto [it, inserted] = tableGridTraversal.try_emplace(hash, *const_cast<Grid *>(this));
+        return it->second;
+    }
 }
 
 std::string Grid::serialize() const {

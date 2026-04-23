@@ -1,6 +1,7 @@
 #pragma once
 #include <deque>
 #include <vector>
+#include <unordered_map>
 
 #include "Cell.hpp"
 #include "Grid.hpp"
@@ -47,6 +48,9 @@ struct AdjacentNode {
 	constexpr const Node* operator[](size_t i) const { return v[i]; }
 };
 
+class GridTraversal;
+extern std::unordered_map<uint64_t, GridTraversal> tableGridTraversal;
+
 class Grid;
 class GridTraversal {
 private:
@@ -60,57 +64,6 @@ private:
 
 public:
 	GridTraversal(Grid &grid);
-
-	/*GridTraversal(const GridTraversal&) = default;
-	GridTraversal &operator=(const GridTraversal &other) {
-		if (this == &other)
-			return *this;
-
-		// grid is a reference: it cannot be rebound here.
-		isLODGenerated = other.isLODGenerated;
-		isCellRowGenerated = other.isCellRowGenerated;
-
-		nodeLODsGarbage = other.nodeLODsGarbage;
-		gridLOD = other.gridLOD;
-		cellRowsGarbage = other.cellRowsGarbage;
-		gridCellRow = other.gridCellRow;
-
-		auto remapLODPtr = [&](NodeLOD *p) -> NodeLOD * {
-			if (!p) return nullptr;
-			for (size_t i = 0; i < other.nodeLODsGarbage.size(); ++i) {
-				if (p == &other.nodeLODsGarbage[i])
-					return &nodeLODsGarbage[i];
-			}
-			return nullptr;
-		};
-
-		auto remapCellRowPtr = [&](NodeCellRow *p) -> NodeCellRow * {
-			if (!p) return nullptr;
-			for (size_t i = 0; i < other.cellRowsGarbage.size(); ++i) {
-				if (p == &other.cellRowsGarbage[i])
-					return &cellRowsGarbage[i];
-			}
-			return nullptr;
-		};
-
-		for (auto &adj : gridLOD) {
-			for (size_t d = 0; d < 4; ++d)
-				adj[d] = remapLODPtr(adj[d]);
-		}
-
-		for (size_t i = 0; i < cellRowsGarbage.size(); ++i) {
-			cellRowsGarbage[i].prev = remapCellRowPtr(other.cellRowsGarbage[i].prev);
-			cellRowsGarbage[i].next = remapCellRowPtr(other.cellRowsGarbage[i].next);
-		}
-
-		for (auto &adj : gridCellRow) {
-			for (size_t d = 0; d < 4; ++d)
-				adj[d] = remapCellRowPtr(adj[d]);
-		}
-
-		return *this;
-	}*/
-
 	void clean();
 
 	const AdjacentNode<NodeCellRow> operator[](const unsigned i) const;
