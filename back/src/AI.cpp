@@ -52,9 +52,9 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     for (auto move : getOrderedCandidateMoves(board.grid, bestMove)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
+
         float child = -alphaBetaNegaMax(newBoard, depth - 1, -b, -a, -color);
         if (child > value) { value = child; bestMove = move; }
-        value = std::max(value, -alphaBetaNegaMax(newBoard, depth -1, -b, -a, -color));
         a = std::max(a, value);
         if (a >= b) break;
     }
@@ -135,6 +135,7 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
     float bestScore = isWhite ? -INF : INF;
     unsigned bestMove = Board::FIRSTMOVE;
     AI::nodeVisitCounter.assign(AI::maxDepth + 1, 0);
+    tt.newSearch();
     for (auto move : getCandidateMoves(board.grid)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
