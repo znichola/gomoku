@@ -63,8 +63,10 @@ Cell GameState::askAI2Play() {
             COUT << "[AI] Move took " << us / 1'000'000.0 << " s\n";
             MQ   << "[AI] Move took " << us / 1'000'000.0 << " s\n";
         }
+        MQ << "[AI] eval : " << AI::evaluate(board, 0, board.isVictory());
         return res ? activePlayer : Cell::OUTSIDE;
     }
+    MQ << "[AI] eval : " << AI::evaluate(board, 0, board.isVictory());
     return Cell::EMPTY;
 }
 

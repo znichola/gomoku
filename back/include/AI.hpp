@@ -7,24 +7,27 @@
 #include "Board.hpp"
 
 namespace AI {
-    enum class SearchFunction { MINMAX, NEGAMAX, ALPHABETA};
+    enum class SearchFunction { MINMAX, NEGAMAX, ALPHABETA_NEDAMAX, ALPHABETA_NEDAMAX_NOTT};
 
-    inline int16_t maxDepth = 2;
+    struct Eval {float black=0; float white=0;};
+
+    inline int16_t maxDepth = 3;
     inline std::vector<int> nodeVisitCounter;
     inline TranspositionTable tt;
 
-    unsigned bestMove(const Board &board, bool isWhite, SearchFunction sf);
+    // MinMax and varians
+
     float minMax(const Board &board, int16_t depth, bool maximizingPlayer);
     float negaMax(const Board &board, int16_t depth, float color);
     float alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color);
-    float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
+    float alphaBetaNegaMaxNoTT(const Board &board, int16_t depth, float a, float b, float color);
 
-    /* Returns a score for each potential move on the board (limmited to a square around played pieces) */
-    std::vector<std::pair<unsigned, float>>heuristic(const Board &board);
     unsigned play(const Board &board, bool isWhite);
+    unsigned bestMove(const Board &board, bool isWhite, SearchFunction sf);
+    float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
     std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove);
-
+    Eval countGroupsOf(const Board &board, int size);
     bool tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, float &score, unsigned &bestMove);
 };

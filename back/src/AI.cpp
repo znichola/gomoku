@@ -12,7 +12,7 @@ static constexpr float WIN = 100000.0F; // Then endgame in x is maxDepth - depth
 
 // https://en.wikipedia.org/wiki/Minimax#Pseudocode
 unsigned AI::play(const Board &board, bool isWhite) {
-    unsigned move = bestMove(board, isWhite, SearchFunction::ALPHABETA);
+    unsigned move = bestMove(board, isWhite, SearchFunction::ALPHABETA_NEDAMAX_NOTT);
     if (move == Board::FIRSTMOVE) return 180;
     return move;
 }
@@ -53,7 +53,7 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
-        float child = -alphaBetaNegaMax(newBoard, depth - 1, -b, -a, -color);
+        float child = -alphaBetaNegaMax(newBoard, depth-1, -b, -a, -color);
         if (child > value) { value = child; bestMove = move; }
         a = std::max(a, value);
         if (a >= b) break;
@@ -66,6 +66,32 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     tt.store(hash, value, depth, bestMove, bound);
     return value;
 }
+
+/*
+    Alpha Beta - variant with no Transposition table
+*/
+float AI::alphaBetaNegaMaxNoTT(const Board &board, int16_t depth, float a, float b, float color) {
+    nodeVisitCounter[depth] += 1;
+
+    Cell victory = board.isVictory();
+    if (depth == 0 || victory != Cell::EMPTY) {
+        return color * evaluate(board, depth, victory);
+    }
+
+    float value = -INF;
+    for (auto move : getOrderedCandidateMoves(board.grid, Board::FIRSTMOVE)) {
+        Board newBoard(board);
+        if (newBoard.playMove(move) == false) continue;
+
+        float child = -alphaBetaNegaMaxNoTT(newBoard, depth-1, -b, -a, -color);
+        if (child > value) value = child;
+        a = std::max(a, value);
+        if (a >= b) break;
+    }
+    return value;
+}
+
+
 
 /*
     NegaMax algo - alt for miniMax, minimise losses
@@ -148,8 +174,10 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
         case SearchFunction::NEGAMAX:
             score = negaMax(newBoard, AI::maxDepth, isWhite ? 1 : -1);
             break;
-        case SearchFunction::ALPHABETA:
+        case SearchFunction::ALPHABETA_NEDAMAX:
             score = alphaBetaNegaMax(newBoard, AI::maxDepth, -INF, INF, isWhite ? 1 : -1);
+            case SearchFunction::ALPHABETA_NEDAMAX_NOTT:
+            score = alphaBetaNegaMaxNoTT(newBoard, AI::maxDepth, -INF, INF, isWhite ? 1 : -1);
         }
         ENABLE_LOG MBQ(move, std::to_string(score)); DISABLE_LOG
         if (isWhite ? score > bestScore : score < bestScore) { // if white we look for highest score, if black we look for lowest
@@ -166,7 +194,7 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
        << [](){
         std::stringstream ss;
         for (int i = static_cast<int>(nodeVisitCounter.size()) - 1; 0 <= i; i--) {
-            ss << "Depth: " << maxDepth - i << " - " << nodeVisitCounter[i] << " nodes\n";
+            ss << "Depth: " << maxDepth - i << " :: " << nodeVisitCounter[i] << " nodes\n";
         }
         return ss.str();}();
     DISABLE_LOG
@@ -184,33 +212,41 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
     if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {
         return 0;
     }
-    const GridTraversal &gt = board.grid.nodes();
-    // const AdjacentNode<NodeCellRow> &adj = gt[board.lastMove];
-    // if (!adj[i]) continue ; const NodeCellRow &cr = *adj[i];
-    const std::deque<NodeCellRow> nodes = gt.getCellRowsGarbage();
 
-    float max_black = 0;
-    float max_white = 0;
-    for (auto node = nodes.begin(); node != nodes.end(); node++) {
-        const NodeCellRow &cr = *node;
-        if (cr.type == Cell::BLACK && cr.score > max_black) {
-            max_black = cr.size;
-        } else if (cr.type == Cell::WHITE && cr.size > max_white) {
-            max_white = cr.size;
+    Eval tempo = {
+        static_cast<float>(board.isBlackToPlay),
+        static_cast<float>(!board.isBlackToPlay)
+    };
+
+    Eval eval;
+    Eval twos = countGroupsOf(board, 2);
+    Eval threes = countGroupsOf(board, 3);
+    // Eval fours = countGroupsOf(board, 4);
+
+    eval.black += twos.black * 1.1f + tempo.black * 0.2;
+    eval.white += twos.white * 1.1f + tempo.white * 0.2;
+
+    eval.black += threes.black * 0.2f + tempo.black * 0.1;
+    eval.white += threes.white * 0.2f + tempo.white * 0.1;
+
+    // eval.black += fours.black * 2;
+    // eval.white += fours.white * 2;
+
+    return eval.white - eval.black; // + is good for white, - good for black
+}
+
+AI::Eval AI::countGroupsOf(const Board &board, int size) {
+    const GridTraversal &gt = board.grid.nodes();
+    const std::deque<NodeCellRow> &nodes = gt.getCellRowsGarbage();
+
+    Eval eval;
+    for (const NodeCellRow &n : nodes) {
+        if (n.size == size) {
+            if (n.type ==Cell::BLACK) eval.black++;
+            if (n.type ==Cell::WHITE) eval.white++;
         }
     }
-    if (max_black > 0 || max_white > 0)
-       return max_white - max_black; // TODO: FREEZE HERE
-
-    // A basic heuristic for now, all can be thrown away.
-    int blackCount = 0;
-    int whiteCount = 0;
-    for (size_t id = 0; id < board.grid.size; id++) {
-        auto piece = board.grid[id];
-        if (piece == Cell::BLACK) blackCount++;
-        if (piece == Cell::WHITE) whiteCount++;
-    }
-    return whiteCount - blackCount; // If black has more pieces, it's better for them
+    return eval;
 }
 
 std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
