@@ -8,29 +8,45 @@ const moves = computed(() => gameStore.gameState.moveHistory)
 </script>
 
 <template>
-  <div class="turn-log">
+  <div class="turnlog">
     <h2>Turn log</h2>
-    <div class="move-list">
-      <span v-for="(move, i) in moves"
+    <ul>
+      <li v-for="(move, i) in moves"
         :key="move"
-        class="turn"
          @mouseover="gameStore.highlight.set(move, true)" @mouseleave="gameStore.highlight.set(move, false)"
         :class="i % 2 === 0 ? 'white' : 'black'"
-        >{{ move }}</span>
-    </div>
+        >{{ move }}</li>
+    </ul>
   </div>
 </template>
 
 <style scoped land="less">
-.turn-log {
+h2 {
+  padding-bottom: 0.4rem;
+}
+.turnlog {
   color: var(--line-color);
   font-family: 'Courier New', Courier, monospace;
-  margin-left: 3rem;
-}
-
-.move-list {
-  display: flex;
-  flex-wrap: wrap;
+  margin: 0 calc(var(--cell-size) / 2);
+  max-height: 100%;
+  overflow-y: auto;
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  ul li {
+    padding: 0.4rem 1rem;
+    color: var(--primary-color);
+    border: 1px solid var(--line-color);
+    cursor: pointer;
+    &:nth-child(even) {
+      background: var(--primary-color);
+      color: var(--bg-color);
+    }
+    &:hover, &.reverse {
+      background: var(--accent-color);
+    }
+  }
 }
 
 .white {
@@ -40,12 +56,4 @@ const moves = computed(() => gameStore.gameState.moveHistory)
 .black {
   color: var(--black-color);
 }
-
-.turn {
-  border: solid 1px var(--line-color);
-  padding: 0.2rem;
-  min-width: 2ch;
-  cursor: pointer;
-}
-
 </style>

@@ -193,6 +193,10 @@ function keyMode(event: KeyboardEvent) {
 </template>
 
 <style scoped lang="less">
+section {
+  display: flex;
+  justify-content: center;
+}
 div#error-parent {
   position: relative;
 }
@@ -218,11 +222,11 @@ p.error {
 }
 
 div.board {
-  // --celsize: min(40px, calc(100vw / 19));
-  margin-top: calc(var(--celsize) / -2);
-  margin-left: calc(var(--celsize) / -2);
-  padding-bottom: calc(var(--celsize) / 2);
-  padding-right: calc(var(--celsize) / 2);
+  max-width: var(--board-size);
+  margin-top: calc(var(--cell-size) / -2);
+  margin-left: calc(var(--cell-size) / -2);
+  padding-bottom: calc(var(--cell-size) / 2);
+  padding-right: calc(var(--cell-size) / 2);
   box-sizing: content-box;
 
   div.line {
@@ -235,24 +239,24 @@ div.board {
   }
 
   div.cell {
-    width: var(--celsize);
-    height: var(--celsize);
-    line-height: var(--celsize / 2);
+    width: var(--cell-size);
+    height: var(--cell-size);
+    line-height: var(--cell-size / 2);
     border-right: 1px solid var(--line-color);
     border-bottom: 1px solid var(--line-color);
     text-align: center;
 
     position: relative;
     div.circle {
-      --radius: calc(var(--celsize) / 1.5);
+      --radius: calc(var(--cell-size) / 1.5);
       position: absolute;
-      left: calc(var(--celsize) - var(--radius) / 2);
-      top: calc(var(--celsize) - var(--radius) / 2);
+      left: calc(var(--cell-size) - var(--radius) / 2);
+      top: calc(var(--cell-size) - var(--radius) / 2);
       width: calc(var(--radius));
       height: var(--radius);
       line-height: var(--radius);
       font-size: 8px;
-      border-radius: var(--celsize);
+      border-radius: var(--cell-size);
       padding-top: 2px;
       background-color: var(--line-color);
       color: var(--text-color);
@@ -284,7 +288,7 @@ div.board {
       }
 
       &[data-type=black], &[data-type=white] {
-        --radius: calc(var(--celsize) * 0.75);
+        --radius: calc(var(--cell-size) * 0.75);
 
         background: var(--white-color);
         &::after {
@@ -295,7 +299,7 @@ div.board {
           height: calc(var(--radius) * 0.8);
           margin: calc(var(--radius) * 0.1);
           border: calc(var(--radius) * 0.08) solid var(--bg-color);
-          border-radius: var(--celsize);
+          border-radius: var(--cell-size);
           box-sizing: border-box;
           content: ' ';
           z-index: 21;
@@ -319,7 +323,7 @@ div.board {
           margin: -4px 0;
           color: var(--white-color);
           font-family: sans-serif;
-          font-size: calc(var(--celsize) * 0.3);
+          font-size: calc(var(--cell-size) * 0.3);
           display: block;
           width: max-content;
           height: min-content;
@@ -376,10 +380,10 @@ div.board {
 }
 
 div.board.iso3D {
-  margin-top: calc(var(--celsize) / -2);
-  margin-left: calc(var(--celsize) / -2);
-  padding-bottom: calc(var(--celsize) / 1);
-  padding-right: calc(var(--celsize) / 1);
+  margin-top: calc(var(--cell-size) / -2);
+  margin-left: calc(var(--cell-size) / -2);
+  padding-bottom: calc(var(--cell-size) / 1);
+  padding-right: calc(var(--cell-size) / 1);
 
   transform:
     rotateX(50deg)

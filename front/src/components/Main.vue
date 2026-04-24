@@ -57,6 +57,7 @@ h1 {
 
 .layout {
   max-width: var(--content-width);
+  height: 100vh;
 }
 
 .header {
@@ -64,6 +65,7 @@ h1 {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
+  padding-top: 0.8rem;
 }
 
 #logo {
