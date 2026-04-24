@@ -2,10 +2,13 @@
 
 #include <string>
 
+#include "AI.hpp"
 #include "Board.hpp"
 
 struct GameState {
     Cell isAIGame = Cell::EMPTY;
+    Cell moveSuggestion = Cell::EMPTY; // Empty: non, Black: black, White: White, OUTSIDE: both
+    AI::SearchFunction searchFunction = AI::SearchFunction::ALPHABETA_NEGAMAX_TT;
     Board board;
     std::vector<unsigned> moveHistory;
 

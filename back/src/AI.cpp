@@ -11,8 +11,8 @@ static constexpr float INF = std::numeric_limits<float>::infinity();
 static constexpr float WIN = 100000.0F; // Then endgame in x is maxDepth - depth
 
 // https://en.wikipedia.org/wiki/Minimax#Pseudocode
-unsigned AI::play(const Board &board, bool isWhite) {
-    unsigned move = findBestMove(board, isWhite, SearchFunction::ALPHABETA_NEGAMAX);
+unsigned AI::play(const Board &board, bool isWhite, SearchFunction sf) {
+    unsigned move = findBestMove(board, isWhite, sf);
     if (move == Board::FIRSTMOVE) return 180;
     return move;
 }

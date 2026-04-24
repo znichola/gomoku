@@ -22,7 +22,7 @@ namespace AI {
     float alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color);
     float alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b, float color);
 
-    unsigned play(const Board &board, bool isWhite);
+    unsigned play(const Board &board, bool isWhite, SearchFunction sf);
     unsigned findBestMove(const Board &board, bool isWhite, SearchFunction sf);
     float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
 

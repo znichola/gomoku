@@ -3,7 +3,15 @@ import { defineStore } from 'pinia'
 import { Cell, type GameState } from '../types/game'
 
 export const useGameStore = defineStore('game', () => {
-  const gameState = reactive<GameState>({ isAIGame: 0, moveHistory: [], board: null, messages: [] })
+  const gameState = reactive<GameState>({
+    isAIGame: 0,
+    searchFunction: 'ALPHABETA_NEGAMAX_TT',
+    moveSuggestion: 'off',
+    searchDepth: 0,
+    moveHistory: [],
+    board: null,
+    messages: []
+  })
   const watcherState = reactive({
     enabled: false,
     preview_state: [] as Cell[],
@@ -49,6 +57,9 @@ export const useGameStore = defineStore('game', () => {
     gameState.isAIGame = newgameState.isAIGame
     gameState.moveHistory = newgameState.moveHistory
     gameState.messages = processMessages(newgameState.messages)
+    gameState.searchDepth = newgameState.searchDepth
+    gameState.moveSuggestion = newgameState.moveSuggestion
+    gameState.searchFunction = newgameState.searchFunction
   }
 
   /* >> DEBUG BACK WATCHER */

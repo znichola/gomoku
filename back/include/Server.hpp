@@ -10,7 +10,7 @@
 
 class Server {
 public:
-    typedef std::unordered_multimap<std::string, std::string> QueryMap;
+    typedef std::unordered_map<std::string, std::string> QueryMap;
     struct Request {
         std::string method;
         std::string path;

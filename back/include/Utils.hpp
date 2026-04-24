@@ -3,6 +3,7 @@
 
 #include "Server.hpp"
 #include "GameState.hpp"
+#include "AI.hpp"
 
 extern uint64_t zob[361][3];
 

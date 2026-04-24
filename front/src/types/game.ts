@@ -1,20 +1,32 @@
-enum Cell { EMPTY=0, BLACK=1, WHITE=2, OUTSIDE=3 }
+export enum Cell { EMPTY=0, BLACK=1, WHITE=2, OUTSIDE=3 }
 
-type Board = {
-    grid: Cell[]
-    width: number
-    blackCaptured: number
-    whiteCaptured: number
-    isBlackToPlay: boolean
-    winner: Cell
+type SearchFunction =
+  | 'MINMAX'
+  | 'NEGAMAX'
+  | 'ALPHABETA_NEGAMAX'
+  | 'ALPHABETA_NEGAMAX_TT'
+
+type MoveSuggestion =
+  | 'off'
+  | 'black'
+  | 'white'
+  | 'both'
+
+export interface Board {
+  grid: Cell[];
+  width: number;
+  blackCaptured: number;
+  whiteCaptured: number;
+  isBlackToPlay: boolean;
+  winner: Cell;
 }
 
-type GameState = {
-    isAIGame: Cell
-    moveHistory: number[]
-    board: Board | null
-    messages: string[]
+export interface GameState {
+  searchDepth: number;
+  searchFunction: SearchFunction;
+  moveSuggestion: MoveSuggestion;
+  isAIGame: Cell;
+  moveHistory: number[];
+  board: Board | null;
+  messages: string[];
 }
-
-export { Cell }
-export type { Board, GameState }

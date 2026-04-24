@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useGameStore } from '@/stores/game'
-import bowlofstones from './BowlOfStones.vue'
+import bowlofstonesIcon from './icons/BowlOfStonesIcon.vue'
 
 const gameStore = useGameStore()
 const board = computed(() => gameStore.gameState.board)
@@ -16,14 +16,14 @@ const humanGame = computed(() => gameStore.watcherState.human)
   <div class="hud">
     <div class="capture-card black" :class="{ai: aiGame === 1, human: humanGame === 1 }">
       <div class="capture-bowl">
-        <bowlofstones />
+        <bowlofstonesIcon />
         <span class="capture-count">{{ blackCaptured }}</span>
       </div>
     </div>
 
     <div class="capture-card white" :class="{ai: aiGame === 2, human: humanGame === 2}">
       <div class="capture-bowl">
-        <bowlofstones />
+        <bowlofstonesIcon />
         <span class="capture-count">{{ whiteCaptured }}</span>
       </div>
     </div>

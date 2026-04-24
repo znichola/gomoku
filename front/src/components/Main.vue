@@ -10,11 +10,14 @@ import hud from './Hud.vue'
 import turnlog from './TurnLog.vue'
 import messages from './Messages.vue'
 import RulesModal from './RulesModal.vue'
+import ConfigModal from './ConfigModal.vue'
 import WinnerModal from './WinnerModal.vue'
+import ConfigIcon from "@/components/icons/ConfigIcon.vue";
 
 const reload = () => window.location.reload()
 
 const rulesOpen = ref(false)
+const configOpen = ref(false)
 
 async function reset() {
   try {
@@ -37,6 +40,7 @@ async function reset() {
       <span class="desc" v-if="gameStore.watcherState.enabled">[DEBUG] Watcher is enabled</span>
       <!-- Bouton règles -->
       <span class="rules" type="button" @click="rulesOpen = true">?</span>
+      <span class="config" type="button" @click="configOpen = true"><ConfigIcon size="16"/></span>
     </div>
 
     <controles />
@@ -47,6 +51,7 @@ async function reset() {
   <turnlog class="turnlog" />
 </div>
 <RulesModal :open="rulesOpen" @close="rulesOpen = false" />
+<ConfigModal :open="configOpen" @close="configOpen = false" />
 <WinnerModal @close="reset()" />
 </template>
 
@@ -80,15 +85,23 @@ h1 {
   }
 }
 
-.header .rules {
+.rules, .config {
   cursor: pointer;
   position: absolute;
-  top: 0px;
-  left: -20px;
   padding: 5px;
   font-size: 1.4rem;
   font-weight: bold;
   color: var(--text-color);
+}
+
+.rules {
+  top: 0px;
+  left: -20px;
+}
+
+.config {
+  top: 30px;
+  left: -25px;
 }
 
 h1::after {
