@@ -8,11 +8,11 @@
 #include <assert.h>
 
 Grid::Grid(unsigned width) : grid(width * width, Cell::EMPTY), width(width), size(width * width) {
-
+    generateHash();
 }
 
 Grid::Grid(const Grid &grid) : grid(std::move(grid.grid)), width(grid.width), size(width * width) {
-
+    generateHash();
 }
 
 Grid::~Grid() {

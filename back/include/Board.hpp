@@ -7,7 +7,11 @@
 #include "Cell.hpp"
 #include "Grid.hpp"
 
-struct Board {
+class Board {
+private:
+    bool playMove(unsigned id, bool forceMove);
+
+public:
     static constexpr unsigned FIRSTMOVE = 0xFFFF;
 
     Grid grid;
@@ -19,10 +23,14 @@ struct Board {
 
     Board(unsigned width=19);
     Board(const Grid &grid);
+    /**
+     * @param forceMoveId is NOT verified with isValidMove
+     */
+    Board(const Grid &grid, unsigned forceMoveId);
 
     bool playMove(unsigned id);
     void doCaptures(unsigned id);
-    bool isValidMove(unsigned id);
+    bool isValidMove(unsigned id) const;
     Cell isVictory() const;
     bool isGameOver() const;
     void addCapture(Cell color);

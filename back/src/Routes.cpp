@@ -90,6 +90,7 @@ void registerRoutes(Server& server, GameState& gs) {
             changed = true;
             gs.searchFunction = parseEnum<AI::SearchFunction>(get("searchFunction"), {
                 {"MINMAX", AI::SearchFunction::MINMAX},
+                {"MINMAX_JETESTE", AI::SearchFunction::MINMAX_JETESTE},
                 {"NEGAMAX", AI::SearchFunction::NEGAMAX},
                 {"ALPHABETA_NEGAMAX", AI::SearchFunction::ALPHABETA_NEGAMAX},
                 {"ALPHABETA_NEGAMAX_TT", AI::SearchFunction::ALPHABETA_NEGAMAX_TT}

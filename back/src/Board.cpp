@@ -13,8 +13,12 @@ Board::Board(const Grid &grid) : grid(grid) {
 
 }
 
-bool Board::playMove(unsigned id) {
-    if (!isValidMove(id))
+Board::Board(const Grid &grid, unsigned forceMoveId) : grid(grid) {
+    playMove(forceMoveId, true);
+}
+
+bool Board::playMove(unsigned id, bool forceMove) {
+    if (!forceMove && !isValidMove(id))
         return false;
 
     grid.set(id, isBlackToPlay ? Cell::BLACK : Cell::WHITE);
@@ -36,7 +40,11 @@ bool Board::playMove(unsigned id) {
     return true;
 }
 
-bool Board::isValidMove(unsigned id) {
+bool Board::playMove(unsigned id) {
+    return playMove(id, false);
+}
+
+bool Board::isValidMove(unsigned id) const {
     if (id >= grid.size)
         return false;
 

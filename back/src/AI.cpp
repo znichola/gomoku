@@ -171,6 +171,9 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, SearchFunction sf) {
         case SearchFunction::MINMAX:
             score = minMax(newBoard, AI::maxDepth, !isWhite);
             break;
+        case SearchFunction::MINMAX_JETESTE:
+            score = minMax_jeteste1(newBoard, AI::maxDepth, !isWhite);
+            break;
         case SearchFunction::NEGAMAX:
             score = negaMax(newBoard, AI::maxDepth, isWhite ? 1 : -1);
             break;
@@ -269,18 +272,18 @@ std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
 
 std::vector<unsigned> AI::getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color) {
     const GridTraversal &gt = grid.nodes();
-    const std::vector<AdjacentNode<NodeCellRow>> gridCR = gt.getGridCellRow();
+    const std::vector<AdjacentNode<NodeCellRow>> &gridCR = gt.getGridCellRow();
 
     (void) bestMove;
 
     std::set<unsigned> moves = getCandidateMoves(grid);
 
     struct Compare {
-        bool operator()(const std::pair<int, int>& a,
-                        const std::pair<int, int>& b) const {
-            if (a.first != b.first)
-                return a.first > b.first; // score décroissant
-            return a.second < b.second;   // tie-break sur id
+        bool operator()(const std::pair<unsigned, unsigned>& a,
+                        const std::pair<unsigned, unsigned>& b) const {
+            if (a.second != b.second)
+                return a.second > b.second; // score décroissant
+            return a.first < b.first;   // tie-break sur id
         }
     };
     std::set<std::pair<unsigned, unsigned>, Compare> stones;
@@ -297,12 +300,12 @@ std::vector<unsigned> AI::getOrderedCandidateMoves(const Grid &grid, unsigned be
                 score += 5 + cr.size + cr.next->size;
             }
         }
-        stones.insert({score, *id});
+        stones.insert({*id, score});
     }
 
     std::vector<unsigned> result;
 
-    for (const auto& [score, id] : stones) {
+    for (const auto& [id, score] : stones) {
         if (score > 1)
             result.push_back(id);
     }

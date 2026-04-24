@@ -7,7 +7,12 @@
 #include "Board.hpp"
 
 namespace AI {
-    enum class SearchFunction { MINMAX, NEGAMAX, ALPHABETA_NEGAMAX, ALPHABETA_NEGAMAX_TT};
+    enum class SearchFunction {
+        MINMAX,
+        MINMAX_JETESTE,
+        NEGAMAX,
+        ALPHABETA_NEGAMAX, ALPHABETA_NEGAMAX_TT
+    };
 
     struct Eval {float black=0; float white=0;};
 
@@ -30,4 +35,7 @@ namespace AI {
     std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color);
     Eval countGroupsOf(const Board &board, int size);
     bool tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, float &score, unsigned &bestMove);
+
+    float minMax_jeteste1(const Board &board, int16_t depth, bool isBlackToPlay, int16_t level = 0);
+    std::set<unsigned>getCandidateMoves_jeteste1(const Grid &grid, Cell color, int16_t level); 
 };

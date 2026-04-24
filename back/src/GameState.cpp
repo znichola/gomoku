@@ -17,6 +17,7 @@ std::string GameState::serialize() const {
     out << "\"isAIGame\": " << static_cast<unsigned>(isAIGame) << ",\n";
     out << "\"searchFunction\": " << serializeEnum<AI::SearchFunction>(searchFunction, {
         {AI::SearchFunction::MINMAX, "MINMAX"},
+        {AI::SearchFunction::MINMAX_JETESTE, "MINMAX_JETESTE"},
         {AI::SearchFunction::NEGAMAX, "NEGAMAX"},
         {AI::SearchFunction::ALPHABETA_NEGAMAX, "ALPHABETA_NEGAMAX"},
         {AI::SearchFunction::ALPHABETA_NEGAMAX_TT, "ALPHABETA_NEGAMAX_TT"}
