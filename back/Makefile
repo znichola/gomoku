@@ -8,7 +8,7 @@ CXXFLAGS += -std=c++20
 
 FILES     = Board Cell GameState Grid Routes Server Utils MessageQueue AI AI.jeteste Vector2D GridTraversal TranspositionTable EnumIO
 # CXXFILES are files without header (.hpp file) :
-CXXFILES  = RoutesArbiter main_$(PORT) $(FILES)
+CXXFILES  = RoutesArbiter main_$(PORT) $(FILES) AI2
 
 OBJ_PATH  = obj/
 GOBJ_PATH = gobj/

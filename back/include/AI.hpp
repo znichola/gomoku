@@ -30,6 +30,7 @@ namespace AI {
     unsigned play(const Board &board, bool isWhite, SearchFunction sf);
     unsigned findBestMove(const Board &board, bool isWhite, SearchFunction sf);
     float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
+    float evaluate2(const Board &board, int16_t depth, Cell winningPlayer);
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
     std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color);
