@@ -61,6 +61,7 @@ h1 {
 }
 
 .header {
+  height: min-content;
   display: flex;
   align-items: center;
   justify-content: center;

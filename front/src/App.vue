@@ -65,7 +65,7 @@ h1 {
 }
 
 @media all and (min-width: 900px),
-       all and (max-height: 850px) {
+       all and (max-height: 600px) {
   .layout {
     width: 100vw;
     max-width: 100vw !important;
