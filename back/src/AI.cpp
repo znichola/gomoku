@@ -209,6 +209,8 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, SearchFunction sf) {
     This function is only called at terminal nodes of the tree (see subject p5)
 */
 float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
+    return AI::evaluate2(board, depth, winningPlayer);
+
     if (winningPlayer == Cell::WHITE) return WIN + depth;
     if (winningPlayer == Cell::BLACK) return -WIN - depth;
     if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {
