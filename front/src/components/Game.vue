@@ -75,7 +75,8 @@ async function move(event: MouseEvent) {
     }
   }
   const human = gameStore.watcherState.human
-  if (human !== Cell.EMPTY && (gameStore.gameState.board?.isBlackToPlay && human === Cell.WHITE))
+  const player = gameStore.gameState.board?.isBlackToPlay ? Cell.BLACK : Cell.WHITE
+  if (human !== Cell.EMPTY && human !== player)
     return
   try {
     clearTimeout(_timeout_delay_ai)
