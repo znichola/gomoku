@@ -139,6 +139,10 @@ std::string Server::readFullRequest(int client) {
     std::string request;
     char buffer[4096];
     bool method_checked = false;
+    struct timeval tv;
+    tv.tv_sec = 60; // 60sec of timeout
+    tv.tv_usec = 0;
+    setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
     while (true) {
         int bytes = read(client, buffer, sizeof(buffer));
