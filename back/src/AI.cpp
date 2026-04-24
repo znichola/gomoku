@@ -12,7 +12,7 @@ static constexpr float WIN = 100000.0F; // Then endgame in x is maxDepth - depth
 
 // https://en.wikipedia.org/wiki/Minimax#Pseudocode
 unsigned AI::play(const Board &board, bool isWhite) {
-    unsigned move = bestMove(board, isWhite, SearchFunction::ALPHABETA_NEDAMAX_NOTT);
+    unsigned move = findBestMove(board, isWhite, SearchFunction::ALPHABETA_NEGAMAX);
     if (move == Board::FIRSTMOVE) return 180;
     return move;
 }
@@ -30,7 +30,7 @@ unsigned AI::play(const Board &board, bool isWhite) {
 
     Much like negamax, as black pass color=-1 as white color=1.
 */
-float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color) {
+float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b, float color) {
     nodeVisitCounter[depth] += 1;
     uint64_t hash = board.grid.getHash();
 
@@ -53,7 +53,7 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
-        float child = -alphaBetaNegaMax(newBoard, depth-1, -b, -a, -color);
+        float child = -alphaBetaNegaMaxTT(newBoard, depth-1, -b, -a, -color);
         if (child > value) { value = child; bestMove = move; }
         a = std::max(a, value);
         if (a >= b) break;
@@ -70,7 +70,7 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
 /*
     Alpha Beta - variant with no Transposition table
 */
-float AI::alphaBetaNegaMaxNoTT(const Board &board, int16_t depth, float a, float b, float color) {
+float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color) {
     nodeVisitCounter[depth] += 1;
 
     Cell victory = board.isVictory();
@@ -83,7 +83,7 @@ float AI::alphaBetaNegaMaxNoTT(const Board &board, int16_t depth, float a, float
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
-        float child = -alphaBetaNegaMaxNoTT(newBoard, depth-1, -b, -a, -color);
+        float child = -alphaBetaNegaMax(newBoard, depth-1, -b, -a, -color);
         if (child > value) value = child;
         a = std::max(a, value);
         if (a >= b) break;
@@ -157,7 +157,7 @@ float AI::minMax(const Board &board, int16_t depth, bool maximizingPlayer) {
 /*
     Choosing the best move by using minMax
 */
-unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
+unsigned AI::findBestMove(const Board &board, bool isWhite, SearchFunction sf) {
     float bestScore = isWhite ? -INF : INF;
     unsigned bestMove = Board::FIRSTMOVE;
     AI::nodeVisitCounter.assign(AI::maxDepth + 1, 0);
@@ -174,11 +174,11 @@ unsigned AI::bestMove(const Board &board, bool isWhite, SearchFunction sf) {
         case SearchFunction::NEGAMAX:
             score = negaMax(newBoard, AI::maxDepth, isWhite ? 1 : -1);
             break;
-        case SearchFunction::ALPHABETA_NEDAMAX:
+        case SearchFunction::ALPHABETA_NEGAMAX:
             score = alphaBetaNegaMax(newBoard, AI::maxDepth, -INF, INF, isWhite ? 1 : -1);
             break;
-        case SearchFunction::ALPHABETA_NEDAMAX_NOTT:
-            score = alphaBetaNegaMaxNoTT(newBoard, AI::maxDepth, -INF, INF, isWhite ? 1 : -1);
+        case SearchFunction::ALPHABETA_NEGAMAX_TT:
+            score = alphaBetaNegaMaxTT(newBoard, AI::maxDepth, -INF, INF, isWhite ? 1 : -1);
             break;
         }
         ENABLE_LOG MBQ(move, std::to_string(score)); DISABLE_LOG

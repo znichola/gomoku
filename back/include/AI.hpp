@@ -7,7 +7,7 @@
 #include "Board.hpp"
 
 namespace AI {
-    enum class SearchFunction { MINMAX, NEGAMAX, ALPHABETA_NEDAMAX, ALPHABETA_NEDAMAX_NOTT};
+    enum class SearchFunction { MINMAX, NEGAMAX, ALPHABETA_NEGAMAX, ALPHABETA_NEGAMAX_TT};
 
     struct Eval {float black=0; float white=0;};
 
@@ -20,10 +20,10 @@ namespace AI {
     float minMax(const Board &board, int16_t depth, bool maximizingPlayer);
     float negaMax(const Board &board, int16_t depth, float color);
     float alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color);
-    float alphaBetaNegaMaxNoTT(const Board &board, int16_t depth, float a, float b, float color);
+    float alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b, float color);
 
     unsigned play(const Board &board, bool isWhite);
-    unsigned bestMove(const Board &board, bool isWhite, SearchFunction sf);
+    unsigned findBestMove(const Board &board, bool isWhite, SearchFunction sf);
     float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
