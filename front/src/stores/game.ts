@@ -58,6 +58,8 @@ export const useGameStore = defineStore('game', () => {
   function updateGameState(newgameState: GameState) {
     gameState.board = newgameState.board
     gameState.isAIGame = newgameState.isAIGame
+    if (watcherState.human === gameState.isAIGame)
+      watcherState.human = Cell.EMPTY;
     gameState.moveHistory = newgameState.moveHistory
     gameState.messages = processMessages(newgameState.messages)
     gameState.searchDepth = newgameState.searchDepth
