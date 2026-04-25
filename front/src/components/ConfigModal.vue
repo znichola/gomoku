@@ -2,6 +2,7 @@
 import { ref, watch, onBeforeUnmount } from 'vue'
 import { useGameStore } from '@/stores/game'
 import AppButton from '@/components/AppButton.vue'
+import { computed } from 'vue';
 
 const props = defineProps<{
   open: boolean
@@ -11,12 +12,25 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
+async function toggleAI(color: 1 | 2) {
+  try {
+    const v = gameStore.gameState.isAIGame == color ? 0 : color
+    const resp = await fetch(`http://${window.location.hostname}:9012/set-config?isAIGame=${v}`, {
+      method: 'GET',
+    })
+    const data = await resp.json()
+    gameStore.updateGameState(data);
+    } catch (err) {
+    console.warn(err)
+  }
+}
+
 const gameStore = useGameStore()
 
-const localAI = ref<0 | 1 | 2>(0)
-const localSearch = ref<SearchFunction>('ALPHABETA_NEGAMAX_TT')
+const aiGame = computed(() => gameStore.gameState.isAIGame)
+const localSearch = ref('ALPHABETA_NEGAMAX_TT')
 const localDepth = ref<number>(1)
-const localSuggest = ref<MoveSuggestion>('off')
+const localSuggest = ref('off')
 
 
 watch(
@@ -24,8 +38,7 @@ watch(
   (open) => {
     if (!open) return
 
-    localAI.value = gameStore.gameState.isAIGame as 0 | 1 | 2
-    localSearch.value = gameStore.gameState.searchFunction 
+    localSearch.value = gameStore.gameState.searchFunction
     localDepth.value = gameStore.gameState.searchDepth
     localSuggest.value = gameStore.gameState.moveSuggestion
   }
@@ -46,7 +59,6 @@ onBeforeUnmount(() => {
 async function applyConfig() {
   try {
     const params = new URLSearchParams({
-      isAIGame: String(localAI.value),
       searchFunction: localSearch.value,
       searchDepth: String(localDepth.value),
       moveSuggestion: String(localSuggest.value),
@@ -71,7 +83,7 @@ function onBackdropClick(e: MouseEvent) {
   if (e.target === e.currentTarget) emit('close')
 }
 
-const searchOptions: { value: SearchFunction; label: string; desc: string }[] = [
+const searchOptions: { value: string; label: string; desc: string }[] = [
   { value: 'MINMAX',               label: 'Minimax',         desc: 'Basic two-player search' },
   { value: 'MINMAX_JETESTE',       label: 'Minimax (G)',     desc: 'Basic two-player search' },
   { value: 'NEGAMAX',              label: 'Negamax',         desc: 'Simplified minimax variant' },
@@ -101,18 +113,20 @@ const suggestOptions = [
 
           <section class="cm-section">
             <h3>AI opponent</h3>
-            <em style="margin-bottom: 0.4rem; display: block;">TODO: enabled after centralising AI toggles</em>
             <div class="cm-row">
               <AppButton
-                :disabled="true"
-                :active="localAI === 1"
-                @click="localAI = localAI === 1 ? 0 : 1"
+                :active="aiGame === 1"
+                @click="toggleAI(1)"
               >Black</AppButton>
               <AppButton
-                :disabled="true"
-                :active="localAI === 2"
-                @click="localAI = localAI === 2 ? 0 : 2"
+                :active="aiGame === 2"
+                @click="toggleAI(2)"
               >White</AppButton>
+              <div class="cm-range-row" data-hint="Add a delay between human and ai move.">
+                <input id="aispeed" type="range" :value="gameStore.watcherState.speed"
+                  @input="event => gameStore.watcherState.speed = (event.target as any).value || 0" min="0" max="10">
+                <label for="aispeed"><span class="cm-value">{{ +gameStore.watcherState.speed }}s</span></label>
+              </div>
             </div>
           </section>
 
@@ -131,7 +145,7 @@ const suggestOptions = [
 
           <section class="cm-section">
             <h3>Search depth</h3>
-            <div class="cm-depth-row">
+            <div class="cm-range-row">
               <input
                 type="range"
                 min="1"
@@ -139,7 +153,7 @@ const suggestOptions = [
                 step="1"
                 v-model.number="localDepth"
               />
-              <span class="cm-depth-value">{{ localDepth }}</span>
+              <span class="cm-value">{{ localDepth }}</span>
             </div>
             <p class="cm-hint">
               <template v-if="localDepth <= 2">Puny depth, weak play, but fast response.</template>
@@ -255,9 +269,10 @@ const suggestOptions = [
   }
 }
 
-.cm-depth-row {
+.cm-range-row {
   display: flex;
   align-items: center;
+  width: 100%;
   gap: 0.8rem;
 
   input[type='range'] {
@@ -267,19 +282,30 @@ const suggestOptions = [
   }
 }
 
-.cm-depth-value {
+.cm-value {
   font: var(--ui-font);
   color: var(--accent-color);
   min-width: 1.2rem;
   text-align: right;
 }
 
-.cm-hint {
+.cm-hint, *[data-hint]::after {
   margin: 0.35rem 0 0;
   font-family: var(--ui-font-family);
   font-size: 0.8rem;
   color: var(--line-color);
   line-height: 1.4;
+}
+
+*[data-hint] {
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+*[data-hint]::after  {
+  content: attr(data-hint);
+  position: absolute;
+  bottom: 0.1rem;
 }
 
 .cm-foot {
