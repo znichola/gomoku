@@ -39,13 +39,14 @@ struct NodeCellRow: NodeLOD {
 	~NodeCellRow() {}
 };
 
-template <typename Node> 
 struct AdjacentNode {
 	bool dead = false;
 
-	Node* v[4] = { NULL, NULL, NULL, NULL }; // v[0]=right, v[1]=bottomRight, v[2]=bottom, v[3]=bottomLeft
-	constexpr Node*& operator[](size_t i) { return v[i]; }
-	constexpr const Node* operator[](size_t i) const { return v[i]; }
+	NodeLOD* lod[4] = { NULL, NULL, NULL, NULL }; // v[0]=right, v[1]=bottomRight, v[2]=bottom, v[3]=bottomLeft
+	NodeCellRow* cr[4] = { NULL, NULL, NULL, NULL }; // v[0]=right, v[1]=bottomRight, v[2]=bottom, v[3]=bottomLeft
+
+	constexpr NodeCellRow*& operator[](size_t i) { return cr[i]; }
+	constexpr const NodeCellRow* operator[](size_t i) const { return cr[i]; }
 };
 
 class GridTraversal;
@@ -55,9 +56,8 @@ class Grid;
 class GridTraversal {
 private:
 	std::deque<NodeLOD> nodeLODsGarbage;
-	std::vector<AdjacentNode<NodeLOD>> gridLOD;
 	std::deque<NodeCellRow> cellRowsGarbage;
-	std::vector<AdjacentNode<NodeCellRow>> gridCellRow;
+	std::vector<AdjacentNode> gridCellRow;
 
 	void iterateNode(const Grid& grid, void (GridTraversal::*populateNode)(long, long, long, const Grid&));
 
@@ -70,10 +70,9 @@ private:
 public:
 	GridTraversal(const Grid &grid);
 
-	const AdjacentNode<NodeCellRow> operator[](const unsigned i) const;
+	const AdjacentNode operator[](const unsigned i) const;
 
-	 const std::deque<NodeLOD>& getNodeLODsGarbage() const;
-	 const std::vector<AdjacentNode<NodeLOD>>& getGridLOD() const;
-	 const std::deque<NodeCellRow>& getCellRowsGarbage() const;
-	 const std::vector<AdjacentNode<NodeCellRow>>& getGridCellRow() const;
+	const std::deque<NodeLOD>& getNodeLODsGarbage() const;
+	const std::deque<NodeCellRow>& getCellRowsGarbage() const;
+	const std::vector<AdjacentNode>& getGridCellRow() const;
 };

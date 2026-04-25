@@ -272,7 +272,7 @@ std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
 
 std::vector<unsigned> AI::getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color) {
     const GridTraversal &gt = grid.nodes();
-    const std::vector<AdjacentNode<NodeCellRow>> &gridCR = gt.getGridCellRow();
+    const std::vector<AdjacentNode> &gridCR = gt.getGridCellRow();
 
     (void) bestMove;
 
@@ -289,7 +289,7 @@ std::vector<unsigned> AI::getOrderedCandidateMoves(const Grid &grid, unsigned be
     std::set<std::pair<unsigned, unsigned>, Compare> stones;
 
     for (std::set<unsigned>::iterator id = moves.begin(); id != moves.end(); ++id) {
-        const AdjacentNode<NodeCellRow> &adj = gridCR[*id];
+        const AdjacentNode &adj = gridCR[*id];
         unsigned score = 0;
         for (unsigned ext = 0; ext < 4; ++ext) {
             if (!adj[ext]) continue;

@@ -7,20 +7,17 @@ std::unordered_map<uint64_t, GridTraversal> tableGridTraversal;
 GridTraversal::GridTraversal(const Grid &grid) {
 	const unsigned size = grid.size;
 
-	// NodeLOD
-	gridLOD.reserve(size);
-	gridLOD.insert(gridLOD.end(), size, AdjacentNode<NodeLOD>{});
+	gridCellRow.reserve(size);
+	gridCellRow.insert(gridCellRow.end(), size, AdjacentNode{});
 
+	// NodeLOD
 	iterateNode(grid, &GridTraversal::populateLOD);
 
 	// NodeCellRow
-	gridCellRow.reserve(size);
-	gridCellRow.insert(gridCellRow.end(), size, AdjacentNode<NodeCellRow>{});
-
 	// Set dead state
 	for (unsigned id = 0; id < size; ++id) {
 		for (long ext = 0; ext < 4; ++ext) {
-			NodeLOD*& cellLOD = gridLOD[id][ext];
+			NodeLOD*& cellLOD = gridCellRow[id].lod[ext];
 			if (cellLOD != NULL && cellLOD->step == NodeStep::DEATH) {
 				// std::cout << id << " is dead" << std::endl;
 				gridCellRow[id].dead = true;
@@ -32,7 +29,7 @@ GridTraversal::GridTraversal(const Grid &grid) {
 	iterateNode(grid, &GridTraversal::populateCellRow);
 }
 
-const AdjacentNode<NodeCellRow> GridTraversal::operator[](unsigned i) const {
+const AdjacentNode GridTraversal::operator[](unsigned i) const {
 	return gridCellRow[i];
 }
 
@@ -62,8 +59,8 @@ NodeLOD* GridTraversal::createLOD(Cell type) {
 }
 
 void GridTraversal::populateLOD(long id, long nid, long ext, const Grid& grid) {
-	NodeLOD*& cell = gridLOD[id][ext];
-	NodeLOD*& next = gridLOD[nid][ext];
+	NodeLOD*& cell = gridCellRow[id].lod[ext];
+	NodeLOD*& next = gridCellRow[nid].lod[ext];
 
 	if (cell == NULL) { // COMPARE FIRST & SECOND PIECE
 
@@ -123,15 +120,11 @@ const std::deque<NodeLOD>& GridTraversal::getNodeLODsGarbage() const {
 	return nodeLODsGarbage;
 };
 
-const std::vector<AdjacentNode<NodeLOD>>& GridTraversal::getGridLOD() const {
-	return gridLOD;
-};
-
 const std::deque<NodeCellRow>& GridTraversal::getCellRowsGarbage() const {
 	return cellRowsGarbage;
 };
 
-const std::vector<AdjacentNode<NodeCellRow>>& GridTraversal::getGridCellRow() const {
+const std::vector<AdjacentNode>& GridTraversal::getGridCellRow() const {
 	return gridCellRow;
 };
 
