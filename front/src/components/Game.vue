@@ -122,7 +122,6 @@ async function move(event: MouseEvent) {
         gameStore.updateGameState(data)
     }
   } catch (err) {
-    errorMessage.value = 'Server refused this move.'
     console.warn((err as Error).message)
   }
   gameStore.fetchIsAvailable.set(true);
