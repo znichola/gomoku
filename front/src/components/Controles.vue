@@ -100,7 +100,6 @@ onMounted(() => {
   }
   if (localStorage.getItem('gomoku_keymode') === 'true') {
     gameStore.watcherState.keymode = true;
-    console.log('ok')
   }
 })
 

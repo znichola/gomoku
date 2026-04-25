@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted, computed, nextTick } from 'vue'
+import { ref, watch, onUnmounted, computed, nextTick, onUpdated, onMounted } from 'vue'
 import { Cell } from '@/types/game'
 import { useGameStore } from '@/stores/game'
 
@@ -11,6 +11,8 @@ const emit = defineEmits<{
 
 const gameStore = useGameStore()
 const canvasEl = ref<HTMLCanvasElement | null>(null)
+
+const cardVisible = ref(false)
 
 interface Particle {
   x: number
@@ -104,6 +106,12 @@ function getTextTargets(
 async function startAnimation() {
   if (!canvasEl.value || !winner.value) return
 
+  gameStore.fetchIsAvailable.set(false)
+  await new Promise(resolve => setTimeout(resolve, 1000))
+  cardVisible.value = true
+  await new Promise(resolve => setTimeout(resolve, 1000))
+  gameStore.fetchIsAvailable.set(true)
+
   const canvas = canvasEl.value
   canvas.width = window.innerWidth
   canvas.height = window.innerHeight
@@ -182,12 +190,27 @@ function animate() {
   if (!canvas) return
   const ctx = canvas.getContext('2d')!
 
-  // Semi-transparent fill creates motion trail and dims the backdrop gradually
-  ctx.fillStyle = 'rgba(45, 52, 66, 0.18)'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-
   frameCount++
   const exploding = frameCount <= EXPLODE_DURATION
+
+  // ✅ Calculer l'opacité du fond
+  const FADE_OUT_START = 150
+  const FADE_OUT_DURATION = 60
+  const fadeFrame = frameCount - FADE_OUT_START
+  let backdropAlpha = 0.98
+
+  if (fadeFrame >= 0 && fadeFrame <= FADE_OUT_DURATION) {
+    backdropAlpha = 0.98 * Math.max(0, 1 - (fadeFrame / FADE_OUT_DURATION))
+  } else if (fadeFrame > FADE_OUT_DURATION) {
+    backdropAlpha = 0
+  }
+
+  // ✅ CLEAR complètement le canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  // Semi-transparent fill avec opacité dynamique
+  ctx.fillStyle = `rgba(45, 52, 66, ${backdropAlpha})`
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   for (const p of particles) {
     if (exploding) {
@@ -215,37 +238,184 @@ function animate() {
   animFrame = requestAnimationFrame(animate)
 }
 
-watch(open, async (newVal) => {
-  if (newVal) {
-    await nextTick()
-    startAnimation()
-  } else {
-    cancelAnimationFrame(animFrame)
-    particles = []
-  }
-})
-
 onUnmounted(() => {
   cancelAnimationFrame(animFrame)
 })
+const cardPosition = ref({ x: 0, y: 0 })
+const isDragging = ref(false)
+let dragStart = { x: 0, y: 0 }
+let dragOffset = { x: 0, y: 0 }
 
-function onBackdropClick(e: MouseEvent) {
-  //if (e.target === e.currentTarget) emit('close')
+function onMouseDown(e: MouseEvent) {
+  isDragging.value = true
+  dragStart = { x: e.clientX, y: e.clientY }
+  dragOffset = { ...cardPosition.value }
 }
+
+function onMouseMove(e: MouseEvent) {
+  if (!isDragging.value) return
+
+  const deltaX = e.clientX - dragStart.x
+  const deltaY = e.clientY - dragStart.y
+
+  cardPosition.value = {
+    x: dragOffset.x + deltaX,
+    y: dragOffset.y + deltaY
+  }
+}
+
+function onMouseUp() {
+  isDragging.value = false
+}
+
+function handleResize() {
+  if (!canvasEl.value || !winner.value) return
+  const canvas = canvasEl.value
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
+
+  const screenCenterX = canvas.width / 2
+  const screenCenterY = canvas.height / 2
+
+  for (const p of particles) {
+    const dx = p.targetX - screenCenterX
+    const dy = p.targetY - screenCenterY
+    p.vx = dx * 0.055
+    p.vy = dy * 0.055
+  }
+}
+
+const isClickDragging = ref(false)
+let clickDragStart = { x: 0, y: 0 }
+
+function onBackdropMouseDown(event: MouseEvent) {
+  if (event.target !== event.currentTarget) return
+
+  isClickDragging.value = true
+  clickDragStart = { x: event.clientX, y: event.clientY }
+
+  for (const p of particles) {
+    const dx = clickDragStart.x - p.x
+    const dy = clickDragStart.y - p.y
+    const len = Math.sqrt(dx * dx + dy * dy) || 1
+    p.vx = (dx / len) * 8
+    p.vy = (dy / len) * 8
+  }
+}
+
+function onBackdropMouseMove(event: MouseEvent) {
+  if (!isClickDragging.value) return
+
+  const currentX = event.clientX
+  const currentY = event.clientY
+  const deltaX = currentX - clickDragStart.x
+  const deltaY = currentY - clickDragStart.y
+  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+
+  if (distance < 10) return
+
+  for (const particle of particles) {
+    const particleDx = particle.x - clickDragStart.x
+    const particleDy = particle.y - clickDragStart.y
+    const particleDistance = Math.sqrt(particleDx * particleDx + particleDy * particleDy)
+
+    const pullRadius = distance * 0.5
+    const pullStrength = Math.max(0, 1 - particleDistance / pullRadius)
+
+    if (pullStrength > 0) {
+      const directionX = deltaX / distance
+      const directionY = deltaY / distance
+
+      particle.vx += directionX * distance * 0.15 * pullStrength
+      particle.vy += directionY * distance * 0.15 * pullStrength
+    }
+  }
+}
+
+function onBackdropMouseUp() {
+  isClickDragging.value = false
+}
+
+const isShiftPressed = ref(false)
+
+function handleKeyDown(event: KeyboardEvent) {
+  if (event.key === 'Shift')
+    isShiftPressed.value = true
+}
+
+function handleKeyUp(event: KeyboardEvent) {
+  if (event.key === 'Shift')
+    isShiftPressed.value = false
+}
+
+async function onOpen() {
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
+  window.addEventListener('resize', handleResize)
+  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keyup', handleKeyUp)
+  await nextTick()
+  startAnimation()
+  const backdrop = document.querySelector('.wm-backdrop') as HTMLElement
+  backdrop?.addEventListener('mousedown', onBackdropMouseDown)
+  backdrop?.addEventListener('mousemove', onBackdropMouseMove)
+  backdrop?.addEventListener('mouseup', onBackdropMouseUp)
+}
+
+function onLeave() {
+  document.removeEventListener('mousemove', onMouseMove)
+  document.removeEventListener('mouseup', onMouseUp)
+  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keyup', handleKeyUp)
+  cancelAnimationFrame(animFrame)
+  particles = []
+  isDragging.value = false
+  cardPosition.value = { x: 0, y: 0 }
+  const backdrop = document.querySelector('.wm-backdrop') as HTMLElement
+  backdrop?.removeEventListener('mousedown', onBackdropMouseDown)
+  backdrop?.removeEventListener('mousemove', onBackdropMouseMove)
+  backdrop?.removeEventListener('mouseup', onBackdropMouseUp)
+}
+
+watch(open, async (newVal) => {
+  if (!newVal)
+    return onLeave()
+  onOpen()
+}, { flush: 'post' }) // The handler is fired after vue has updated the component and has updated the Browser DOM.
+
+onMounted(onOpen)
+onUnmounted(onLeave)
 </script>
 
 <template>
   <teleport to="body">
-    <div v-if="open" class="wm-backdrop" @click="onBackdropClick" aria-hidden="false">
+    <div v-if="open" class="wm-backdrop" aria-hidden="false"
+        :style="{ pointerEvents: !isShiftPressed ? 'auto' : 'none' }">
       <canvas ref="canvasEl" class="wm-canvas" aria-hidden="true"></canvas>
 
-      <div class="wm-card" role="dialog" aria-modal="true" aria-label="Game over">
+      <div
+        class="wm-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Game over"
+        @mousedown="onMouseDown"
+        :class="{ visible: cardVisible }"
+        :style="{
+          transform: `translate(${cardPosition.x}px, ${cardPosition.y}px)`,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          userSelect: isDragging ? 'none' : 'auto'
+        }"
+      >
         <div class="wm-title">The winner is</div>
         <div class="wm-winner" :style="{ color: winnerColor }">{{ winnerLabel }}!</div>
         <div class="wm-player" v-if="playerType">
           <span class="wm-badge">{{ playerType === 'AI' ? '🤖 AI' : '👤 Human' }}</span>
         </div>
         <button class="wm-close-btn" type="button" @click="emit('close')">Close</button>
+      </div>
+      <div v-if="!isShiftPressed" class="shift-hint">
+        Hold Shift to interact with elements
       </div>
     </div>
   </teleport>
@@ -260,6 +430,7 @@ function onBackdropClick(e: MouseEvent) {
   justify-content: center;
   padding-bottom: 2.5rem;
   z-index: 9999;
+  cursor: pointer;
 }
 
 .wm-canvas {
@@ -284,6 +455,12 @@ function onBackdropClick(e: MouseEvent) {
   padding: 1.2rem 2rem 1rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   min-width: 220px;
+  opacity: 0;
+  transition: transform 0.1s ease-out;
+  transition: opacity 1s linear;
+  &.visible {
+    opacity: 1;
+  }
 }
 
 .wm-title {
@@ -292,9 +469,11 @@ function onBackdropClick(e: MouseEvent) {
   color: var(--primary-color);
   opacity: 0.8;
   letter-spacing: 0.05em;
+  user-select: none;
 }
 
 .wm-winner {
+  user-select: none;
   font-family: var(--title-font-family);
   font-size: 3.5rem;
   font-weight: 400;
@@ -303,6 +482,7 @@ function onBackdropClick(e: MouseEvent) {
 
 .wm-player {
   margin-top: 0.1rem;
+  user-select: none;
 }
 
 .wm-badge {
@@ -332,5 +512,24 @@ function onBackdropClick(e: MouseEvent) {
   &:active {
     transform: scale(0.96);
   }
+}
+
+.shift-hint {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: rgba(255, 255, 255, 0.6);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
 }
 </style>

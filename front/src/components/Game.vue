@@ -100,6 +100,7 @@ async function move(event: MouseEvent) {
     const query = new URLSearchParams(objQuery).toString()
     const resp = await fetch(`http://${window.location.hostname}:9012/move?${query}`)
     if (resp.status == 400) {
+      gameStore.fetchIsAvailable.set(true)
       errorMessage.value = (await resp.json()).error || 'Invalid move.'
       return
     } else if (resp.status != 200)
@@ -113,9 +114,12 @@ async function move(event: MouseEvent) {
       updateGS(data.human)
       if (gameStore.watcherState.speed < 1) {
         updateGS(data.ai)
-      } else if (!gameStore.watcherState.enabled) {
-        console.log(gameStore.watcherState.speed * 1000)
-        _timeout_delay_ai = setTimeout(updateGS, gameStore.watcherState.speed * 1000, data.ai)
+      } else {
+        gameStore.watcherState.human = (gameStore.gameState.isAIGame === 1) ? 2 : 1
+        if (!gameStore.watcherState.enabled) {
+          clearTimeout(_timeout_delay_ai)
+          _timeout_delay_ai = setTimeout(updateGS, gameStore.watcherState.speed * 1000, data.ai)
+        }
       }
     } else {
       if (gameStore.backWatcher().checkResponse(data, resp))
@@ -151,9 +155,6 @@ function keyMode(event: KeyboardEvent) {
     default:
       return
   }
-  console.log(event.key, event.type)
-  event.stopPropagation()
-  event.preventDefault()
 }
 
 </script>
