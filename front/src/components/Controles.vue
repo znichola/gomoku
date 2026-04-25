@@ -139,15 +139,10 @@ function preview(state: boolean) {
     <span>Debug</span>
     <ul>
       <li>
-        <button class="debug-btn" @click="debug('make-double-tree')"
-            title="Créer un double three selon la position de la dernière pièce, dans une rotation aléatoire."
-          >Double Tree Maker</button>
+        <button class="debug-btn" @click="watcher('toggle-keymode')" :class="{ reverse: gameStore.watcherState.keymode }"
+            title="Active/Désactive les modifieurs clavier. SHIFT + CLICK => BLACK - CTRL + CLICK => WHITE - ALT + CLICK => EMPTY"
+          >Key Modifiers</button>
       </li>
-      <li>
-        <button class="debug-btn" @click="debug('set-reset')"
-            title="Définit le reset sur l'état actuel de la grille ."
-          >Set Restart</button>
-        </li>
       <li>
         <button class="debug-btn" @click="watcher('start')" v-if="!gameStore.watcherState.enabled"
             title="Démarre le Watcher. Si le serveur redémarre le GameState actuel ou T0 sera envoyé."
@@ -157,19 +152,24 @@ function preview(state: boolean) {
           >Stop Watcher</button>
       </li>
       <li>
-        <button class="debug-btn" @click="watcher('set-t0')" @mouseover="preview(true)" @mouseleave="preview(false)"
-            title="Utilise le GameState actuel comme point de rollback pour chaque redémarrage du serveur."
-          >Watcher Set T0</button>
-      </li>
-      <li>
         <button class="debug-btn" @click="watcher('apply-t0')" @mouseover="preview(true)" @mouseleave="preview(false)"
             title="Applique immédiatement T0."
-          >Apply T0</button>
+          >Apply T0 to board</button>
+      </li>
+      <li>
+        <button class="debug-btn" @click="debug('set-reset')"
+            title="Définit le reset sur l'état actuel de la grille ."
+          >Set board to Restart</button>
+      </li>
+      <li>
+        <button class="debug-btn" @click="watcher('set-t0')" @mouseover="preview(true)" @mouseleave="preview(false)"
+            title="Utilise le GameState actuel comme point de rollback pour chaque redémarrage du serveur."
+          >Set board to T0</button>
       </li>
       <li>
         <button class="debug-btn" @click="watcher('reset-t0')"
             title="Supprime T0, le dernier état de GameState dans le navigateur sera utilisé comme point de rollback."
-          >Reset T0</button>
+          >Erase T0</button>
       </li>
       <li>
         <button class="debug-btn" @click="watcher('toggle-edit')" :class="{ reverse: gameStore.watcherState.edition }"
@@ -177,9 +177,9 @@ function preview(state: boolean) {
           >Toggle Edit</button>
       </li>
       <li>
-        <button class="debug-btn" @click="watcher('toggle-keymode')" :class="{ reverse: gameStore.watcherState.keymode }"
-            title="Active/Désactive les modifieurs clavier. SHIFT + CLICK => BLACK - CTRL + CLICK => WHITE - ALT + CLICK => EMPTY"
-          >Key Modifiers</button>
+        <button class="debug-btn" @click="debug('make-double-tree')"
+            title="Créer un double three selon la position de la dernière pièce, dans une rotation aléatoire."
+          >Double Tree Maker</button>
       </li>
     </ul>
   </div>
