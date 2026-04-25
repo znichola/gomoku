@@ -26,6 +26,5 @@ struct GameState {
         unsigned whiteCaptured,
         bool isBlackToPlay,
         unsigned width,
-        const std::vector<unsigned>& moveHistory,
-        Cell isAIGame);
+        const std::vector<unsigned>& moveHistory);
 };

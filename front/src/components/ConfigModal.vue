@@ -3,6 +3,7 @@ import { ref, watch, onBeforeUnmount } from 'vue'
 import { useGameStore } from '@/stores/game'
 import AppButton from '@/components/AppButton.vue'
 import { computed } from 'vue';
+import { searchOptions } from '@/helpers/helpers';
 
 const props = defineProps<{
   open: boolean
@@ -63,7 +64,6 @@ async function applyConfig() {
       searchDepth: String(localDepth.value),
       moveSuggestion: String(localSuggest.value),
     })
-    emit('close')
     const resp = await fetch(
       `http://${window.location.hostname}:9012/set-config?${params}`,
       { method: 'GET' }
@@ -82,14 +82,6 @@ async function applyConfig() {
 function onBackdropClick(e: MouseEvent) {
   if (e.target === e.currentTarget) emit('close')
 }
-
-const searchOptions: { value: string; label: string; desc: string }[] = [
-  { value: 'MINMAX',               label: 'Minimax',         desc: 'Basic two-player search' },
-  { value: 'MINMAX_JETESTE',       label: 'Minimax (G)',     desc: 'Basic two-player search' },
-  { value: 'NEGAMAX',              label: 'Negamax',         desc: 'Simplified minimax variant' },
-  { value: 'ALPHABETA_NEGAMAX',    label: 'Alpha-beta',      desc: 'Negamax with alpha-beta pruning' },
-  { value: 'ALPHABETA_NEGAMAX_TT', label: 'Alpha-beta + TT', desc: 'Negamax with alpha-beta pruning and a transposition table' },
-]
 
 const suggestOptions = [
   { value: 'off',   label: 'Off' },
@@ -137,7 +129,7 @@ const suggestOptions = [
                 v-for="opt in searchOptions"
                 :key="opt.value"
                 :active="localSearch === opt.value"
-                @click="localSearch = opt.value"
+                @click="localSearch = opt.value; applyConfig()"
                 :title="opt.desc"
               >{{ opt.label }}</AppButton>
             </div>
@@ -152,6 +144,7 @@ const suggestOptions = [
                 max="10"
                 step="1"
                 v-model.number="localDepth"
+                @change="applyConfig"
               />
               <span class="cm-value">{{ localDepth }}</span>
             </div>
@@ -172,18 +165,11 @@ const suggestOptions = [
                 v-for="opt in suggestOptions"
                 :key="opt.value"
                 :active="localSuggest === opt.value"
-                @click="localSuggest = opt.value"
+                @click="localSuggest = opt.value; applyConfig()"
               >{{ opt.label }}</AppButton>
             </div>
           </section>
-
         </div>
-
-        <div class="cm-foot">
-          <AppButton @click="emit('close')">Cancel</AppButton>
-          <AppButton variant="accent" @click="applyConfig">Apply</AppButton>
-        </div>
-
       </div>
     </div>
   </teleport>

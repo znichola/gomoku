@@ -8,8 +8,13 @@ const width = computed(() => gameStore.gameState.board?.width || 19)
 </script>
 
 <template>
-  <main :style="{'--board-dimention': `${width}`}"
-        :class="{ editMode: gameStore.watcherState.edition, keyMode: gameStore.watcherState.keymode, gameEnded: gameStore.gameState.board?.winner }">
+  <main :style="{'--board-width': `${width}`}"
+        :class="{
+          editMode: gameStore.watcherState.edition,
+          keyMode: gameStore.watcherState.keymode,
+          watcherMode: gameStore.watcherState.enabled,
+          gameEnded: gameStore.gameState.board?.winner
+        }">
     <!-- Page Router view -->
     <router-view />
   </main>
@@ -33,11 +38,11 @@ body {
   --ui-font-family: 'Galdeano', sans-serif;
   --ui-font: bold 1.4rem var(--ui-font-family);
 
-  --board-dimention: 19;
-  --max-content-width: min(40px, calc(90vw / var(--board-dimention)));
-  --cell-size: max(14px, min(var(--max-content-width), calc((100vh - 110px) / var(--board-dimention))));
-  --board-size: calc(var(--cell-size)*var(--board-dimention));
-  --content-width: calc(var(--max-content-width)*var(--board-dimention));
+  --board-width: 19;
+  --max-content-width: min(40px, calc(90vw / var(--board-width)));
+  --cell-size: max(14px, min(var(--max-content-width), calc((100vh - 110px) / var(--board-width))));
+  --board-size: calc(var(--cell-size)*var(--board-width));
+  --content-width: calc(var(--max-content-width)*var(--board-width));
 }
 
 main {

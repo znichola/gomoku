@@ -1,4 +1,6 @@
 #include "Utils.hpp"
+#include <EnumIO.hpp>
+#include <MessageQueue.hpp>
 
 uint64_t zob[361][3];
 
@@ -86,8 +88,51 @@ static std::vector<unsigned> parseMoveHistoryCSV(const std::string& s) {
     return out;
 }
 
+bool handleLoadAIState(const Server::QueryMap& query, GameState& gs) {
+    bool changed = false;
+
+    auto has = [&query](const std::string& key) -> bool {
+        return query.find(key) != query.end(); };
+
+    auto get = [&query](const std::string& key) -> const std::string& {
+        return query.at(key); };
+
+    if (has("moveSuggestion")) {
+        changed = true;
+        gs.moveSuggestion = parseEnum<Cell>(get("moveSuggestion"), {
+            {"off", Cell::EMPTY},
+            {"black", Cell::BLACK},
+            {"white", Cell::WHITE},
+            {"both", Cell::OUTSIDE},
+        });
+    }
+
+    if (has("searchFunction")) {
+        changed = true;
+        gs.searchFunction = parseEnum<AI::SearchFunction>(get("searchFunction"), {
+            {"MINMAX", AI::SearchFunction::MINMAX},
+            {"MINMAX_JETESTE", AI::SearchFunction::MINMAX_JETESTE},
+            {"NEGAMAX", AI::SearchFunction::NEGAMAX},
+            {"ALPHABETA_NEGAMAX", AI::SearchFunction::ALPHABETA_NEGAMAX},
+            {"ALPHABETA_NEGAMAX_TT", AI::SearchFunction::ALPHABETA_NEGAMAX_TT}
+        });
+    }
+
+    if (has("searchDepth")) {
+        changed = true;
+        AI::maxDepth = std::stoi(get("searchDepth"));
+    }
+
+    if (has("isAIGame")) {
+        changed = true;
+        gs.isAIGame = parseCell(get("isAIGame"));
+        MessageQueue::drain();
+        gs.askAI2Play();
+    }
+    return changed;
+}
+
 void handleLoadGameState(const Server::QueryMap& query, GameState& gs) {
-    const Cell isAIGame = parseCell(getQueryRequired(query, "isAIGame"));
     const std::vector<unsigned> moveHistory = parseMoveHistoryCSV(getQueryRequired(query, "moveHistory"));
     const unsigned width =
         static_cast<unsigned>(std::stoul(getQueryRequired(query, "board_width")));
@@ -98,5 +143,6 @@ void handleLoadGameState(const Server::QueryMap& query, GameState& gs) {
     const bool isBlackToPlay = parseBool(getQueryRequired(query, "board_isBlackToPlay"));
     const std::vector<Cell> grid = parseGridCSV(getQueryRequired(query, "board_grid"));
 
-    gs.reload(grid, blackCaptured, whiteCaptured, isBlackToPlay, width, moveHistory, isAIGame);
+    gs.reload(grid, blackCaptured, whiteCaptured, isBlackToPlay, width, moveHistory);
+    handleLoadAIState(query, gs);
 }

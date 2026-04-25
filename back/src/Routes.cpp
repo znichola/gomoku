@@ -68,48 +68,7 @@ void registerRoutes(Server& server, GameState& gs) {
     });
 
     server.get("/set-config", [&gs](const Request& req) -> Response {
-        bool changed = 0;
-
-        auto has = [&req](const std::string& key) -> bool {
-            return req.query.find(key) != req.query.end(); };
-
-        auto get = [&req](const std::string& key) -> const std::string& {
-            return req.query.at(key); };
-
-        if (has("moveSuggestion")) {
-            changed = true;
-            gs.moveSuggestion = parseEnum<Cell>(get("moveSuggestion"), {
-                {"off", Cell::EMPTY},
-                {"black", Cell::BLACK},
-                {"white", Cell::WHITE},
-                {"both", Cell::OUTSIDE},
-            });
-        }
-
-        if (has("searchFunction")) {
-            changed = true;
-            gs.searchFunction = parseEnum<AI::SearchFunction>(get("searchFunction"), {
-                {"MINMAX", AI::SearchFunction::MINMAX},
-                {"MINMAX_JETESTE", AI::SearchFunction::MINMAX_JETESTE},
-                {"NEGAMAX", AI::SearchFunction::NEGAMAX},
-                {"ALPHABETA_NEGAMAX", AI::SearchFunction::ALPHABETA_NEGAMAX},
-                {"ALPHABETA_NEGAMAX_TT", AI::SearchFunction::ALPHABETA_NEGAMAX_TT}
-            });
-        }
-
-        if (has("searchDepth")) {
-            changed = true;
-            AI::maxDepth = std::stoi(get("searchDepth"));
-        }
-
-        if (has("isAIGame")) {
-            changed = true;
-            gs.isAIGame = parseCell(get("isAIGame"));
-            MessageQueue::drain();
-            gs.askAI2Play();
-        }
-
-        if (!changed) {
+        if (!handleLoadAIState(req.query, gs)) {
             return Response{400, "{ \"error\": \"invalid action\" }"};
         }
 

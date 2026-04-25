@@ -75,6 +75,9 @@ export const useGameStore = defineStore('game', () => {
       return ''
     return new URLSearchParams({
       isAIGame: gameState.isAIGame.toString(),
+      searchFunction: gameState.searchFunction,
+      searchDepth: gameState.searchDepth.toString(),
+      moveSuggestion: gameState.moveSuggestion.toString(),
       moveHistory: gameState.moveHistory.join(','),
       board_grid: gameState.board.grid.join(','),
       board_width: gameState.board.width.toString(),

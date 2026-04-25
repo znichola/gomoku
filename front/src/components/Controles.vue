@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { useGameStore } from '@/stores/game'
 import { Cell } from '@/types/game'
-import { onMounted, onUnmounted, computed } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 
 const gameStore = useGameStore()
-
-const aiGame = computed(() => gameStore.gameState.isAIGame)
 
 onMounted(() => window.addEventListener('click', click, true))
 onUnmounted(() => window.removeEventListener('click', click, true))
@@ -38,19 +36,6 @@ async function click(event: MouseEvent) {
   event.preventDefault()
   try {
     const resp = await fetch(`http://${window.location.hostname}:9012/debug-action?action=${action[0]}&id=${action[1]}`, {
-      method: 'GET',
-    })
-    const data = await resp.json()
-    gameStore.updateGameState(data);
-    } catch (err) {
-    console.warn(err)
-  }
-}
-
-async function toggleAI(color: 1 | 2) {
-  try {
-    const v = gameStore.gameState.isAIGame == color ? 0 : color
-    const resp = await fetch(`http://${window.location.hostname}:9012/set-config?isAIGame=${v}`, {
       method: 'GET',
     })
     const data = await resp.json()
@@ -98,14 +83,26 @@ function watcher(action: string) {
     gameStore.backWatcher().resetT0()
   } else if (action === 'toggle-edit') {
     gameStore.watcherState.edition = !gameStore.watcherState.edition
+    localStorage.setItem('gomoku_editmode', gameStore.watcherState.edition.toString())
     console.log('Switch edit mode', gameStore.watcherState.edition)
   } else if (action === 'toggle-keymode') {
     gameStore.watcherState.keymode = !gameStore.watcherState.keymode
-    console.log('Switch cheating mode', gameStore.watcherState.keymode)
+    localStorage.setItem('gomoku_keymode', gameStore.watcherState.keymode.toString())
+    console.log('Switch key mode', gameStore.watcherState.keymode)
   } else {
     console.warn('action not found')
   }
 }
+
+onMounted(() => {
+  if (localStorage.getItem('gomoku_editmode') === 'true') {
+    gameStore.watcherState.edition = true;
+  }
+  if (localStorage.getItem('gomoku_keymode') === 'true') {
+    gameStore.watcherState.keymode = true;
+    console.log('ok')
+  }
+})
 
 function preview(state: boolean) {
   gameStore.watcherState.preview = state
@@ -117,26 +114,7 @@ function preview(state: boolean) {
 <div class="controles">
   <button class="reset-btn" @click="reset">Restart</button>
   <div class="menu">
-    <span :class="{reverse: aiGame !== 0}">IA</span>
-    <ul>
-      <li>
-        <button class="ai-play" :class="{reverse: aiGame === 1}" @click="toggleAI(1)"
-          >AI {{(aiGame === 1) ? 'dis' : 'on'}} Black</button>
-      </li>
-      <li>
-        <button class="ai-play" :class="{reverse: aiGame === 2}" @click="toggleAI(2)"
-          >AI {{(aiGame === 2) ? 'dis' : 'on'}} White</button></li>
-      <li>
-        <div>
-          <label for="aispeed">Speed ({{ +gameStore.watcherState.speed }}s):</label>
-          <input id="aispeed" type="range" :value="gameStore.watcherState.speed"
-            @input="event => gameStore.watcherState.speed = (event.target as any).value || 0" min="0" max="10">
-        </div>
-      </li>
-    </ul>
-  </div>
-  <div class="menu">
-    <span>Debug</span>
+    <span id="debug-span">Debug</span>
     <ul>
       <li>
         <button class="debug-btn" @click="watcher('toggle-keymode')" :class="{ reverse: gameStore.watcherState.keymode }"
@@ -255,4 +233,19 @@ button, div.menu span {
   }
 }
 
+#debug-span {
+  position: relative;
+}
+#debug-span::after {
+  content: '📤';
+  position: absolute;
+  font-size: 1rem;
+  right: -1rem;
+  top: -3.5rem;
+  transition: all 0.5s ease-in-out;
+}
+
+.watcherMode #debug-span::after {
+  top: 1.4rem;
+}
 </style>

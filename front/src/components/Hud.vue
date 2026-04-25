@@ -14,14 +14,14 @@ const humanGame = computed(() => gameStore.watcherState.human)
 
 <template>
   <div class="hud">
-    <div class="capture-card black" :class="{ai: aiGame === 1, human: humanGame === 1 }">
+    <div class="capture-card black" :class="{ai: aiGame === 1, human: humanGame === 1 }" title="CTRL + Click to lock your side">
       <div class="capture-bowl">
         <bowlofstonesIcon />
         <span class="capture-count">{{ blackCaptured }}</span>
       </div>
     </div>
 
-    <div class="capture-card white" :class="{ai: aiGame === 2, human: humanGame === 2}">
+    <div class="capture-card white" :class="{ai: aiGame === 2, human: humanGame === 2}" title="CTRL + Click to lock your side">
       <div class="capture-bowl">
         <bowlofstonesIcon />
         <span class="capture-count">{{ whiteCaptured }}</span>

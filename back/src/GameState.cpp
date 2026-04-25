@@ -148,16 +148,13 @@ void GameState::reload(const std::vector<Cell>& newGrid,
                     unsigned whiteCaptured,
                     bool isBlackToPlay,
                     unsigned width,
-                    const std::vector<unsigned>& newMoveHistory,
-                    Cell newisAIGame) {
+                    const std::vector<unsigned>& newMoveHistory) {
     const size_t expected = static_cast<size_t>(width) * static_cast<size_t>(width);
     if (newGrid.size() != expected) {
         throw std::runtime_error("reload: board_grid size mismatch (expected " +
                                  std::to_string(expected) + ", got " +
                                  std::to_string(newGrid.size()) + ")");
     }
-
-    isAIGame = newisAIGame;
 
     board.grid = Grid(width);
     board.grid.setGrid(newGrid);
