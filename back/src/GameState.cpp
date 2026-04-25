@@ -3,6 +3,7 @@
 #include <random>
 #include <tuple>
 #include <chrono>
+#include <sys/sysinfo.h>
 
 #include "GameState.hpp"
 #include "MessageQueue.hpp"
@@ -78,7 +79,15 @@ Cell GameState::askAI2Play() {
             COUT << "[AI] Move took " << us / 1'000'000.0 << " s\n";
             MQ   << "[AI] Move took " << us / 1'000'000.0 << " s\n";
         }
-        MQ << "[AI] eval : " << AI::evaluate(board, 0, board.isVictory());
+        COUT << "[AI] eval : " << AI::evaluate(board, 0, board.isVictory()) << "\n";
+        MQ << "[AI] eval : " << AI::evaluate(board, 0, board.isVictory()) << "\n";
+        COUT << "[CACHE] table GT size " << tableGridTraversal.size() << " elements\n";
+        MQ << "[CACHE] table GT size " << tableGridTraversal.size() << " elements\n";
+        tableGridTraversal.clear();
+        struct sysinfo info;
+        sysinfo(&info);
+        COUT   << "[RAM] Free " << info.freeram / 1'000'000.0 << "/" << info.totalram / 1'000'000.0 << " Mb\n";
+        MQ   << "[RAM] Free " << info.freeram / 1'000'000.0 << "/" << info.totalram / 1'000'000.0 << " Mb\n";
         return res ? activePlayer : Cell::OUTSIDE;
     }
     MQ << "[AI] eval : " << AI::evaluate(board, 0, board.isVictory());
