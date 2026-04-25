@@ -28,6 +28,15 @@ const overlayMap = computed(() => {
   return map
 })
 
+const highlightId = computed(() => {
+  const hid = gameStore.highlight.get()
+  if (hid === null) {
+    const arr = gameStore.gameState.moveHistory
+    return arr[arr.length - 1]
+  }
+  return hid;
+})
+
 
 const previewGrid = computed(() => gameStore.watcherState.preview_state)
 const iso3D = ref(false)
@@ -180,7 +189,7 @@ function keyMode(event: KeyboardEvent) {
           <div v-for="(cid, x) in line" :key="x" class="cell">
             <div class="circle"
             :class="{
-              highlight: gameStore.highlight.get() == cid,
+              highlight: highlightId === cid,
               overlay: overlay && overlayMap.has(cid)
             }"
             :data-type="getCellClass(gameStore.gameState.board?.grid[cid] as Cell)"
@@ -273,7 +282,7 @@ div.board {
       }
 
       &.highlight {
-        animation: scale-highlight 1s ease-in-out infinite;
+        animation: scale-highlight 1.2s ease-in-out infinite;
         &[data-type=empty] {
           opacity: 1;
           transition: all 0.2s ease-in;
@@ -282,13 +291,13 @@ div.board {
 
       @keyframes scale-highlight {
         from {
-          transform: scale(1.2);
+          transform: scale(1);
         }
         50% {
-          transform: scale(1.4);
+          transform: scale(1.2);
         }
         to {
-          transform: scale(1.2);
+          transform: scale(1);
         }
       }
 
