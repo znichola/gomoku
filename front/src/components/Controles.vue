@@ -137,12 +137,12 @@ function preview(state: boolean) {
       <li>
         <button class="debug-btn" @click="debug('set-reset')"
             title="Définit le reset sur l'état actuel de la grille ."
-          >Set board to Restart</button>
+          >Set Restart</button>
       </li>
       <li>
         <button class="debug-btn" @click="watcher('set-t0')" @mouseover="preview(true)" @mouseleave="preview(false)"
             title="Utilise le GameState actuel comme point de rollback pour chaque redémarrage du serveur."
-          >Set board to T0</button>
+          >Set T0</button>
       </li>
       <li>
         <button class="debug-btn" @click="watcher('reset-t0')"

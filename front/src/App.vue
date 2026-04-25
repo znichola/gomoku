@@ -13,7 +13,8 @@ const width = computed(() => gameStore.gameState.board?.width || 19)
           editMode: gameStore.watcherState.edition,
           keyMode: gameStore.watcherState.keymode,
           watcherMode: gameStore.watcherState.enabled,
-          gameEnded: gameStore.gameState.board?.winner
+          gameEnded: gameStore.gameState.board?.winner,
+          waiting: !gameStore.fetchIsAvailable.get()
         }">
     <!-- Page Router view -->
     <router-view />
@@ -53,6 +54,13 @@ main {
   flex-direction: column;
   align-items: center;
   background-color: var(--bg-color);
+  &.waiting,
+  &.waiting div.board div.cell div.circle[id] {
+    cursor: wait;
+  }
+  &.waiting div.board div.cell div.circle[data-type="empty"]:hover {
+    opacity: 0;
+  }
 }
 
 h1 {

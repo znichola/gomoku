@@ -79,6 +79,9 @@ async function move(event: MouseEvent) {
   if (human !== Cell.EMPTY && human !== player)
     return
   try {
+    if (!gameStore.fetchIsAvailable.get())
+      return false;
+    gameStore.fetchIsAvailable.set(false);
     clearTimeout(_timeout_delay_ai)
     const objQuery: { id: string, force_color?: string } = {
       id: cellId.toString()
@@ -113,6 +116,7 @@ async function move(event: MouseEvent) {
     errorMessage.value = 'Server refused this move.'
     console.warn((err as Error).message)
   }
+  gameStore.fetchIsAvailable.set(true);
 }
 
 const keyDown = reactive({

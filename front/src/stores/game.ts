@@ -22,6 +22,9 @@ export const useGameStore = defineStore('game', () => {
     human: Cell.EMPTY
   })
 
+  // Prevent server spamming
+  const fetchIsAvailable: Ref<boolean> = ref(true)
+
   const overlayMessages = ref<{ id: number; msg: string }[]>([])
 
   function tryParseOverlayMessage(raw: string) {
@@ -147,6 +150,8 @@ export const useGameStore = defineStore('game', () => {
 
   async function watchServer() {
     try {
+      if (!fetchIsAvailable.value)
+        return false
       const resp = await fetch(`http://${window.location.hostname}:9012/gameState?silent`)
       if (resp.status != 200)
         throw Error('STATUS NOT 200')
@@ -154,7 +159,7 @@ export const useGameStore = defineStore('game', () => {
       if (checkResponse(data, resp))
         updateGameState(data)
     } catch {
-      console.warn('server offline');
+      console.warn('server offline')
     }
   }
 
@@ -208,6 +213,10 @@ export const useGameStore = defineStore('game', () => {
     highlight: {
       get: () => highlightCircle.value,
       set: setHighlightCircle
+    },
+    fetchIsAvailable: {
+      get: () => fetchIsAvailable.value,
+      set: (value: boolean) => fetchIsAvailable.value = !!value
     }
   }
 })
