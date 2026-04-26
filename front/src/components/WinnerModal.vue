@@ -354,6 +354,7 @@ async function onOpen() {
   window.addEventListener('resize', handleResize)
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('keyup', handleKeyUp)
+  isShiftPressed.value = false;
   await nextTick()
   startAnimation()
   const backdrop = document.querySelector('.wm-backdrop') as HTMLElement
@@ -368,6 +369,7 @@ function onLeave() {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('keydown', handleKeyDown)
   window.removeEventListener('keyup', handleKeyUp)
+  isShiftPressed.value = false;
   cancelAnimationFrame(animFrame)
   particles = []
   isDragging.value = false
