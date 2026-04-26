@@ -25,9 +25,9 @@ struct NodeCellRow: NodeLOD {
 	long originId = 0;
 	int ext = 0;
 
-    // Length of the stone line
-    int size = 0;
-    // Score of living stone
+	// Length of the stone line
+	int size = 0;
+	// Score of living stone
 	int score = 0;
 	int _tmpscr = 0;
 

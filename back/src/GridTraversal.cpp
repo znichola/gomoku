@@ -16,11 +16,12 @@ GridTraversal::GridTraversal(const Grid &grid) {
 	// NodeCellRow
 	// Set dead state
 	for (unsigned id = 0; id < size; ++id) {
+		AdjacentNode& adj = gridCellRow[id];
 		for (long ext = 0; ext < 4; ++ext) {
-			NodeLOD*& cellLOD = gridCellRow[id].lod[ext];
+			NodeLOD*& cellLOD = adj.lod[ext];
 			if (cellLOD != NULL && cellLOD->step == NodeStep::DEATH) {
 				// std::cout << id << " is dead" << std::endl;
-				gridCellRow[id].dead = true;
+				adj.dead = true;
 				break ;
 			}
 		}
