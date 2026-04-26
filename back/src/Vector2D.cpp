@@ -53,6 +53,22 @@ bool Vector2D::operator<=(long value) const {
     return x <= value && y <= value;
 }
 
+bool Vector2D::operator>(Vector2D vec) const {
+    return x > vec.x && y > vec.y;
+}
+
+bool Vector2D::operator<(Vector2D vec) const {
+    return x < vec.x && y < vec.y;
+}
+
+bool Vector2D::operator>=(Vector2D vec) const {
+    return x >= vec.x && y >= vec.y;
+}
+
+bool Vector2D::operator<=(Vector2D vec) const {
+    return x <= vec.x && y <= vec.y;
+}
+
 long Vector2D::dot(const Vector2D& other) const {
     return x * other.x + y * other.y;
 }

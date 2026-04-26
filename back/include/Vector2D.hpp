@@ -22,6 +22,11 @@ struct Vector2D {
     bool operator>=(long value) const;
     bool operator<=(long value) const;
 
+    bool operator>(Vector2D vec) const;
+    bool operator<(Vector2D vec) const;
+    bool operator>=(Vector2D vec) const;
+    bool operator<=(Vector2D vec) const;
+
     long dot(const Vector2D& other) const;
     long cross(const Vector2D& other) const;
 };
