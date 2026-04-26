@@ -6,14 +6,16 @@
 #include "MessageQueue.hpp"
 
 Board::Board(unsigned width) {
+    Vector2D::initCache(width);
     grid = Grid{width};
 }
 
 Board::Board(const Grid &grid) : grid(grid) {
-
+    Vector2D::initCache(grid.width);
 }
 
 Board::Board(const Grid &grid, unsigned forceMoveId) : grid(grid) {
+    Vector2D::initCache(grid.width);
     playMove(forceMoveId, true);
 }
 

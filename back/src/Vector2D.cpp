@@ -17,8 +17,14 @@ Vector2D::~Vector2D() {
 
 }
 
+void Vector2D::initCache(unsigned width) {
+    cache.initialize(width);
+}
+
 Vector2D Vector2D::createFromIndex(long id, unsigned width) {
-    return Vector2D(id % width, id / width);
+    (void) width;
+    // return Vector2D(id % width, id / width);
+    return cache.get(id);
 }
 
 long Vector2D::toIndex(unsigned width) const {
@@ -64,3 +70,5 @@ long Vector2D::cross(const Vector2D& other) const {
 std::ostream& operator<<(std::ostream& os, const Vector2D& v) {
     return os << "(" << v.x << ", " << v.y << ")";
 }
+
+Vector2DCache Vector2D::cache = Vector2DCache();
