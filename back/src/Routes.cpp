@@ -77,6 +77,25 @@ void registerRoutes(Server& server, GameState& gs) {
         return Response{200, gs.serialize()};
     });
 
+    server.get("/replay", [&gs](const Request& rq) -> Response {
+        if (rq.query.find("moves") != rq.query.end()) {
+            std::vector<std::string> m = splitCSV(rq.query.at("moves"));
+            MessageQueue::drain();
+            gs.reset();
+            DISABLE_LOG
+            for (const auto& s : m) {
+                unsigned move = static_cast<unsigned>(std::stoul(s));
+                gs.playMove(move);
+            }
+            gs.askAI2Play();
+            ENABLE_LOG
+        } else {
+            return Response{400, "missing 'moves' query parameter"};
+        }
+        COUT << "Replaying to position: " << rq.query.at("moves");
+        return Response{200, gs.serialize()};
+    });
+
     server.get("/debug-action", [&gs](const Request& req) -> Response {
         Server::QueryMap::const_iterator it = req.query.find("action");
         if (it == req.query.end())

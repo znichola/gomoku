@@ -10,6 +10,7 @@ extern uint64_t zob[361][3];
 void init_zobrist(uint64_t seed);
 
 Cell parseCell(const std::string& s);
+std::vector<std::string> splitCSV(const std::string& s);
 std::vector<Cell> parseGridCSV(const std::string& s);
 
 bool handleLoadAIState(const Server::QueryMap& query, GameState& gs);

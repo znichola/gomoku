@@ -25,7 +25,7 @@ Cell parseCell(const std::string& s) {
     throw std::runtime_error("invalid Cell: " + s);
 }
 
-static std::vector<std::string> splitCSV(const std::string& s) {
+std::vector<std::string> splitCSV(const std::string& s) {
     std::vector<std::string> out;
     std::string cur;
     for (char c : s) {
