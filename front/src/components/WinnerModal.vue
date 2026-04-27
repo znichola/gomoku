@@ -23,6 +23,7 @@ interface Particle {
   targetY: number
   color: string
   radius: number
+  burnFrames: number
 }
 
 let animFrame = 0
@@ -181,6 +182,7 @@ async function startAnimation() {
       targetY: tgt.y,
       color: particleColor,
       radius: 5,
+      burnFrames: 0,
     })
   }
 
@@ -279,7 +281,7 @@ function animate() {
     ctx.fill()
   }
 
-  // Laser / eraser: repulse particles near the cursor and draw the glow
+  // Laser / eraser: burn particles near the cursor and draw the glow
   const lp = laserPos
   if (lp) {
     for (const p of particles) {
@@ -287,14 +289,30 @@ function animate() {
       const ldy = p.y - lp.y
       const ldist = Math.sqrt(ldx * ldx + ldy * ldy) || 1
       if (ldist < LASER_RADIUS) {
+        // Keep mild repulsion so particles aren't pinned instantly
         const force = LASER_FORCE * Math.pow(1 - ldist / LASER_RADIUS, 1.5)
         p.vx += (ldx / ldist) * force
         p.vy += (ldy / ldist) * force
+        p.burnFrames++
+      } else {
+        // Slow cool-down when out of range
+        p.burnFrames = Math.max(0, p.burnFrames - 0.4)
       }
     }
+
+    // Remove particles that have reached the burn threshold
+    const prevCount = particles.length
+    particles = particles.filter(p => p.burnFrames < LASER_BURN_THRESHOLD)
+
+    // Chain reaction: fewer than threshold particles left → explode all
+    if (prevCount !== particles.length && !isClosing.value && particles.length < CHAIN_REACTION_THRESHOLD) {
+      handleClose()
+    }
+
+    // Draw laser glow
     const gradient = ctx.createRadialGradient(lp.x, lp.y, 0, lp.x, lp.y, LASER_RADIUS)
-    gradient.addColorStop(0, 'rgba(211, 80, 19, 0.18)')
-    gradient.addColorStop(0.45, 'rgba(211, 80, 19, 0.07)')
+    gradient.addColorStop(0, 'rgba(211, 80, 19, 0.22)')
+    gradient.addColorStop(0.45, 'rgba(211, 80, 19, 0.08)')
     gradient.addColorStop(1, 'rgba(211, 80, 19, 0)')
     ctx.beginPath()
     ctx.arc(lp.x, lp.y, LASER_RADIUS, 0, Math.PI * 2)
@@ -302,8 +320,26 @@ function animate() {
     ctx.fill()
     ctx.beginPath()
     ctx.arc(lp.x, lp.y, 3.5, 0, Math.PI * 2)
-    ctx.fillStyle = 'rgba(211, 80, 19, 0.8)'
+    ctx.fillStyle = 'rgba(211, 80, 19, 0.9)'
     ctx.fill()
+  } else {
+    // Cool all particles when laser is off
+    for (const p of particles) {
+      p.burnFrames = Math.max(0, p.burnFrames - 0.4)
+    }
+  }
+
+  // Draw heat glow on particles that are accumulating burn
+  for (const p of particles) {
+    if (p.burnFrames > 0) {
+      const heat = Math.min(p.burnFrames / LASER_BURN_THRESHOLD, 1)
+      ctx.globalAlpha = heat * 0.75
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.radius * (1 + heat * 1.8), 0, Math.PI * 2)
+      ctx.fillStyle = `rgb(255, ${Math.round(180 * (1 - heat))}, 0)`
+      ctx.fill()
+      ctx.globalAlpha = 1
+    }
   }
 
   animFrame = requestAnimationFrame(animate)
@@ -399,15 +435,17 @@ let clickDragStart = { x: 0, y: 0 }
 let laserPos: { x: number; y: number } | null = null
 const LASER_RADIUS = 120
 const LASER_FORCE = 14
+const LASER_BURN_THRESHOLD = 90  // ~1.5 s of continuous contact at 60 fps
+const CHAIN_REACTION_THRESHOLD = 20
 
 function onBackdropMouseDown(event: MouseEvent) {
   if (event.target !== event.currentTarget) return
 
-  if (event.button === 0) {
-    // Left click: activate laser / eraser repulsion
+  if (event.button === 2) {
+    // Right click: activate laser / eraser
     laserPos = { x: event.clientX, y: event.clientY }
-  } else if (event.button === 2) {
-    // Right click: drag / pull animation
+  } else if (event.button === 0) {
+    // Left click: drag / pull animation
     isClickDragging.value = true
     clickDragStart = { x: event.clientX, y: event.clientY }
 
@@ -422,9 +460,11 @@ function onBackdropMouseDown(event: MouseEvent) {
 }
 
 function onBackdropMouseMove(event: MouseEvent) {
-  // Update laser position only while left button is held (buttons bitmask bit 0)
-  if (event.buttons & 1) {
+  // Update laser position only while right button is held (buttons bitmask bit 2)
+  if (event.buttons & 2) {
     laserPos = { x: event.clientX, y: event.clientY }
+  } else if (!(event.buttons & 2)) {
+    laserPos = null
   }
 
   if (!isClickDragging.value) return
@@ -461,9 +501,9 @@ function onBackdropMouseLeave() {
 }
 
 function onBackdropMouseUp(event: MouseEvent) {
-  if (event.button === 0) {
+  if (event.button === 2) {
     laserPos = null
-  } else if (event.button === 2) {
+  } else if (event.button === 0) {
     isClickDragging.value = false
   }
 }
