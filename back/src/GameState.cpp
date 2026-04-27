@@ -79,8 +79,9 @@ Cell GameState::askAI2Play() {
             COUT << "[AI] Move took " << us / 1'000'000.0 << " s\n";
             MQ   << "[AI] Move took " << us / 1'000'000.0 << " s\n";
         }
-        COUT << "[AI] eval : " << AI::evaluate(board, 0, board.isVictory()) << "\n";
-        MQ << "[AI] eval : " << AI::evaluate(board, 0, board.isVictory()) << "\n";
+        float eval = AI::evaluate(board, 0, board.isVictory());
+        COUT << "[AI] eval " << board.lastMove << ": " << eval << "\n";
+        MQ << "[AI] eval " << board.lastMove << ": " << eval << "\n";
         COUT << "[CACHE] table GT size " << tableGridTraversal.size() << " elements\n";
         MQ << "[CACHE] table GT size " << tableGridTraversal.size() << " elements\n";
         tableGridTraversal.clear();

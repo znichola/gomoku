@@ -268,9 +268,17 @@ AI::EvalGroups AI::countOpenGroupsOf(const Board& board, int size) {
 
     EvalGroups eg;
     for (const NodeCellRow& n : nodes) {
+        if (n.size == 1 
+                && n.type == Cell::EMPTY
+                && n.prev && n.next
+                && (n.next->type == Cell::BLACK || n.next->type == Cell::WHITE)
+                && n.next->type == n.prev->type
+                && (n.next->size + n.prev->size) == size) {
+            if (n.next->type == Cell::BLACK) eg.half.black++; else eg.half.white++;
+        }
         if (n.size != size) continue;
         if (n.type != Cell::BLACK && n.type != Cell::WHITE) continue;
-
+            
         bool openL = n.prev && n.prev->type == Cell::EMPTY;
         bool openR = n.next && n.next->type == Cell::EMPTY;
         int openEnds = (int)openL + (int)openR;
