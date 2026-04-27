@@ -42,9 +42,10 @@ std::set<unsigned> AI::getCandidateMoves_jeteste1(const Grid &grid, Cell color, 
 
 	std::map<unsigned, uint32_t> moves;
 
+	(void) color;
 	for (auto node = CellRows.begin(); node != CellRows.end(); ++node) {
 		const NodeCellRow &cr = *node;
-		if (cr.type == color) {
+		if (cr.type != Cell::EMPTY) {
 			const Vector2D origin = Vector2D::createFromIndex(cr.originId, grid.width);
 			Vector2D vec = origin - EXTREMITIES[cr.ext];
 			if (grid.isInside(vec)) {
@@ -56,10 +57,15 @@ std::set<unsigned> AI::getCandidateMoves_jeteste1(const Grid &grid, Cell color, 
 				unsigned id = vec.toIndex(grid.width);
 				moves[id] = ((moves.count(id) > 0) ? moves[id] : 0) + cr.score + cr.size;
 			}
-		} else if (cr.type == Cell::EMPTY && cr.size == 1) {
+    } else if (cr.size == 1 
+						&& cr.type == Cell::EMPTY
+						&& cr.prev && cr.next
+						&& (cr.next->type == Cell::BLACK || cr.next->type == Cell::WHITE)
+						&& cr.next->type == cr.prev->type
+						&& (cr.next->size + cr.prev->size) >= 3) {
 			moves[cr.originId] = ((moves.count(cr.originId) > 0) ? moves[cr.originId] : 0)
-				+ (cr.prev && cr.prev->type == color ? cr.prev->score + cr.prev->size : 0)
-				+ (cr.next && cr.next->type == color ? cr.next->score + cr.next->size : 0);
+				+ (cr.prev && cr.prev->type == color ? cr.prev->score + cr.prev->size + 10 : 0)
+				+ (cr.next && cr.next->type == color ? cr.next->score + cr.next->size + 10 : 0);
 		}
 	}
 	// Convertir la map en vecteur
@@ -78,8 +84,6 @@ std::set<unsigned> AI::getCandidateMoves_jeteste1(const Grid &grid, Cell color, 
 		const auto& [id, score] = sortedMoves[i];
 		result.insert(id);
 	}
-
-	(void) level;
 
 	return result;
 }

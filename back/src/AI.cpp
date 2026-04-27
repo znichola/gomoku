@@ -163,7 +163,7 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, SearchFunction sf) {
     unsigned bestMove = Board::FIRSTMOVE;
     AI::nodeVisitCounter.assign(AI::maxDepth + 1, 0);
     tt.newSearch();
-    for (auto move : getCandidateMoves(board.grid)) {
+    for (auto move : getCandidateMoves_jeteste1(board.grid, isWhite ? Cell::WHITE : Cell::BLACK, 0)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
         float score = 0;
