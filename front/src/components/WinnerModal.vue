@@ -23,7 +23,9 @@ interface Particle {
   targetY: number
   color: string
   radius: number
-  burnFrames: number
+  burnFrames: number   // WHITE winner: fire-burn accumulator
+  freezeFrames: number // BLACK winner: ice-freeze accumulator
+  frozen: boolean      // BLACK winner: particle fully frozen, falls by gravity
 }
 
 let animFrame = 0
@@ -108,6 +110,21 @@ function getTextTargets(
   return targets
 }
 
+// Helper: linearly blend two hex colours by a 0–1 ratio
+function blendColor(hexA: string, hexB: string, t: number): string {
+  const parse = (h: string) => [
+    parseInt(h.slice(1, 3), 16),
+    parseInt(h.slice(3, 5), 16),
+    parseInt(h.slice(5, 7), 16),
+  ]
+  const [ar, ag, ab] = parse(hexA)
+  const [br, bg, bb] = parse(hexB)
+  const r = Math.round((ar ?? 0) + ((br ?? 0) - (ar ?? 0)) * t)
+  const g = Math.round((ag ?? 0) + ((bg ?? 0) - (ag ?? 0)) * t)
+  const b = Math.round((ab ?? 0) + ((bb ?? 0) - (ab ?? 0)) * t)
+  return `rgb(${r},${g},${b})`
+}
+
 async function startAnimation() {
   if (!canvasEl.value || !winner.value) return
 
@@ -183,6 +200,8 @@ async function startAnimation() {
       color: particleColor,
       radius: 5,
       burnFrames: 0,
+      freezeFrames: 0,
+      frozen: false,
     })
   }
 
@@ -259,10 +278,17 @@ function animate() {
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   for (const p of particles) {
-    if (exploding) {
+    if (p.frozen) {
+      // Frozen particles: gravity only, no target-tracking
+      p.vy += 0.5
+      p.x += p.vx
+      p.y += p.vy
+    } else if (exploding) {
       p.vy += 0.38
       p.vx *= 0.985
       p.vy *= 0.985
+      p.x += p.vx
+      p.y += p.vy
     } else {
       const dx = p.targetX - p.x
       const dy = p.targetY - p.y
@@ -270,75 +296,141 @@ function animate() {
       p.vy += dy * 0.055
       p.vx *= 0.86
       p.vy *= 0.86
+      p.x += p.vx
+      p.y += p.vy
     }
 
-    p.x += p.vx
-    p.y += p.vy
+    const iceProgress = Math.min(p.freezeFrames / LASER_FREEZE_THRESHOLD, 1)
+    const drawColor = p.frozen
+      ? '#8ed8f8'
+      : (iceProgress > 0 ? blendColor(p.color, '#8ed8f8', iceProgress) : p.color)
 
     ctx.beginPath()
     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
-    ctx.fillStyle = p.color
+    ctx.fillStyle = drawColor
     ctx.fill()
   }
 
-  // Laser / eraser: burn particles near the cursor and draw the glow
+  // Laser: behaviour differs by winner
   const lp = laserPos
+  const isBlackWinner = winner.value === Cell.BLACK
+
   if (lp) {
-    for (const p of particles) {
-      const ldx = p.x - lp.x
-      const ldy = p.y - lp.y
-      const ldist = Math.sqrt(ldx * ldx + ldy * ldy) || 1
-      if (ldist < LASER_RADIUS) {
-        // Keep mild repulsion so particles aren't pinned instantly
-        const force = LASER_FORCE * Math.pow(1 - ldist / LASER_RADIUS, 1.5)
-        p.vx += (ldx / ldist) * force
-        p.vy += (ldy / ldist) * force
-        p.burnFrames++
-      } else {
-        // Slow cool-down when out of range
-        p.burnFrames = Math.max(0, p.burnFrames - 0.4)
+    if (isBlackWinner) {
+      // ——— FREEZE laser (BLACK winner) ———
+      for (const p of particles) {
+        if (p.frozen) continue
+        const ldx = p.x - lp.x
+        const ldy = p.y - lp.y
+        const ldist = Math.sqrt(ldx * ldx + ldy * ldy) || 1
+        if (ldist < LASER_RADIUS) {
+          p.freezeFrames++
+          // Slow the particle as it freezes
+          const iceRatio = Math.min(p.freezeFrames / LASER_FREEZE_THRESHOLD, 1)
+          p.vx *= 1 - iceRatio * 0.08
+          p.vy *= 1 - iceRatio * 0.08
+          if (p.freezeFrames >= LASER_FREEZE_THRESHOLD) {
+            p.frozen = true
+            p.vx = 0
+            p.vy = 0
+          }
+        } else {
+          p.freezeFrames = Math.max(0, p.freezeFrames - 0.4)
+        }
+      }
+
+      // Chain reaction: ≥ 20 frozen → freeze everything then close
+      const frozenCount = particles.filter(p => p.frozen).length
+      if (!chainReactionTriggered && !isClosing.value && frozenCount >= CHAIN_REACTION_THRESHOLD) {
+        chainReactionTriggered = true
+        for (const p of particles) {
+          p.frozen = true
+          p.vx = (Math.random() - 0.5) * 2
+          p.vy = 1 + Math.random() * 3
+        }
+        setTimeout(() => handleClose(), 1500)
+      }
+
+      // Draw cyan/blue laser glow
+      const gradIce = ctx.createRadialGradient(lp.x, lp.y, 0, lp.x, lp.y, LASER_RADIUS)
+      gradIce.addColorStop(0, 'rgba(100, 210, 255, 0.26)')
+      gradIce.addColorStop(0.45, 'rgba(100, 210, 255, 0.09)')
+      gradIce.addColorStop(1, 'rgba(100, 210, 255, 0)')
+      ctx.beginPath()
+      ctx.arc(lp.x, lp.y, LASER_RADIUS, 0, Math.PI * 2)
+      ctx.fillStyle = gradIce
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(lp.x, lp.y, 3.5, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(100, 210, 255, 0.95)'
+      ctx.fill()
+
+      // Ice crystal glow on partially-frozen particles
+      for (const p of particles) {
+        if (p.freezeFrames > 0 && !p.frozen) {
+          const ice = Math.min(p.freezeFrames / LASER_FREEZE_THRESHOLD, 1)
+          ctx.globalAlpha = ice * 0.7
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.radius * (1 + ice * 1.5), 0, Math.PI * 2)
+          ctx.fillStyle = `rgb(${Math.round(142 + 113 * ice)}, ${Math.round(216 + 39 * ice)}, 248)`
+          ctx.fill()
+          ctx.globalAlpha = 1
+        }
+      }
+    } else {
+      // ——— BURN laser (WHITE winner / draw) ———
+      for (const p of particles) {
+        const ldx = p.x - lp.x
+        const ldy = p.y - lp.y
+        const ldist = Math.sqrt(ldx * ldx + ldy * ldy) || 1
+        if (ldist < LASER_RADIUS) {
+          const force = LASER_FORCE * Math.pow(1 - ldist / LASER_RADIUS, 1.5)
+          p.vx += (ldx / ldist) * force
+          p.vy += (ldy / ldist) * force
+          p.burnFrames++
+        } else {
+          p.burnFrames = Math.max(0, p.burnFrames - 0.4)
+        }
+      }
+
+      const prevCount = particles.length
+      particles = particles.filter(p => p.burnFrames < LASER_BURN_THRESHOLD)
+      if (prevCount !== particles.length && !isClosing.value && particles.length < CHAIN_REACTION_THRESHOLD) {
+        handleClose()
+      }
+
+      // Draw orange laser glow
+      const gradFire = ctx.createRadialGradient(lp.x, lp.y, 0, lp.x, lp.y, LASER_RADIUS)
+      gradFire.addColorStop(0, 'rgba(211, 80, 19, 0.22)')
+      gradFire.addColorStop(0.45, 'rgba(211, 80, 19, 0.08)')
+      gradFire.addColorStop(1, 'rgba(211, 80, 19, 0)')
+      ctx.beginPath()
+      ctx.arc(lp.x, lp.y, LASER_RADIUS, 0, Math.PI * 2)
+      ctx.fillStyle = gradFire
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(lp.x, lp.y, 3.5, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(211, 80, 19, 0.9)'
+      ctx.fill()
+
+      // Heat glow on burning particles
+      for (const p of particles) {
+        if (p.burnFrames > 0) {
+          const heat = Math.min(p.burnFrames / LASER_BURN_THRESHOLD, 1)
+          ctx.globalAlpha = heat * 0.75
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.radius * (1 + heat * 1.8), 0, Math.PI * 2)
+          ctx.fillStyle = `rgb(255, ${Math.round(180 * (1 - heat))}, 0)`
+          ctx.fill()
+          ctx.globalAlpha = 1
+        }
       }
     }
-
-    // Remove particles that have reached the burn threshold
-    const prevCount = particles.length
-    particles = particles.filter(p => p.burnFrames < LASER_BURN_THRESHOLD)
-
-    // Chain reaction: fewer than threshold particles left → explode all
-    if (prevCount !== particles.length && !isClosing.value && particles.length < CHAIN_REACTION_THRESHOLD) {
-      handleClose()
-    }
-
-    // Draw laser glow
-    const gradient = ctx.createRadialGradient(lp.x, lp.y, 0, lp.x, lp.y, LASER_RADIUS)
-    gradient.addColorStop(0, 'rgba(211, 80, 19, 0.22)')
-    gradient.addColorStop(0.45, 'rgba(211, 80, 19, 0.08)')
-    gradient.addColorStop(1, 'rgba(211, 80, 19, 0)')
-    ctx.beginPath()
-    ctx.arc(lp.x, lp.y, LASER_RADIUS, 0, Math.PI * 2)
-    ctx.fillStyle = gradient
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(lp.x, lp.y, 3.5, 0, Math.PI * 2)
-    ctx.fillStyle = 'rgba(211, 80, 19, 0.9)'
-    ctx.fill()
   } else {
-    // Cool all particles when laser is off
+    // Laser off: slow cool/thaw
     for (const p of particles) {
       p.burnFrames = Math.max(0, p.burnFrames - 0.4)
-    }
-  }
-
-  // Draw heat glow on particles that are accumulating burn
-  for (const p of particles) {
-    if (p.burnFrames > 0) {
-      const heat = Math.min(p.burnFrames / LASER_BURN_THRESHOLD, 1)
-      ctx.globalAlpha = heat * 0.75
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, p.radius * (1 + heat * 1.8), 0, Math.PI * 2)
-      ctx.fillStyle = `rgb(255, ${Math.round(180 * (1 - heat))}, 0)`
-      ctx.fill()
-      ctx.globalAlpha = 1
+      if (!p.frozen) p.freezeFrames = Math.max(0, p.freezeFrames - 0.4)
     }
   }
 
@@ -368,14 +460,19 @@ function handleClose() {
   const cx = canvas.width / 2
   const cy = canvas.height / 2
 
-  // Burst all particles outward from screen center with random spread
+  // Burst non-frozen particles outward; frozen particles keep falling
   for (const p of particles) {
-    const dx = p.x - cx
-    const dy = p.y - cy
-    const len = Math.sqrt(dx * dx + dy * dy) || 1
-    const burstSpeed = 18 + Math.random() * 22
-    p.vx = (dx / len) * burstSpeed + (Math.random() - 0.5) * 12
-    p.vy = (dy / len) * burstSpeed + (Math.random() - 0.5) * 12
+    if (p.frozen) {
+      p.vx = (Math.random() - 0.5) * 4
+      p.vy = Math.max(p.vy, 2 + Math.random() * 4)
+    } else {
+      const dx = p.x - cx
+      const dy = p.y - cy
+      const len = Math.sqrt(dx * dx + dy * dy) || 1
+      const burstSpeed = 18 + Math.random() * 22
+      p.vx = (dx / len) * burstSpeed + (Math.random() - 0.5) * 12
+      p.vy = (dy / len) * burstSpeed + (Math.random() - 0.5) * 12
+    }
   }
 
   closingFrameCount = 0
@@ -435,8 +532,10 @@ let clickDragStart = { x: 0, y: 0 }
 let laserPos: { x: number; y: number } | null = null
 const LASER_RADIUS = 120
 const LASER_FORCE = 14
-const LASER_BURN_THRESHOLD = 90  // ~1.5 s of continuous contact at 60 fps
+const LASER_BURN_THRESHOLD = 90   // WHITE: ~1.5 s at 60 fps
+const LASER_FREEZE_THRESHOLD = 90 // BLACK: ~1.5 s at 60 fps
 const CHAIN_REACTION_THRESHOLD = 20
+let chainReactionTriggered = false
 
 function onBackdropMouseDown(event: MouseEvent) {
   if (event.target !== event.currentTarget) return
@@ -551,6 +650,7 @@ function onLeave() {
   isClosing.value = false
   closingFrameCount = 0
   laserPos = null
+  chainReactionTriggered = false
   cancelAnimationFrame(animFrame)
   particles = []
   isDragging.value = false
