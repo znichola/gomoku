@@ -30,6 +30,10 @@ let particles: Particle[] = []
 let frameCount = 0
 const EXPLODE_DURATION = 80
 
+const isClosing = ref(false)
+let closingFrameCount = 0
+const CLOSE_DURATION = 55 // ~0.9 s at 60 fps
+
 const open = computed(() => winner.value !== Cell.EMPTY)
 
 const playerType = computed(() => {
@@ -191,6 +195,46 @@ function animate() {
   const ctx = canvas.getContext('2d')!
 
   frameCount++
+
+  // ——— CLOSING burst animation ———
+  if (isClosing.value) {
+    closingFrameCount++
+    const t = Math.min(closingFrameCount / CLOSE_DURATION, 1)
+    // easeOutExpo: fast initial burst that slows at the end
+    const eased = t === 1 ? 1 : 1 - Math.pow(2, -10 * t)
+
+    const backdropAlpha = 0.98 * Math.max(0, 1 - eased)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = `rgba(45, 52, 66, ${backdropAlpha})`
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    const particleAlpha = Math.max(0, 1 - eased * 1.6)
+    for (const p of particles) {
+      p.vy += 0.25
+      p.vx *= 0.975
+      p.vy *= 0.975
+      p.x += p.vx
+      p.y += p.vy
+      if (particleAlpha > 0.01) {
+        ctx.globalAlpha = particleAlpha
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
+        ctx.fillStyle = p.color
+        ctx.fill()
+        ctx.globalAlpha = 1
+      }
+    }
+
+    if (t >= 1) {
+      isClosing.value = false
+      emit('close')
+      return
+    }
+    animFrame = requestAnimationFrame(animate)
+    return
+  }
+
+  // ——— Normal entrance animation ———
   const exploding = frameCount <= EXPLODE_DURATION
 
   // ✅ Calculer l'opacité du fond
@@ -235,7 +279,70 @@ function animate() {
     ctx.fill()
   }
 
+  // Laser / eraser: repulse particles near the cursor and draw the glow
+  const lp = laserPos
+  if (lp) {
+    for (const p of particles) {
+      const ldx = p.x - lp.x
+      const ldy = p.y - lp.y
+      const ldist = Math.sqrt(ldx * ldx + ldy * ldy) || 1
+      if (ldist < LASER_RADIUS) {
+        const force = LASER_FORCE * Math.pow(1 - ldist / LASER_RADIUS, 1.5)
+        p.vx += (ldx / ldist) * force
+        p.vy += (ldy / ldist) * force
+      }
+    }
+    const gradient = ctx.createRadialGradient(lp.x, lp.y, 0, lp.x, lp.y, LASER_RADIUS)
+    gradient.addColorStop(0, 'rgba(211, 80, 19, 0.18)')
+    gradient.addColorStop(0.45, 'rgba(211, 80, 19, 0.07)')
+    gradient.addColorStop(1, 'rgba(211, 80, 19, 0)')
+    ctx.beginPath()
+    ctx.arc(lp.x, lp.y, LASER_RADIUS, 0, Math.PI * 2)
+    ctx.fillStyle = gradient
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(lp.x, lp.y, 3.5, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(211, 80, 19, 0.8)'
+    ctx.fill()
+  }
+
   animFrame = requestAnimationFrame(animate)
+}
+
+function handleClose() {
+  // Respect prefers-reduced-motion: skip animation, close instantly
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    emit('close')
+    return
+  }
+
+  if (isClosing.value) return
+  isClosing.value = true
+
+  // Fade the card out immediately
+  cardVisible.value = false
+
+  const canvas = canvasEl.value
+  if (!canvas || particles.length === 0) {
+    // No canvas / particles yet – derive delay from CLOSE_DURATION (assume 60 fps)
+    setTimeout(() => emit('close'), Math.round((CLOSE_DURATION / 60) * 1000))
+    return
+  }
+
+  const cx = canvas.width / 2
+  const cy = canvas.height / 2
+
+  // Burst all particles outward from screen center with random spread
+  for (const p of particles) {
+    const dx = p.x - cx
+    const dy = p.y - cy
+    const len = Math.sqrt(dx * dx + dy * dy) || 1
+    const burstSpeed = 18 + Math.random() * 22
+    p.vx = (dx / len) * burstSpeed + (Math.random() - 0.5) * 12
+    p.vy = (dy / len) * burstSpeed + (Math.random() - 0.5) * 12
+  }
+
+  closingFrameCount = 0
 }
 
 onUnmounted(() => {
@@ -288,6 +395,11 @@ function handleResize() {
 const isClickDragging = ref(false)
 let clickDragStart = { x: 0, y: 0 }
 
+// Laser / eraser – repulsion field around the cursor
+let laserPos: { x: number; y: number } | null = null
+const LASER_RADIUS = 120
+const LASER_FORCE = 14
+
 function onBackdropMouseDown(event: MouseEvent) {
   if (event.target !== event.currentTarget) return
 
@@ -304,6 +416,9 @@ function onBackdropMouseDown(event: MouseEvent) {
 }
 
 function onBackdropMouseMove(event: MouseEvent) {
+  // Always update laser position for the repulsion field
+  laserPos = { x: event.clientX, y: event.clientY }
+
   if (!isClickDragging.value) return
 
   const currentX = event.clientX
@@ -330,6 +445,10 @@ function onBackdropMouseMove(event: MouseEvent) {
       particle.vy += directionY * distance * 0.15 * pullStrength
     }
   }
+}
+
+function onBackdropMouseLeave() {
+  laserPos = null
 }
 
 function onBackdropMouseUp() {
@@ -361,6 +480,7 @@ async function onOpen() {
   backdrop?.addEventListener('mousedown', onBackdropMouseDown)
   backdrop?.addEventListener('mousemove', onBackdropMouseMove)
   backdrop?.addEventListener('mouseup', onBackdropMouseUp)
+  backdrop?.addEventListener('mouseleave', onBackdropMouseLeave)
 }
 
 function onLeave() {
@@ -370,6 +490,9 @@ function onLeave() {
   window.removeEventListener('keydown', handleKeyDown)
   window.removeEventListener('keyup', handleKeyUp)
   isShiftPressed.value = false;
+  isClosing.value = false
+  closingFrameCount = 0
+  laserPos = null
   cancelAnimationFrame(animFrame)
   particles = []
   isDragging.value = false
@@ -378,6 +501,7 @@ function onLeave() {
   backdrop?.removeEventListener('mousedown', onBackdropMouseDown)
   backdrop?.removeEventListener('mousemove', onBackdropMouseMove)
   backdrop?.removeEventListener('mouseup', onBackdropMouseUp)
+  backdrop?.removeEventListener('mouseleave', onBackdropMouseLeave)
 }
 
 watch(open, async (newVal) => {
@@ -402,7 +526,7 @@ onUnmounted(onLeave)
         aria-modal="true"
         aria-label="Game over"
         @mousedown="onMouseDown"
-        :class="{ visible: cardVisible }"
+        :class="{ visible: cardVisible, closing: isClosing }"
         :style="{
           transform: `translate(${cardPosition.x}px, ${cardPosition.y}px)`,
           cursor: isDragging ? 'grabbing' : 'grab',
@@ -414,7 +538,7 @@ onUnmounted(onLeave)
         <div class="wm-player" v-if="playerType">
           <span class="wm-badge">{{ playerType === 'AI' ? '🤖 AI' : '👤 Human' }}</span>
         </div>
-        <button class="wm-close-btn" type="button" @click="emit('close')">Close</button>
+        <button class="wm-close-btn" type="button" @click="handleClose">Close</button>
       </div>
       <div v-if="!isShiftPressed" class="shift-hint">
         Hold Shift to interact with elements
@@ -432,7 +556,7 @@ onUnmounted(onLeave)
   justify-content: center;
   padding-bottom: 2.5rem;
   z-index: 9999;
-  cursor: pointer;
+  cursor: crosshair;
 }
 
 .wm-canvas {
@@ -462,6 +586,10 @@ onUnmounted(onLeave)
   transition: opacity 1s linear;
   &.visible {
     opacity: 1;
+  }
+  &.closing {
+    opacity: 0 !important;
+    transition: opacity 0.45s ease-out !important;
   }
 }
 
