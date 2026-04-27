@@ -7,6 +7,7 @@
 
 #define MQ MessageQueue::out()
 #define MBQ(id, msg) MessageQueue::boardMessage((id), (msg))
+#define MBL(layer, id, msg) MessageQueue::boardMessage((layer), (id), (msg))
 #define COUT MessageQueue::ConsoleSink{}
 #define ENABLE_LOG MessageQueue::enabled = true;
 #define DISABLE_LOG MessageQueue::enabled = false;
@@ -95,7 +96,17 @@ namespace MessageQueue
     inline void boardMessage(unsigned id, const std::string &msg) {
         if (!enabled) return;
         std::stringstream ss;
-        ss << "{\"id\":" << id
+        ss << "{\"layer\":\"default\""
+           << ",\"id\":" << id
+           << ",\"msg\":\"" << json_escape(msg) << "\"}";
+        push(ss.str());
+    }
+
+    inline void boardMessage(const std::string layer, unsigned id, const std::string &msg) {
+        if (!enabled) return;
+        std::stringstream ss;
+        ss << "{\"layer\":\"" << json_escape(layer) << "\""
+           << ",\"id\":" << id
            << ",\"msg\":\"" << json_escape(msg) << "\"}";
         push(ss.str());
     }

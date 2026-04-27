@@ -22,7 +22,8 @@ const grids = computed(() => {
 
 const overlayMap = computed(() => {
   const map = new Map<number, string>()
-  for (const m of gameStore.overlayMessages) {
+  for (const m of gameStore.overlay.messages) {
+    if (m.layer === "default")
     map.set(m.id, m.msg)
   }
   return map
@@ -202,7 +203,13 @@ function keyMode(event: KeyboardEvent) {
       </template>
     </div>
     <button id="isoButton" @click="() => iso3D = !iso3D">iso3D</button>
-    <button id="overlayButton" @click="() => overlay = !overlay">overlay</button>
+    <div id="overlayBox">
+      <button id="overlayButton" @click="() => overlay = !overlay">overlay ({{gameStore.overlay.layers.length}})</button>
+      <ul v-if="gameStore.overlay.layers">
+        <li v-for="layer in gameStore.overlay.layers" :style="'--layer-color: ' + layer"
+          ><input :id="'cb-'+layer" type="checkbox" /><label :for="'cb-'+layer">{{ layer }}</label></li>
+      </ul>
+    </div>
   </section>
 </template>
 
@@ -444,13 +451,34 @@ div.board.iso3D {
   left: 0;
 }
 
-#overlayButton {
-  background: none;
+#overlayBox {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: right;
   color: var(--white-color);
   z-index: 1000;
-  cursor: pointer;
   position: fixed;
   bottom: 0;
-  right: 0;
+  right: 1px;
+  #overlayButton {
+    background: none;
+    color: var(--white-color);
+    cursor: pointer;
+    text-align: right;
+  }
+  ul {
+    display: none;
+    background-color: var(--bg-color);
+    padding: 5px;
+    border: 1px solid var(--white-color);
+  }
+  &:hover ul {
+    display: block;
+  }
+  label, input {
+    cursor: pointer;
+    user-select: none;
+    color: var(--layer-color);
+  }
 }
 </style>

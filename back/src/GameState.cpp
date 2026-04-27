@@ -68,6 +68,9 @@ Cell GameState::askAI2Play() {
         auto end = std::chrono::high_resolution_clock::now();
         auto us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         ENABLE_LOG
+	    for (auto move : AI::getCandidateMoves_jeteste1(board.grid, board.isBlackToPlay ? Cell::BLACK : Cell::WHITE, 0)) {
+            MBL("CadetBlue", move, "prop"); 
+        }
 
         if (us < 1'000) {
             COUT << "[AI] Move took " << us << " µs\n";

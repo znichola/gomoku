@@ -25,26 +25,33 @@ export const useGameStore = defineStore('game', () => {
   // Prevent server spamming
   const fetchIsAvailable: Ref<boolean> = ref(true)
 
-  const overlayMessages = ref<{ id: number; msg: string }[]>([])
+  const overlayLayers = ref<string[]>([])
+  const overlayMessages = ref<{ id: number; msg: string; layer?: string }[]>([])
 
   function tryParseOverlayMessage(raw: string) {
-    try {
-      const obj = JSON.parse(raw)
-      if (
-        obj &&
-        typeof obj === 'object' &&
-        typeof obj.id === 'number' &&
-        typeof obj.msg === 'string'
-      ) {
-        return obj as { id: number; msg: string }
+    const obj = (() => {
+      try {
+        return JSON.parse(raw)
+      } catch {
+        return null;
       }
-    } catch {}
-    return null
+    })()
+    if (!obj) return null;
+    if (
+      obj &&
+      typeof obj === 'object' &&
+      typeof obj.id === 'number' &&
+      typeof obj.msg === 'string'
+    ) {
+      if ('layer' in obj && !overlayLayers.value?.find((a) => a === obj.layer)) { overlayLayers.value.push(obj.layer) }
+      return obj as { id: number; msg: string; layer?: string }
+    }
   }
 
   function processMessages(messages: string[]) {
     const remaining: string[] = []
 
+    overlayLayers.value = []
     overlayMessages.value = []
     for (const m of messages) {
       const parsed = tryParseOverlayMessage(m)
@@ -211,7 +218,11 @@ export const useGameStore = defineStore('game', () => {
   /* << */
 
   return {
-    gameState, updateGameState, backWatcher, watcherState, overlayMessages,
+    gameState, updateGameState, backWatcher, watcherState,
+    overlay: {
+      messages: overlayMessages,
+      layers: overlayLayers
+    },
     highlight: {
       get: () => highlightCircle.value,
       set: setHighlightCircle
