@@ -340,8 +340,8 @@ function animate() {
       }
 
       // Chain reaction: ≥ 20 frozen → freeze everything then close
-      const frozenCount = particles.filter(p => p.frozen).length
-      if (!chainReactionTriggered && !isClosing.value && frozenCount >= CHAIN_REACTION_THRESHOLD) {
+      const unfrozenCount = particles.filter(p => !p.frozen).length
+      if (!chainReactionTriggered && !isClosing.value && unfrozenCount < CHAIN_REACTION_THRESHOLD) {
         chainReactionTriggered = true
         for (const p of particles) {
           p.frozen = true
