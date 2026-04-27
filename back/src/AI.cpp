@@ -4,6 +4,7 @@
 
 #include "AI.hpp"
 #include "MessageQueue.hpp"
+#include <iomanip>
 
 enum class Player {WHITE, BLACK};
 
@@ -53,8 +54,8 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
-        float child = -alphaBetaNegaMaxTT(newBoard, depth-1, -b, -a, -color);
-        if (child > value) { value = child; bestMove = move; }
+        float score = -alphaBetaNegaMaxTT(newBoard, depth-1, -b, -a, -color);
+        if (score > value) { value = score; bestMove = move; }
         a = std::max(a, value);
         if (a >= b) break;
     }
@@ -184,7 +185,9 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, SearchFunction sf) {
             score = alphaBetaNegaMaxTT(newBoard, AI::maxDepth, -INF, INF, isWhite ? 1 : -1);
             break;
         }
-        ENABLE_LOG MBQ(move, std::to_string(score)); DISABLE_LOG
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(1) << score;
+        ENABLE_LOG MBQ(move, oss.str()); DISABLE_LOG
         if (isWhite ? score > bestScore : score < bestScore) { // if white we look for highest score, if black we look for lowest
             bestMove = move;
             bestScore = score;
@@ -218,24 +221,30 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
         return 0;
     }
 
-    Eval tempo = {
-        static_cast<float>(board.isBlackToPlay),
-        static_cast<float>(!board.isBlackToPlay)
-    };
+    // 1 for the side to play, 0 for the waiting side
+    Eval active  = { static_cast<float>( board.isBlackToPlay),
+                     static_cast<float>(!board.isBlackToPlay) };
+    Eval passive = 1.0f - active;
 
-    Eval eval;
-    Eval twos = countGroupsOf(board, 2);
-    Eval threes = countGroupsOf(board, 3);
-    // Eval fours = countGroupsOf(board, 4);
+    EvalGroups twos   = countOpenGroupsOf(board, 2);
+    EvalGroups threes = countOpenGroupsOf(board, 3);
+    EvalGroups fours  = countOpenGroupsOf(board, 4);
 
-    eval.black += twos.black * 1.1f + tempo.black * 0.2;
-    eval.white += twos.white * 1.1f + tempo.white * 0.2;
+    Eval eval = fours.open  * (active * 1000.0f + passive * 900.0f)
+              + fours.half  * (active *  950.0f + passive * 400.0f)
+              + threes.open * (active *  700.0f + passive * 600.0f)
+              + threes.half * (active *  200.0f + passive * 90.0f)
+              + twos.open   * (active *   10.0f + passive * 6.0f)
+              + twos.half   * (active *    8.5f + passive * 3.2f)
+              + active * 1.2f; // move advantage
 
-    eval.black += threes.black * 0.2f + tempo.black * 0.1;
-    eval.white += threes.white * 0.2f + tempo.white * 0.1;
-
-    // eval.black += fours.black * 2;
-    // eval.white += fours.white * 2;
+    MQ << "Evaluate " << eval.white - eval.black
+       << "\n" << (board.isBlackToPlay ? "black" : "white") << " to play" 
+       << "\n black:" << eval.black << " white:" << eval.white
+       << "\ntwos open:" << twos.open << "  half:" << twos.half
+       << "\nthrees open:" << threes.open << "  half:" << threes.half
+       << "\nfours open:" << fours.open << "  half:" << fours.half
+       ;
 
     return eval.white - eval.black; // + is good for white, - good for black
 }
@@ -252,6 +261,26 @@ AI::Eval AI::countGroupsOf(const Board &board, int size) {
         }
     }
     return eval;
+}
+
+AI::EvalGroups AI::countOpenGroupsOf(const Board& board, int size) {
+    const auto& nodes = board.grid.nodes().getCellRowsGarbage();
+
+    EvalGroups eg;
+    for (const NodeCellRow& n : nodes) {
+        if (n.size != size) continue;
+        if (n.type != Cell::BLACK && n.type != Cell::WHITE) continue;
+
+        bool openL = n.prev && n.prev->type == Cell::EMPTY;
+        bool openR = n.next && n.next->type == Cell::EMPTY;
+        int openEnds = (int)openL + (int)openR;
+
+        if (openEnds == 0) continue; // closed, skip
+
+        Eval& target = (openEnds == 2) ? eg.open : eg.half;
+        if (n.type == Cell::BLACK) target.black++; else target.white++;
+    }
+    return eg;
 }
 
 std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
@@ -342,4 +371,52 @@ bool AI::tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, f
     }
 
     return false;
+}
+
+
+// Eval
+
+AI::Eval AI::Eval::operator+(const Eval& other) const {
+    return { black + other.black, white + other.white };
+}
+
+AI::Eval AI::Eval::operator*(const Eval& other) const {
+    return { black * other.black, white * other.white };
+}
+
+AI::Eval AI::Eval::operator-(const Eval& other) const {
+    return { black - other.black, white - other.white };
+}
+
+
+AI::Eval& AI::Eval::operator+=(const Eval& other) {
+    black += other.black;
+    white += other.white;
+    return *this;
+}
+
+
+AI::Eval AI::Eval::operator-(float scale) const {
+    return { black - scale, white - scale };
+}
+
+AI::Eval AI::Eval::operator+(float scale) const {
+    return { black + scale, white + scale };
+}
+
+AI::Eval AI::Eval::operator*(float scale) const {
+    return { black * scale, white * scale };
+}
+
+
+AI::Eval AI::operator-(float scale, const Eval& other) {
+    return { scale - other.black, scale - other.white };
+}
+
+AI::Eval AI::operator+(float scale, const Eval& other) {
+    return { scale + other.black, scale + other.white };
+}
+
+AI::Eval AI::operator*(float scale, const Eval& other) {
+    return { scale * other.black, scale * other.white };
 }

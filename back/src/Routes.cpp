@@ -29,7 +29,8 @@ void registerRoutes(Server& server, GameState& gs) {
 
         if (gs.board.winner != Cell::EMPTY) {
             MQ << "GAME ENDED !";
-		    return Response{200, gs.serialize()};
+            MQ << "[AI] eval : " << AI::evaluate(gs.board, 0, gs.board.winner);
+            return Response{200, gs.serialize()};
         }
 
         bool played = false;
@@ -37,6 +38,7 @@ void registerRoutes(Server& server, GameState& gs) {
             MQ << "INVALID MOVE";
             // return Response{400, "{\"error\": \"invalid move\"}"};
 
+        AI::evaluate(gs.board, 0, gs.board.winner);
         const std::string output = gs.serialize();
 
         if (!played)

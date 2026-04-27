@@ -90,7 +90,6 @@ Cell GameState::askAI2Play() {
         MQ   << "[RAM] Free " << info.freeram / 1'000'000.0 << "/" << info.totalram / 1'000'000.0 << " Mb\n";
         return res ? activePlayer : Cell::OUTSIDE;
     }
-    MQ << "[AI] eval : " << AI::evaluate(board, 0, board.isVictory());
     return Cell::EMPTY;
 }
 
