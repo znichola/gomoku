@@ -403,21 +403,29 @@ const LASER_FORCE = 14
 function onBackdropMouseDown(event: MouseEvent) {
   if (event.target !== event.currentTarget) return
 
-  isClickDragging.value = true
-  clickDragStart = { x: event.clientX, y: event.clientY }
+  if (event.button === 0) {
+    // Left click: activate laser / eraser repulsion
+    laserPos = { x: event.clientX, y: event.clientY }
+  } else if (event.button === 2) {
+    // Right click: drag / pull animation
+    isClickDragging.value = true
+    clickDragStart = { x: event.clientX, y: event.clientY }
 
-  for (const p of particles) {
-    const dx = clickDragStart.x - p.x
-    const dy = clickDragStart.y - p.y
-    const len = Math.sqrt(dx * dx + dy * dy) || 1
-    p.vx = (dx / len) * 8
-    p.vy = (dy / len) * 8
+    for (const p of particles) {
+      const dx = clickDragStart.x - p.x
+      const dy = clickDragStart.y - p.y
+      const len = Math.sqrt(dx * dx + dy * dy) || 1
+      p.vx = (dx / len) * 8
+      p.vy = (dy / len) * 8
+    }
   }
 }
 
 function onBackdropMouseMove(event: MouseEvent) {
-  // Always update laser position for the repulsion field
-  laserPos = { x: event.clientX, y: event.clientY }
+  // Update laser position only while left button is held (buttons bitmask bit 0)
+  if (event.buttons & 1) {
+    laserPos = { x: event.clientX, y: event.clientY }
+  }
 
   if (!isClickDragging.value) return
 
@@ -449,10 +457,19 @@ function onBackdropMouseMove(event: MouseEvent) {
 
 function onBackdropMouseLeave() {
   laserPos = null
+  isClickDragging.value = false
 }
 
-function onBackdropMouseUp() {
-  isClickDragging.value = false
+function onBackdropMouseUp(event: MouseEvent) {
+  if (event.button === 0) {
+    laserPos = null
+  } else if (event.button === 2) {
+    isClickDragging.value = false
+  }
+}
+
+function onBackdropContextMenu(event: MouseEvent) {
+  event.preventDefault()
 }
 
 const isShiftPressed = ref(false)
@@ -481,6 +498,7 @@ async function onOpen() {
   backdrop?.addEventListener('mousemove', onBackdropMouseMove)
   backdrop?.addEventListener('mouseup', onBackdropMouseUp)
   backdrop?.addEventListener('mouseleave', onBackdropMouseLeave)
+  backdrop?.addEventListener('contextmenu', onBackdropContextMenu)
 }
 
 function onLeave() {
@@ -502,6 +520,7 @@ function onLeave() {
   backdrop?.removeEventListener('mousemove', onBackdropMouseMove)
   backdrop?.removeEventListener('mouseup', onBackdropMouseUp)
   backdrop?.removeEventListener('mouseleave', onBackdropMouseLeave)
+  backdrop?.removeEventListener('contextmenu', onBackdropContextMenu)
 }
 
 watch(open, async (newVal) => {
