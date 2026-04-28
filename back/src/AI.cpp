@@ -51,7 +51,7 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
     float origA = a;
 
     float value = -INF;
-    for (auto move : getOrderedCandidateMoves2(board, bestMove, color == -1.0f ? Cell::BLACK : Cell::WHITE, depth)) {
+    for (auto move : mainCandidateMoves(board, bestMove, color == -1.0f ? Cell::BLACK : Cell::WHITE, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
@@ -81,7 +81,7 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     }
 
     float value = -INF;
-    for (auto move : getOrderedCandidateMoves(board.grid, Board::FIRSTMOVE, color == -1.0f ? Cell::BLACK : Cell::WHITE)) {
+    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, color == -1.0f ? Cell::BLACK : Cell::WHITE)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
@@ -315,6 +315,23 @@ AI::Eval AI::countCaptures(const Board &board) {
     }
     return eval;
 }
+
+std::vector<unsigned> AI::mainCandidateMoves(
+    const Board &board, unsigned bestMove, float color, int depth
+) {
+    std::set<unsigned> m;
+    switch (moveFunction) {
+    case MovesFunction::CANDIDATE_MOVES:
+        return getOrderedCandidateMoves(board.grid, bestMove, color);
+    case MovesFunction::CANDIDATE_MOVES_2:
+        return getOrderedCandidateMoves2(board, bestMove, color, depth);
+    case MovesFunction::JETEST:
+        m = getCandidateMoves_jeteste1(board.grid, color, depth);
+        return std::vector<unsigned>(m.begin(), m.end());
+    }
+    std::runtime_error("Must select valid Move function");
+}
+
 
 std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
     std::set<unsigned> cm;

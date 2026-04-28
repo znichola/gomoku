@@ -15,7 +15,17 @@ namespace AI {
         ALPHABETA_NEGAMAX, ALPHABETA_NEGAMAX_TT
     };
 
+    enum class MovesFunction {
+        CANDIDATE_MOVES,
+        CANDIDATE_MOVES_2,
+        JETEST
+    };
+
     inline int16_t maxDepth = 3;
+
+    inline SearchFunction searchFunction = SearchFunction::ALPHABETA_NEGAMAX_TT;
+    inline MovesFunction moveFunction = MovesFunction::CANDIDATE_MOVES_2;
+
     inline std::vector<int> nodeVisitCounter;
     inline TranspositionTable tt;
 
@@ -29,6 +39,9 @@ namespace AI {
     unsigned play(const Board &board, bool isWhite, SearchFunction sf);
     unsigned findBestMove(const Board &board, bool isWhite, SearchFunction sf);
     float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
+
+    std::vector<unsigned>mainCandidateMoves(const Board &board, unsigned bestMove, float color, int depth);
+    float mainSearch(const Board &board, int16_t depth, float a, float b, float color);
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
     std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color);
