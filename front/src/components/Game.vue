@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RefStringOrNull } from '@/types/vue'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { Cell, type GameState } from '@/types/game'
+import { Cell, type GameState, type OverlayMessage } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
 import { useGameStore } from '@/stores/game'
 
@@ -21,10 +21,13 @@ const grids = computed(() => {
 })
 
 const overlayMap = computed(() => {
-  const map = new Map<number, string>()
-  for (const m of gameStore.overlay.messages) {
-    if (m.layer === "default")
-    map.set(m.id, m.msg)
+  const map = new Map<number, OverlayMessage>()
+  for (const msg of gameStore.overlay.messages) {
+    if (map.has(msg.id))
+      continue
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!msg.group || !(gameStore.overlay.disabled as any)[msg.group?.name])
+      map.set(msg.id, msg)
   }
   return map
 })
@@ -193,21 +196,26 @@ function keyMode(event: KeyboardEvent) {
               highlight: highlightId === cid,
               overlay: overlay && overlayMap.has(cid)
             }"
+            :style="(overlayMap.get(cid)?.group) ? '--layer-color: ' + overlayMap.get(cid)?.group?.color : ''"
             :data-type="getCellClass(gameStore.gameState.board?.grid[cid] as Cell)"
             :title="`[${x}; ${y}] - id: ${cid}`"
             :id="cid.toString()"
             @click="move"
-              ><span v-if="overlay">{{ overlayMap.get(cid) }}</span></div>
+              ><span v-if="overlay && overlayMap.get(cid)">{{ overlayMap.get(cid)?.msg }}</span></div>
           </div>
         </div>
       </template>
     </div>
     <button id="isoButton" @click="() => iso3D = !iso3D">iso3D</button>
     <div id="overlayBox">
-      <button id="overlayButton" @click="() => overlay = !overlay">overlay ({{gameStore.overlay.layers.length}})</button>
+      <button id="overlayButton" @click="() => overlay = !overlay"
+        >overlay ({{gameStore.overlay.layers.filter((a) => !(gameStore.overlay.disabled as any)?.[a.name]).length}}/{{gameStore.overlay.layers.length}})</button>
       <ul v-if="gameStore.overlay.layers">
-        <li v-for="layer in gameStore.overlay.layers" :style="'--layer-color: ' + layer"
-          ><input :id="'cb-'+layer" type="checkbox" /><label :for="'cb-'+layer">{{ layer }}</label></li>
+        <li v-for="layer in gameStore.overlay.layers" :style="'--layer-color: ' + layer.color" :key="layer.name">
+          <input :id="'cb-'+layer.name" type="checkbox" :checked="!(gameStore.overlay.disabled as any)?.[layer.name]"
+            @click="(gameStore.overlay.disabled as any)[layer.name] = !(gameStore.overlay.disabled as any)[layer.name]" />
+          <label :for="'cb-'+layer.name">{{ layer.name }}</label>
+        </li>
       </ul>
     </div>
   </section>
@@ -324,6 +332,8 @@ div.board {
           box-sizing: border-box;
           content: ' ';
           z-index: 21;
+          background-color: var(--layer-color);
+          border-color: var(--layer-color, var(--bg-color));
         }
       }
       &[data-type=black] {
@@ -333,6 +343,9 @@ div.board {
       &[data-type=empty] {
         opacity: 0;
         transition: all 0.2s ease-in;
+        &:not(:hover) {
+          background-color: var(--layer-color);
+        }
       }
       &.overlay {
         opacity: 1;

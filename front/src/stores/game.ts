@@ -1,6 +1,31 @@
 import { reactive, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
-import { Cell, type GameState } from '../types/game'
+import { Cell, type GameState, type OverlayLayer, type OverlayMessage } from '../types/game'
+
+// Conversion HSV → RGB
+function hsvToRgb(h: number, s: number, v: number) {
+  let r = 0, g = 0, b = 0;
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+
+  switch (i % 6) {
+    case 0: r = v; g = t; b = p; break;
+    case 1: r = q; g = v; b = p; break;
+    case 2: r = p; g = v; b = t; break;
+    case 3: r = p; g = q; b = v; break;
+    case 4: r = t; g = p; b = v; break;
+    case 5: r = v; g = p; b = q; break;
+  }
+
+  return [
+    Math.round(r * 255),
+    Math.round(g * 255),
+    Math.round(b * 255)
+  ];
+}
 
 export const useGameStore = defineStore('game', () => {
   const gameState = reactive<GameState>({
@@ -25,8 +50,9 @@ export const useGameStore = defineStore('game', () => {
   // Prevent server spamming
   const fetchIsAvailable: Ref<boolean> = ref(true)
 
-  const overlayLayers = ref<string[]>([])
-  const overlayMessages = ref<{ id: number; msg: string; layer?: string }[]>([])
+  const overlayDisabled = reactive({})
+  const overlayLayers = ref<OverlayLayer[]>([])
+  const overlayMessages = ref<OverlayMessage[]>([])
 
   function tryParseOverlayMessage(raw: string) {
     const obj = (() => {
@@ -43,8 +69,33 @@ export const useGameStore = defineStore('game', () => {
       typeof obj.id === 'number' &&
       typeof obj.msg === 'string'
     ) {
-      if ('layer' in obj && !overlayLayers.value?.find((a) => a === obj.layer)) { overlayLayers.value.push(obj.layer) }
-      return obj as { id: number; msg: string; layer?: string }
+      if ('layer' in obj) {
+        const arr = obj.layer.split(',')
+        const name = arr[0]
+        const element = overlayLayers.value?.find((a) => a.name === name)
+        if (!element) {
+          const arg2 = arr[1] || arr[0]
+          const color = (() => {
+            if (CSS.supports('color', arg2)) {
+              return arg2
+            } else if (/--\w*/.test(arg2) && window.getComputedStyle(document.body).getPropertyValue(arg2)) {
+              return `var(${arg2})`
+            } else {
+              const i = overlayLayers.value.length
+              const t = (i * 0.618033988749895) % 1.0
+              const v = Math.sqrt(1.0 - ((i * 0.618033988749895) % 0.5))
+              const [r, g, b] = hsvToRgb(t, 0.5, v)
+              return `rgb(${r}, ${g}, ${b})`
+            }
+          })()
+          const newElement = { name, color }
+          overlayLayers.value.push(newElement)
+          obj.group = newElement
+        } else {
+          obj.group = element
+        }
+      }
+      return obj as OverlayMessage
     }
   }
 
@@ -220,6 +271,7 @@ export const useGameStore = defineStore('game', () => {
   return {
     gameState, updateGameState, backWatcher, watcherState,
     overlay: {
+      disabled: overlayDisabled,
       messages: overlayMessages,
       layers: overlayLayers
     },

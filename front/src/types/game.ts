@@ -13,20 +13,32 @@ type MoveSuggestion =
   | 'both'
 
 export interface Board {
-  grid: Cell[];
-  width: number;
-  blackCaptured: number;
-  whiteCaptured: number;
-  isBlackToPlay: boolean;
-  winner: Cell;
+  grid: Cell[]
+  width: number
+  blackCaptured: number
+  whiteCaptured: number
+  isBlackToPlay: boolean
+  winner: Cell
 }
 
 export interface GameState {
-  searchDepth: number;
-  searchFunction: SearchFunction;
-  moveSuggestion: MoveSuggestion;
-  isAIGame: Cell;
-  moveHistory: number[];
-  board: Board | null;
-  messages: string[];
+  searchDepth: number
+  searchFunction: SearchFunction
+  moveSuggestion: MoveSuggestion
+  isAIGame: Cell
+  moveHistory: number[]
+  board: Board | null
+  messages: string[]
+}
+
+export interface OverlayLayer {
+  name: string
+  color: string
+}
+
+export interface OverlayMessage {
+  id: number
+  msg: string
+  layer?: string
+  group?: OverlayLayer
 }
