@@ -230,12 +230,16 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
     EvalGroups threes = countOpenGroupsOf(board, 3);
     EvalGroups fours  = countOpenGroupsOf(board, 4);
 
+    Eval captures = {static_cast<float>(board.blackCaptured), static_cast<float>(board.whiteCaptured)};
+    Eval possibleCaptures = countCaptures(board);
+
     Eval eval = fours.open  * (active * 1000.0f + passive * 900.0f)
               + fours.half  * (active *  950.0f + passive * 400.0f)
               + threes.open * (active *  700.0f + passive * 600.0f)
               + threes.half * (active *  200.0f + passive * 90.0f)
               + twos.open   * (active *   10.0f + passive * 6.0f)
               + twos.half   * (active *    8.5f + passive * 3.2f)
+              + (possibleCaptures * 2 + captures) / 10 * (active * 1000.0f + passive * 700.0f)
               + active * 1.2f; // move advantage
 
     MQ << "Evaluate " << eval.white - eval.black
@@ -244,6 +248,7 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
        << "\ntwos open:" << twos.open << "  half:" << twos.half
        << "\nthrees open:" << threes.open << "  half:" << threes.half
        << "\nfours open:" << fours.open << "  half:" << fours.half
+       << "\npossible captures" << possibleCaptures;
        ;
 
     return eval.white - eval.black; // + is good for white, - good for black
@@ -263,11 +268,11 @@ AI::Eval AI::countGroupsOf(const Board &board, int size) {
     return eval;
 }
 
-AI::EvalGroups AI::countOpenGroupsOf(const Board& board, int size) {
-    const auto& nodes = board.grid.nodes().getCellRowsGarbage();
+AI::EvalGroups AI::countOpenGroupsOf(const Board &board, int size) {
+    const auto &nodes = board.grid.nodes().getCellRowsGarbage();
 
     EvalGroups eg;
-    for (const NodeCellRow& n : nodes) {
+    for (const NodeCellRow &n : nodes) {
         if (n.size == 1 
                 && n.type == Cell::EMPTY
                 && n.prev && n.next
@@ -278,7 +283,7 @@ AI::EvalGroups AI::countOpenGroupsOf(const Board& board, int size) {
         }
         if (n.size != size) continue;
         if (n.type != Cell::BLACK && n.type != Cell::WHITE) continue;
-            
+
         bool openL = n.prev && n.prev->type == Cell::EMPTY;
         bool openR = n.next && n.next->type == Cell::EMPTY;
         int openEnds = (int)openL + (int)openR;
@@ -289,6 +294,26 @@ AI::EvalGroups AI::countOpenGroupsOf(const Board& board, int size) {
         if (n.type == Cell::BLACK) target.black++; else target.white++;
     }
     return eg;
+}
+
+AI::Eval AI::countCaptures(const Board &board) {
+    const auto &nodes = board.grid.nodes().getCellRowsGarbage();
+
+    Eval eval;
+    for (const NodeCellRow &n : nodes) {
+        if (n.size != 2) continue;
+        if (n.type != Cell::BLACK && n.type != Cell::WHITE) continue;
+
+        Cell opponent = (n.type == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
+
+        bool canCapture = n.prev && n.next && (
+            (n.next->type == opponent && n.prev->type == Cell::EMPTY) ||
+            (n.next->type == Cell::EMPTY && n.prev->type == opponent)
+        );
+
+        if (n.type == Cell::WHITE) eval.black += int(canCapture); else eval.white += int(canCapture);
+    }
+    return eval;
 }
 
 std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
@@ -388,12 +413,16 @@ AI::Eval AI::Eval::operator+(const Eval& other) const {
     return { black + other.black, white + other.white };
 }
 
+AI::Eval AI::Eval::operator-(const Eval& other) const {
+    return { black - other.black, white - other.white };
+}
+
 AI::Eval AI::Eval::operator*(const Eval& other) const {
     return { black * other.black, white * other.white };
 }
 
-AI::Eval AI::Eval::operator-(const Eval& other) const {
-    return { black - other.black, white - other.white };
+AI::Eval AI::Eval::operator/(const Eval& other) const {
+    return { black / other.black, white / other.white };
 }
 
 
@@ -416,6 +445,10 @@ AI::Eval AI::Eval::operator*(float scale) const {
     return { black * scale, white * scale };
 }
 
+AI::Eval AI::Eval::operator/(float scale) const {
+    return { black / scale, white / scale };
+}
+
 
 AI::Eval AI::operator-(float scale, const Eval& other) {
     return { scale - other.black, scale - other.white };
@@ -427,4 +460,8 @@ AI::Eval AI::operator+(float scale, const Eval& other) {
 
 AI::Eval AI::operator*(float scale, const Eval& other) {
     return { scale * other.black, scale * other.white };
+}
+
+AI::Eval AI::operator/(float scale, const Eval& other) {
+    return { scale / other.black, scale / other.white };
 }

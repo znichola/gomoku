@@ -21,17 +21,20 @@ namespace AI {
         Eval operator-(const Eval& other) const;
         Eval operator+(const Eval& other) const;
         Eval operator*(const Eval& other) const;
+        Eval operator/(const Eval& other) const;
 
         Eval& operator+=(const Eval& other);
 
-        Eval operator*(float scale) const;
         Eval operator-(float scale) const;
         Eval operator+(float scale) const;
+        Eval operator*(float scale) const;
+        Eval operator/(float scale) const;
     };
 
     Eval operator-(float scale, const Eval& other);
     Eval operator+(float scale, const Eval& other);
     Eval operator*(float scale, const Eval& other);
+    Eval operator/(float scale, const Eval& other);
 
     inline std::ostream &operator<<(std::ostream &os, const Eval &eval) {
         os << "[" << eval.black << ", " << eval.white << "]";
@@ -63,7 +66,9 @@ namespace AI {
     std::set<unsigned>getCandidateMoves(const Grid &grid);
     std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color);
     Eval countGroupsOf(const Board &board, int size);
+    Eval countCaptures(const Board &board);
     EvalGroups countOpenGroupsOf(const Board &board, int size);
+
     bool tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, float &score, unsigned &bestMove);
 
     float minMax_jeteste1(const Board &board, int16_t depth, bool isBlackToPlay, int16_t level = 0);
