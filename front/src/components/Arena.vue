@@ -80,7 +80,7 @@ watch(
   () => gameStore.gameState.board?.winner,
   (winner) => {
     if (winner) {
-      triggerReaction('wild', '🎉 VICTOIRE ! 🎉', 10_000)
+      triggerReaction('wild', '🎉 VICTOIRE ! 🎉', 10000)
       launchConfetti()
     }
   },
@@ -162,7 +162,7 @@ function launchConfetti() {
   confettiTimer = setTimeout(() => {
     confettiActive.value = false
     confettiPieces.value = []
-  }, 11_000)
+  }, 11000)
 }
 
 onUnmounted(() => {
