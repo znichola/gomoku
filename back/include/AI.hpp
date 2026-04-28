@@ -32,6 +32,7 @@ namespace AI {
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
     std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color);
+    std::vector<unsigned>getOrderedCandidateMoves2(const Board &board, unsigned bestMove, const Cell color, int depth);
     Eval countGroupsOf(const Board &board, int size);
     Eval countCaptures(const Board &board);
     EvalGroups countOpenGroupsOf(const Board &board, int size);

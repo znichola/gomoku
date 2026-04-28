@@ -5,6 +5,7 @@
 #include "AI.hpp"
 #include "MessageQueue.hpp"
 #include <iomanip>
+#include <algorithm>
 
 enum class Player {WHITE, BLACK};
 
@@ -50,7 +51,7 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
     float origA = a;
 
     float value = -INF;
-    for (auto move : getOrderedCandidateMoves(board.grid, bestMove, color == -1.0f ? Cell::BLACK : Cell::WHITE)) {
+    for (auto move : getOrderedCandidateMoves2(board, bestMove, color == -1.0f ? Cell::BLACK : Cell::WHITE, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
@@ -163,7 +164,8 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, SearchFunction sf) {
     unsigned bestMove = Board::FIRSTMOVE;
     AI::nodeVisitCounter.assign(AI::maxDepth + 1, 0);
     tt.newSearch();
-    for (auto move : getCandidateMoves_jeteste1(board.grid, isWhite ? Cell::WHITE : Cell::BLACK, 0)) {
+    auto candidateMoves = getOrderedCandidateMoves2(board, Board::FIRSTMOVE, isWhite ? Cell::WHITE : Cell::BLACK, -1);
+    for (auto move : candidateMoves) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
         float score = 0;
@@ -185,9 +187,7 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, SearchFunction sf) {
             score = alphaBetaNegaMaxTT(newBoard, AI::maxDepth, -INF, INF, isWhite ? 1 : -1);
             break;
         }
-        std::ostringstream oss;
-        oss << std::fixed << std::setprecision(1) << score;
-        ENABLE_LOG MBQ(move, oss.str()); DISABLE_LOG
+        ENABLE_LOG MBL("findBestMove", move, score); DISABLE_LOG
         if (isWhite ? score > bestScore : score < bestScore) { // if white we look for highest score, if black we look for lowest
             bestMove = move;
             bestScore = score;
@@ -377,6 +377,70 @@ std::vector<unsigned> AI::getOrderedCandidateMoves(const Grid &grid, unsigned be
 
     return result;
 }
+
+// TODO unused, but could be interesting
+// Normalize scores to [0,1] then measure how "spread out" they are
+// Low entropy = one dominant move = danger/forced
+// High entropy = many good moves = safe, prune aggressively
+inline float scoreEntropy(const std::vector<std::pair<unsigned, float>> &scoredMoves) {
+    if (scoredMoves.size() <= 1) return 0.f;
+
+    float minS = scoredMoves.back().second;
+    float maxS = scoredMoves.front().second;
+    float range = maxS - minS;
+
+    if (range < 1e-6f) return 1.f; // all moves equal = maximally safe
+
+    // Softmax-style: how much probability mass is on the top move?
+    // A sharp peak = low entropy = danger
+    constexpr float temperature = 10.f; // tune to your score scale
+    float sum = 0.f;
+    for (auto &[move, s] : scoredMoves)
+        sum += std::exp((s - maxS) / temperature);
+
+    // Fraction of mass on best move: close to 1 = forced, close to 1/N = safe
+    float topFraction = 1.f / sum; // exp(0)/sum
+
+    // Convert to a danger signal in [0,1]: 1 = fully forced, 0 = all moves equal
+    return topFraction; // rename to "forcedness" if you like
+}
+
+std::vector<unsigned> AI::getOrderedCandidateMoves2(const Board &board, unsigned bestMove, const Cell color, int depth) {
+    std::set<unsigned> moves = getCandidateMoves(board.grid);
+    std::vector<std::pair<unsigned, float>> scoredMoves;
+    scoredMoves.reserve(moves.size());
+
+    float fcolor = color == Cell::BLACK ? -1 : 1;
+    float baseScore = evaluate(board, 0, board.isVictory());
+
+    for (auto move : moves) {
+        if (bestMove != Board::FIRSTMOVE && bestMove == move) {
+            scoredMoves.push_back({move, 1000});
+        }
+        Board newBoard = Board(board);
+        if (!newBoard.playMove(move)) continue;
+        float s = fcolor * (evaluate(newBoard, 0, newBoard.isVictory()) - baseScore);
+        scoredMoves.push_back({move, s});
+    }
+
+    std::sort(scoredMoves.begin(), scoredMoves.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
+
+    constexpr size_t MAX_MOVES = 3;
+    size_t width = std::min(MAX_MOVES, moves.size());
+
+    std::vector<unsigned> orderedMoves;
+    orderedMoves.reserve(width);
+
+    scoredMoves.resize(width);
+    for (auto [move, score] : scoredMoves) {
+        if (depth == -1) {
+            ENABLE_LOG MBL("getOrderedCandidateMoves2", move, score); DISABLE_LOG
+        }
+        orderedMoves.push_back(move);
+    }
+    return orderedMoves;
+}
+
 
 /*
 

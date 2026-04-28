@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 
 #define MQ MessageQueue::out()
 #define MBQ(id, msg) MessageQueue::boardMessage((id), (msg))
@@ -93,15 +94,6 @@ namespace MessageQueue
         return out;
     }
 
-    inline void boardMessage(unsigned id, const std::string &msg) {
-        if (!enabled) return;
-        std::stringstream ss;
-        ss << "{\"layer\":\"default\""
-           << ",\"id\":" << id
-           << ",\"msg\":\"" << json_escape(msg) << "\"}";
-        push(ss.str());
-    }
-
     inline void boardMessage(const std::string layer, unsigned id, const std::string &msg) {
         if (!enabled) return;
         std::stringstream ss;
@@ -110,4 +102,21 @@ namespace MessageQueue
            << ",\"msg\":\"" << json_escape(msg) << "\"}";
         push(ss.str());
     }
+
+    inline void boardMessage(const std::string layer, unsigned id, float msg) {
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(1) << msg;
+        boardMessage(layer, id, oss.str());
+    }
+
+    inline void boardMessage(unsigned id, const std::string &msg) {
+        boardMessage("default", id, msg);
+    }
+
+    inline void boardMessage(unsigned id, float msg) {
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(1) << msg;
+        boardMessage(id, oss.str());
+    }
+
 }
