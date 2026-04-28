@@ -4,6 +4,7 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { Cell, type GameState } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
 import { useGameStore } from '@/stores/game'
+import Arena from './Arena.vue'
 
 const errorMessage: RefStringOrNull = ref(null)
 const gameStore = useGameStore()
@@ -162,6 +163,7 @@ function keyMode(event: KeyboardEvent) {
 
 <template>
   <section>
+    <Arena :iso3D="iso3D" />
     <div id="error-parent">
       <p class="error" v-if="errorMessage" @click="() => errorMessage = null">Message : {{ errorMessage }}</p>
     </div>
