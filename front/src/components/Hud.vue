@@ -14,14 +14,20 @@ const humanGame = computed(() => gameStore.watcherState.human)
 
 <template>
   <div class="hud">
-    <div class="capture-card black" :class="{ai: aiGame === 1, human: humanGame === 1 }" title="CTRL + Click to lock your side">
+    <div class="capture-card black" :class="{
+        ai: aiGame === 1, human: humanGame === 1,
+        highlight: gameStore.gameState.board?.isBlackToPlay
+      }" title="CTRL + Click to lock your side">
       <div class="capture-bowl">
         <bowlofstonesIcon />
         <span class="capture-count">{{ blackCaptured }}</span>
       </div>
     </div>
 
-    <div class="capture-card white" :class="{ai: aiGame === 2, human: humanGame === 2}" title="CTRL + Click to lock your side">
+    <div class="capture-card white" :class="{
+        ai: aiGame === 2, human: humanGame === 2,
+        highlight: !gameStore.gameState.board?.isBlackToPlay
+      }" title="CTRL + Click to lock your side">
       <div class="capture-bowl">
         <bowlofstonesIcon />
         <span class="capture-count">{{ whiteCaptured }}</span>
@@ -71,6 +77,26 @@ const humanGame = computed(() => gameStore.watcherState.human)
   }
   &.ai::after {
     content: 'AI';
+  }
+
+  &.highlight {
+    animation: scale-highlight 1.2s ease-in-out infinite;
+    &[data-type=empty] {
+      opacity: 1;
+      transition: all 0.2s ease-in;
+    }
+  }
+
+  @keyframes scale-highlight {
+    from {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    to {
+      transform: scale(1);
+    }
   }
 }
 
