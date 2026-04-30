@@ -3,7 +3,8 @@ import { ref, watch, onBeforeUnmount } from 'vue'
 import { useGameStore } from '@/stores/game'
 import AppButton from '@/components/AppButton.vue'
 import { computed } from 'vue';
-import { searchOptions } from '@/helpers/helpers';
+import { searchOptions, moveOptions } from '@/helpers/helpers';
+import type { MoveFunction, SearchFunction } from '@/types/game';
 
 const props = defineProps<{
   open: boolean
@@ -29,7 +30,8 @@ async function toggleAI(color: 1 | 2) {
 const gameStore = useGameStore()
 
 const aiGame = computed(() => gameStore.gameState.isAIGame)
-const localSearch = ref('ALPHABETA_NEGAMAX_TT')
+const localSearch = ref<SearchFunction>('ALPHABETA_NEGAMAX_TT')
+const localMove = ref<MoveFunction>('CANDIDATE_MOVES_2')
 const localDepth = ref<number>(1)
 const localSuggest = ref('off')
 
@@ -61,6 +63,7 @@ async function applyConfig() {
   try {
     const params = new URLSearchParams({
       searchFunction: localSearch.value,
+      moveFunction: localMove.value,
       searchDepth: String(localDepth.value),
       moveSuggestion: String(localSuggest.value),
     })
@@ -133,6 +136,25 @@ const suggestOptions = [
                 :title="opt.desc"
               >{{ opt.label }}</AppButton>
             </div>
+            <p class="cm-hint">
+              {{ searchOptions.find(opt => opt.value === localSearch)?.desc }}
+            </p>
+          </section>
+
+          <section class="cm-section">
+            <h3>Move algorithm</h3>
+            <div class="cm-row cm-row--wrap">
+              <AppButton
+                v-for="opt in moveOptions"
+                :key="opt.value"
+                :active="localMove === opt.value"
+                @click="localMove = opt.value; applyConfig()"
+                :title="opt.desc"
+              >{{ opt.label }}</AppButton>
+            </div>
+            <p class="cm-hint">
+              {{ moveOptions.find(opt => opt.value === localMove)?.desc }}
+            </p>
           </section>
 
           <section class="cm-section">

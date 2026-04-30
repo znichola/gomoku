@@ -16,12 +16,17 @@ std::string GameState::serialize() const {
     out << "{\n";
     out << "\"searchDepth\": " << AI::maxDepth << ",\n";
     out << "\"isAIGame\": " << static_cast<unsigned>(isAIGame) << ",\n";
-    out << "\"searchFunction\": " << serializeEnum<AI::SearchFunction>(searchFunction, {
+    out << "\"searchFunction\": " << serializeEnum<AI::SearchFunction>(AI::searchFunction, {
         {AI::SearchFunction::MINMAX, "MINMAX"},
         {AI::SearchFunction::MINMAX_JETESTE, "MINMAX_JETESTE"},
         {AI::SearchFunction::NEGAMAX, "NEGAMAX"},
         {AI::SearchFunction::ALPHABETA_NEGAMAX, "ALPHABETA_NEGAMAX"},
         {AI::SearchFunction::ALPHABETA_NEGAMAX_TT, "ALPHABETA_NEGAMAX_TT"}
+    }) << ",\n";
+    out << "\"moveFunction\": " << serializeEnum<AI::MoveFunction>(AI::moveFunction, {
+        {AI::MoveFunction::CANDIDATE_MOVES, "CANDIDATE_MOVES"},
+        {AI::MoveFunction::CANDIDATE_MOVES_2, "CANDIDATE_MOVES_2"},
+        {AI::MoveFunction::JETEST, "JETEST"},
     }) << ",\n";
     out << "\"moveSuggestion\": " << serializeEnum<Cell>(moveSuggestion, {
         {Cell::EMPTY, "off"},
@@ -64,7 +69,7 @@ Cell GameState::askAI2Play() {
         MQ << "AI is thinking of a good move";
         DISABLE_LOG
         auto start = std::chrono::high_resolution_clock::now();
-        auto res = playMove(AI::play(board, activePlayer == Cell::WHITE, searchFunction));
+        auto res = playMove(AI::play(board, activePlayer == Cell::WHITE));
         auto end = std::chrono::high_resolution_clock::now();
         auto us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         ENABLE_LOG

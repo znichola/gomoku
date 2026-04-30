@@ -31,6 +31,7 @@ export const useGameStore = defineStore('game', () => {
   const gameState = reactive<GameState>({
     isAIGame: 0,
     searchFunction: 'ALPHABETA_NEGAMAX_TT',
+    moveFunction: 'CANDIDATE_MOVES_2',
     moveSuggestion: 'off',
     searchDepth: 0,
     moveHistory: [],
@@ -123,6 +124,7 @@ export const useGameStore = defineStore('game', () => {
     gameState.searchDepth = newgameState.searchDepth
     gameState.moveSuggestion = newgameState.moveSuggestion
     gameState.searchFunction = newgameState.searchFunction
+    gameState.moveFunction = newgameState.moveFunction
   }
 
   /* >> DEBUG BACK WATCHER */
@@ -139,6 +141,7 @@ export const useGameStore = defineStore('game', () => {
     return new URLSearchParams({
       isAIGame: gameState.isAIGame.toString(),
       searchFunction: gameState.searchFunction,
+      moveFunction: gameState.moveFunction,
       searchDepth: gameState.searchDepth.toString(),
       moveSuggestion: gameState.moveSuggestion.toString(),
       moveHistory: gameState.moveHistory.join(','),

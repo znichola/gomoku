@@ -1,16 +1,22 @@
 export enum Cell { EMPTY=0, BLACK=1, WHITE=2, OUTSIDE=3 }
 
-type SearchFunction =
+export type SearchFunction =
   | 'MINMAX'
   | 'NEGAMAX'
+  | 'MINMAX_JETESTE'
   | 'ALPHABETA_NEGAMAX'
   | 'ALPHABETA_NEGAMAX_TT'
 
-type MoveSuggestion =
+export type MoveSuggestion =
   | 'off'
   | 'black'
   | 'white'
   | 'both'
+
+export type MoveFunction =
+  | 'CANDIDATE_MOVES'
+  | 'CANDIDATE_MOVES_2'
+  | 'JETEST'
 
 export interface Board {
   grid: Cell[]
@@ -24,6 +30,7 @@ export interface Board {
 export interface GameState {
   searchDepth: number
   searchFunction: SearchFunction
+  moveFunction : MoveFunction
   moveSuggestion: MoveSuggestion
   isAIGame: Cell
   moveHistory: number[]

@@ -15,7 +15,17 @@ namespace AI {
         ALPHABETA_NEGAMAX, ALPHABETA_NEGAMAX_TT
     };
 
+    enum class MoveFunction {
+        CANDIDATE_MOVES,
+        CANDIDATE_MOVES_2,
+        JETEST
+    };
+
     inline int16_t maxDepth = 3;
+
+    inline SearchFunction searchFunction = SearchFunction::ALPHABETA_NEGAMAX_TT;
+    inline MoveFunction moveFunction = MoveFunction::CANDIDATE_MOVES_2;
+
     inline std::vector<int> nodeVisitCounter;
     inline TranspositionTable tt;
 
@@ -26,13 +36,16 @@ namespace AI {
     float alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color);
     float alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b, float color);
 
-    unsigned play(const Board &board, bool isWhite, SearchFunction sf);
-    unsigned findBestMove(const Board &board, bool isWhite, SearchFunction sf);
+    unsigned play(const Board &board, bool isWhite);
+    unsigned findBestMove(const Board &board, bool isWhite);
     float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
+
+    float mainSearch(const Board &board, float color);
+    std::vector<unsigned>mainCandidateMoves(const Board &board, unsigned bestMove, float color, int depth);
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
     std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color);
-    std::vector<unsigned>getOrderedCandidateMoves2(const Board &board, unsigned bestMove, const Cell color, int depth);
+    std::vector<unsigned>getOrderedCandidateMoves2(const Board &board, unsigned bestMove, float, int depth);
     Eval countGroupsOf(const Board &board, int size);
     Eval countCaptures(const Board &board);
     EvalGroups countOpenGroupsOf(const Board &board, int size);

@@ -109,12 +109,21 @@ bool handleLoadAIState(const Server::QueryMap& query, GameState& gs) {
 
     if (has("searchFunction")) {
         changed = true;
-        gs.searchFunction = parseEnum<AI::SearchFunction>(get("searchFunction"), {
+        AI::searchFunction = parseEnum<AI::SearchFunction>(get("searchFunction"), {
             {"MINMAX", AI::SearchFunction::MINMAX},
             {"MINMAX_JETESTE", AI::SearchFunction::MINMAX_JETESTE},
             {"NEGAMAX", AI::SearchFunction::NEGAMAX},
             {"ALPHABETA_NEGAMAX", AI::SearchFunction::ALPHABETA_NEGAMAX},
             {"ALPHABETA_NEGAMAX_TT", AI::SearchFunction::ALPHABETA_NEGAMAX_TT}
+        });
+    }
+
+    if (has("moveFunction")) {
+        changed = true;
+        AI::moveFunction = parseEnum<AI::MoveFunction>(get("moveFunction"), {
+            {"CANDIDATE_MOVES", AI::MoveFunction::CANDIDATE_MOVES},
+            {"CANDIDATE_MOVES_2", AI::MoveFunction::CANDIDATE_MOVES_2},
+            {"JETEST", AI::MoveFunction::JETEST},
         });
     }
 
