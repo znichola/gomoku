@@ -74,10 +74,10 @@ Cell GameState::askAI2Play() {
         auto us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         ENABLE_LOG
 	    for (auto move : AI::getCandidateMoves_jeteste1(board.grid, Cell::BLACK, 0)) {
-            MBL("Next BLACK,--black-color", move, "B"); 
+            MBL("Next BLACK,--black-bright-color", move, "B"); 
         }
 	    for (auto move : AI::getCandidateMoves_jeteste1(board.grid, Cell::WHITE, 0)) {
-            MBL("Next WHITE,--white-color", move, "W"); 
+            MBL("Next WHITE,--white-bright-color", move, "W"); 
         }
 
         if (us < 1'000) {

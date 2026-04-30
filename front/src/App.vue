@@ -35,6 +35,8 @@ body {
   --text-color: var(--primary-color);
   --black-color: var(--accent-color);
   --white-color: var(--primary-color);
+  --black-bright-color: lighten(#d35013, 10%);
+  --white-bright-color: lighten(#e2d9b2, 10%);
   --title-font-family: 'Pirata One', 'Impact', 'Arial Narrow Bold', sans-serif;
   --ui-font-family: 'Galdeano', sans-serif;
   --ui-font: bold 1.4rem var(--ui-font-family);
