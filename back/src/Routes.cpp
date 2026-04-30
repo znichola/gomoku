@@ -92,7 +92,7 @@ void registerRoutes(Server& server, GameState& gs) {
         } else {
             return Response{400, "missing 'moves' query parameter"};
         }
-        COUT << "Replaying to position: " << rq.query.at("moves");
+        COUT << "Replaying to position: " << rq.query.at("moves") << "\n";
         return Response{200, gs.serialize()};
     });
 
