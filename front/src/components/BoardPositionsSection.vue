@@ -25,20 +25,15 @@ const props = defineProps<Position>()
     </header>
 
     <div class="board-wrap">
-      <MiniBoard
-        :width="props.width"
-        :black="props.black"
-        :white="props.white"
-        :highlight="props.highlight"
-        :board-width="props.boardWidth"
-      />
+      <MiniBoard v-bind="props" />
     </div>
   </article>
 </template>
 
 <style scoped>
 .section {
-  padding: 1.25rem;
+  padding: .75rem;
+  /* margin: 0 1.25rem; */
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
@@ -56,7 +51,7 @@ const props = defineProps<Position>()
 
 .section-head h2 {
   font-family: var(--ui-font);
-  font-size: 0.95rem;
+  font-size: 1.5rem;
   font-weight: bold;
   color: var(--primary-color);
   margin: 0.3rem 0 0.3rem;
@@ -65,8 +60,7 @@ const props = defineProps<Position>()
 
 .section-head p {
   font-family: var(--ui-font);
-  font-size: 0.78rem;
-  color: var(--line-color);
+  color: var(--primary-color);
   margin: 0;
   line-height: 1.5;
 }
@@ -83,6 +77,7 @@ const props = defineProps<Position>()
   border: 1px solid var(--accent-color);
   padding: 1px 8px;
   border-radius: 2px;
+  line-height: normal;
 }
 
 .pill--highlight {
@@ -94,5 +89,41 @@ const props = defineProps<Position>()
   display: flex;
   justify-content: center;
   align-items: flex-end;
+}
+
+.section-head :deep(ul) {
+  font-family: var(--ui-font);
+  font-size: 0.78rem;
+  color: var(--primary-color);
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+  line-height: 1.5;
+  list-style-type: disc;
+}
+
+.section-head :deep(li) {
+  margin-bottom: 0.2rem;
+}
+
+.section-head :deep(li:last-child) {
+  margin-bottom: 0;
+}
+
+.section-head :deep(.black) {
+  font-weight: bolder;
+  color: var(--black-bright-color);
+}
+
+.section-head :deep(.white) {
+  font-weight: bolder;
+  color: var(--white-bright-color);
+}
+
+.section-head :deep(strong) {
+  color: var(--highlight-color)
+}
+
+.section-head :deep(em) {
+  font-weight: 600;
 }
 </style>

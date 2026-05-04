@@ -296,23 +296,4 @@ onMounted(scheduleStats)
   }
 }
 
-// scroll bar
-.block {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
-}
-
-.block::-webkit-scrollbar {
-  height: 6px;
-  width: 6px;
-}
-
-.block::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 10px;
-}
-
-.block::-webkit-scrollbar-track {
-  background: transparent;
-}
 </style>

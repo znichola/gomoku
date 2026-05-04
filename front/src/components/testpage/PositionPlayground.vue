@@ -3,7 +3,6 @@ import { computed, ref } from 'vue'
 import BoardPositionsSection from '@/components/BoardPositionsSection.vue'
 import PositionStats from './PositionStats.vue'
 import { positions } from './positions'
-import MiniBoard from '@/components/MiniBoard.vue'
 
 const positionUpdates = ref<Record<string | number, { black: number[], white: number[], lastMove: number }>>({})
 

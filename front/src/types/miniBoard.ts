@@ -12,6 +12,7 @@ export type Position = {
   white: number[]
   highlight?: HightLable[]
   boardHeight?: string
+  cellHeight?: string
   label?: string
   title?: string
   description?: string

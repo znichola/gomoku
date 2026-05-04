@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PositionRules from '@/components/rulespage/PositionRules.vue'
+
 defineProps<{
   open: boolean
 }>()
@@ -23,24 +25,7 @@ function onBackdropClick(e: MouseEvent) {
         </div>
 
         <div class="rm-body">
-          <h3>Goal</h3>
-          <p>Two way to win:</p>
-          <ul>
-            <li>Be the first to align <strong>5 stones</strong> (horizontal, vertical, or diagonal).</li>
-            <li>Be the first to captures <strong>10 stones</strong>.</li>
-          </ul>
-
-          <h3>Turn order</h3>
-          <ul>
-            <li>On your turn, place one stone on any empty intersection.</li>
-            <li>Players alternate turns (Black / White).</li>
-          </ul>
-
-          <h3>Captures</h3>
-          <ul>
-            <li>If you surround <strong>two opponent stones</strong> with your stones (pattern <code>X O O X</code>), you capture them.</li>
-            <li>Captures are shown in the HUD (bowls).</li>
-          </ul>
+          <PositionRules />
         </div>
 
         <div class="rm-foot">
@@ -109,6 +94,8 @@ function onBackdropClick(e: MouseEvent) {
 .rm-body {
   padding: 0.8rem 0.9rem;
   font-family: var(--ui-font-family);
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .rm-body h3 {

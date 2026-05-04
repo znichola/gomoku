@@ -15,7 +15,7 @@ const props = withDefaults(defineProps<Position>(), {
 const cHeight = computed(() => props.height ?? props.width)
 
 const cellSize = computed(() =>
-  `calc(${props.boardHeight} / (${cHeight.value} + 1))`
+  props.cellHeight ?? `calc(${props.boardHeight} / (${cHeight.value} + 1))`
 )
 
 const grid = computed(() => {
@@ -53,7 +53,7 @@ function highlightCircle(id: number): bool {
 </script>
 
 <template>
-  <div
+  <div v-if="props.width > 0"
     class="bd-board"
     :style="{
       '--bd-cell': cellSize,

@@ -20,8 +20,8 @@ export const positions: Position[] = [
     black: [],
     white: [],
     history: [85,65,104,66,123,64,67,63,62,142,161,103,163,49,67,84,44,84,46,48,47,45,85,27,81,47,46,83,82,83,64,80,81,43,23,65,84,86,66],
-    label: 'cursed AI',
-    title: 'Something is off with it',
-    description: 'I had saved this position as something odd happend with the ai, or how it managed a situation.',
+    label: 'Win detection',
+    title: 'Not sure this should be a win',
+    description: 'This position is declared a win, but that seems wrong',
   }),
 ]

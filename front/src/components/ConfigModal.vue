@@ -249,6 +249,7 @@ const suggestOptions = [
 
 .cm-body {
   padding: 0.4rem 0.9rem 0.6rem;
+  overflow-y: auto;
 }
 
 .cm-section {
