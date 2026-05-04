@@ -22,8 +22,12 @@ const grid = computed(() => {
   const rows: number[][] = []
   for (let y = 0; y < cHeight.value + 1; y++) {
     rows[y] = []
-    for (let x = 0; x < props.width +1; x++) {
-      rows[y]![x] = x + y * props.width
+    for (let x = 0; x < props.width + 1; x++) {
+      if (y === cHeight.value || x === props.width) {
+        rows[y]![x] = -1
+      } else {
+        rows[y]![x] = x + y * props.width
+      }
     }
   }
   return rows
