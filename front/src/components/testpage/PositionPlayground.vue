@@ -1,27 +1,26 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import BoardPositionsSection from '@/components/BoardPositionsSection.vue'
 import PositionStats from './PositionStats.vue'
 import { positions } from './positions'
+import MiniBoard from '@/components/MiniBoard.vue'
+
+const positionUpdates = ref<Record<string | number, { black: number[], white: number[], lastMove: number }>>({})
 
 function resolvePosition(pos: Position): Position {
   if (!pos.history || pos.history.length === 0) return pos
 
-  const black: number[] = []
-  const white: number[] = []
-  const highlight: HightLable[] = []
-
-  pos.history.forEach((cell, i) => {
-    if (i % 2 === 0) black.push(cell)
-    else white.push(cell)
-  })
-
-  // TODO : fix to actually display the AI move, another todo elsewhere
-  highlight.push({id: pos.history[pos.history.length - 1], highlight: true})
-
-  return { ...pos, black, white, highlight }
+  const boardUpdate = positionUpdates.value[pos.id]
+  if (boardUpdate) {
+    const highlight: HightLable[] = [{id: boardUpdate.lastMove, highlight: true}]
+    return { ...pos, black: boardUpdate.black, white: boardUpdate.white, highlight }
+  }
+  return { ...pos}
 }
 
+function handleBoardPositionUpdate(posId: string | number, boardPosition: { black: number[], white: number[], lastMove: number }) {
+  positionUpdates.value[posId] = boardPosition
+}
 
 const resolvedPositions = computed(() => positions.map(resolvePosition))
 </script>
@@ -41,6 +40,7 @@ const resolvedPositions = computed(() => positions.map(resolvePosition))
       >
         <PositionStats 
           :position="pos"
+          @update:boardPosition="(boardPos) => handleBoardPositionUpdate(pos.id, boardPos)"
         />
       </BoardPositionsSection>
     </div>

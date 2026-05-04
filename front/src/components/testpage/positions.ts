@@ -1,12 +1,12 @@
 import type { Position } from '@/types/miniBoard'
+import { createPosition } from '@/helpers/helpers'
 
 function coordsOne(width: number, x: number, y: number): number {
   return x + y * width
 }
 
 export const positions: Position[] = [
-  {
-    id: 'strange-win',
+  createPosition({
     width: 19,
     black: [],
     white: [],
@@ -14,9 +14,8 @@ export const positions: Position[] = [
     label: 'cursed AI',
     title: 'The Ai got me in this positon',
     description: 'It\' an interesting positon, and also adding to to show that multiple positions can be listed here',
-  },
-  {
-    id: 'strange-win',
+  }),
+  createPosition({
     width: 19,
     black: [],
     white: [],
@@ -24,6 +23,5 @@ export const positions: Position[] = [
     label: 'cursed AI',
     title: 'Something is off with it',
     description: 'I had saved this position as something odd happend with the ai, or how it managed a situation.',
-  },
-  
+  }),
 ]

@@ -1,5 +1,6 @@
 import { Cell } from '@/types/game'
 import type { SearchFunction, MoveFunction } from '@/types/game'
+import type { Position } from '@/types/miniBoard'
 
 function getCellClass(cell: Cell): string {
   switch (cell) {
@@ -27,3 +28,25 @@ const moveOptions: { value: MoveFunction; label: string; desc: string }[] = [
 ]
 
 export { getCellClass, searchOptions, moveOptions };
+
+
+// PostionStats Helpers
+
+export function coords(width: number, ...pairs: [number, number][]): number[] {
+  return pairs.map(([x, y]) => x + y * width)
+}
+
+export function coordsOne(width: number, x: number, y: number): number {
+  return x + y * width
+}
+
+let positionCounter = 0
+
+export type PositionInput = Omit<Position, 'id'> & { id?: string }
+
+export function createPosition(pos: PositionInput): Position {
+  return {
+    ...pos,
+    id: pos.id ?? `pos-${++positionCounter}`
+  }
+}

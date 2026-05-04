@@ -13,7 +13,7 @@ const props = defineProps<{
 
 // TODO : finish push new computer position from backend
 const emit = defineEmits<{
-  (e: 'update:moveHistory', value: number[]): void
+  (e: 'update:boardPosition', value: { black: number[], white: number[], lastMove: number }): void
 }>()
 
 type Status = 'idle' | 'queued' | 'loading' | 'done' | 'error'
@@ -59,6 +59,20 @@ function scheduleStats() {
 
       if (!alive) return
       messages.value = data.messages.filter(m => !shouldIgnore(m))
+      
+      // Convert grid to black and white positions (1 = black, 2 = white, 0 = empty)
+      const black: number[] = []
+      const white: number[] = []
+      const grid = data.board.grid as number[]
+      grid.forEach((cell, index) => {
+        if (cell === 1) black.push(index)
+        else if (cell === 2) white.push(index)
+      })
+      const lastMove: number = data.moveHistory[data.moveHistory.length - 1]
+
+      console.log("Black", black, "White", white, "lastMove", lastMove);
+      
+      emit('update:boardPosition', { black, white, lastMove })
       status.value = 'done'
     } catch (err: any) {
       if (!alive) return

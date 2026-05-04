@@ -1,12 +1,5 @@
 import type { Position } from '@/types/miniBoard'
-
-function coords(width: number, ...pairs: [number, number][]): number[] {
-  return pairs.map(([x, y]) => x + y * width)
-}
-
-function coordsOne(width: number, x: number, y: number): number {
-  return x + y * width
-}
+import { coords, coordsOne } from '@/helpers/helpers'
 
 export const positions: Position[] = [
   {
