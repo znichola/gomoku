@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import type { Position } from '@/types/miniBoard'
 import { usePositionQueueStore } from '@/stores/testPositionQueue'
+import router from '@/router'
 
 const props = defineProps<{
   position: Position
@@ -28,6 +29,11 @@ const whoseTurn = (history: number[]): 1 | 2 => history.length % 2 === 0 ? 1 : 2
 let alive = true
 onUnmounted(() => { alive = false })
 
+  const get = (path: string) => fetch(`http://${window.location.hostname}:9012${path}`).then(r => {
+    if (!r.ok) throw new Error(`${path} failed: ${r.status}`)
+    return r
+  })
+
 function scheduleStats() {
   status.value = 'queued'
   messages.value = []
@@ -36,16 +42,10 @@ function scheduleStats() {
     if (!alive) return
 
     status.value = 'loading'
-    const host = window.location.hostname
     const history = props.position.history ?? []
 
     try {
       if (!history.length) throw new Error('History is empty, no position to load')
-
-      const get = (path: string) => fetch(`http://${host}:9012${path}`).then(r => {
-        if (!r.ok) throw new Error(`${path} failed: ${r.status}`)
-        return r
-      })
 
       await get('/set-config?isAIGame=0')
       await get('/reset')
@@ -68,67 +68,87 @@ function scheduleStats() {
   })
 }
 
+async function loadPosition() {
+  const history = props.position.history ?? []
+  try {
+    await get('/set-config?isAIGame=0')
+    await get('/reset')
+    await get(`/replay?moves=${history.join(',')}`)
+
+    router.push('/');
+  } catch (err: any) {
+    console.log('Error loading position: ', err?.message ?? err)
+  }
+}
+
 watch(() => props.position.id, scheduleStats)
 onMounted(scheduleStats)
 </script>
 
 <template>
-  <div class="ps-root">
-
-    <div v-if="status === 'queued'" class="ps-block">
-      <span class="ps-spinner ps-spinner--queued" aria-hidden="true" />
+  <div class="root">
+    <div v-if="status === 'queued'" class="block">
+      <span class="spinner spinner--queued" aria-hidden="true" />
       <span>Waiting in queue…</span>
     </div>
 
-    <div v-else-if="status === 'loading'" class="ps-block">
-      <span class="ps-spinner" aria-hidden="true" />
+    <div v-else-if="status === 'loading'" class="block">
+      <span class="spinner" aria-hidden="true" />
       <span>Querying backend…</span>
     </div>
 
-    <div v-else-if="messages.length" class="ps-block">
+    <div v-else-if="messages.length" class="block">
       <pre
         v-for="(msg, i) in messages"
         :key="i"
-        class="ps-line"
+        class="line"
         :class="{
-          'ps-line--eval':     msg.startsWith('Evaluate'),
-          'ps-line--ai':       msg.startsWith('[AI]'),
-          'ps-line--cache':    msg.startsWith('[CACHE]'),
-          'ps-line--ram':      msg.startsWith('[RAM]'),
-          'ps-line--thinking': msg.includes('AI is thinking'),
-          'ps-line--error':    status === 'error',
+          'line--eval':     msg.startsWith('Evaluate'),
+          'line--ai':       msg.startsWith('[AI]'),
+          'line--cache':    msg.startsWith('[CACHE]'),
+          'line--ram':      msg.startsWith('[RAM]'),
+          'line--thinking': msg.includes('AI is thinking'),
+          'line--error':    status === 'error',
         }"
       >{{ msg.trimEnd() }}</pre>
-
-      <button
-        class="ps-refetch"
-        :disabled="status === 'queued' || status === 'loading'"
-        title="Refetch"
-        @click="scheduleStats"
-      >↺</button>
+      
+      <div class="ctrl-pos ctrl-spacing">
+        <button
+          class="ctrl-btn"
+          :disabled="status === 'queued' || status === 'loading'"
+          title="Refetch"
+          @click="scheduleStats"
+        >↺</button>
+        <button
+          class="ctrl-btn"
+          :disabled="status === 'queued' || status === 'loading'"
+          title="Load"
+          @click="loadPosition"
+        >↪</button>
+      </div>
     </div>
 
-    <div v-else-if="status === 'done'" class="ps-empty">
+    <div v-else-if="status === 'done'" class="empty">
       No output from backend.
-      <button class="ps-refetch ps-refetch--inline" @click="scheduleStats">↺ Retry</button>
+      <button class="ctrl-pos ctrl-btn ctrl-btn--inline" @click="scheduleStats">↺ Retry</button>
     </div>
 
-    <div v-else-if="status === 'error'" class="ps-empty ps-empty--error">
-      <button class="ps-refetch ps-refetch--inline" @click="scheduleStats">↺ Retry</button>
+    <div v-else-if="status === 'error'" class="empty empty--error">
+      <button class="ctrl-pos ctrl-btn ctrl-btn--inline" @click="scheduleStats">↺ Retry</button>
     </div>
 
   </div>
 </template>
 
 <style scoped lang="less">
-.ps-root {
+.root {
   font-family: var(--mono-font-family, 'Fira Mono', 'Consolas', monospace);
   font-size: 0.78rem;
   line-height: 1.55;
   position: relative;
 }
 
-.ps-loading {
+.loading {
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -137,7 +157,7 @@ onMounted(scheduleStats)
   height: 200px;
 }
 
-.ps-spinner {
+.spinner {
   display: inline-block;
   width: 0.85rem;
   height: 0.85rem;
@@ -158,7 +178,7 @@ onMounted(scheduleStats)
   to { transform: rotate(360deg); }
 }
 
-.ps-block {
+.block {
   background: color-mix(in srgb, var(--bg-color) 60%, #000 40%);
   border: 1px solid var(--line-color);
   border-radius: 0.55rem;
@@ -167,7 +187,7 @@ onMounted(scheduleStats)
   height: 200px;
 }
 
-.ps-line {
+.line {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
@@ -205,7 +225,7 @@ onMounted(scheduleStats)
   }
 }
 
-.ps-empty {
+.empty {
   color: var(--line-color);
   font-style: italic;
   font-size: 0.8rem;
@@ -218,10 +238,18 @@ onMounted(scheduleStats)
   }
 }
 
-.ps-refetch {
+.ctrl-pos {
   position: absolute;
   top: 0.6rem;
-  right: 0.6rem;
+  right: 0.8rem;
+  font-size: initial;
+}
+
+.ctrl-spacing .ctrl-btn:first-child {
+  margin-right: 0.2rem;
+}
+
+.ctrl-btn {
   background: none;
   border: 1px solid var(--line-color);
   border-radius: 0.3rem;
@@ -230,10 +258,10 @@ onMounted(scheduleStats)
   font-size: 0.85rem;
   padding: 0.1rem 0.35rem;
   line-height: 1;
-  opacity: 0;
+  // opacity: 0;
   transition: opacity 0.15s, color 0.15s;
 
-  .ps-block:hover & {
+  .block:hover & {
     opacity: 1;
   }
 
@@ -255,22 +283,22 @@ onMounted(scheduleStats)
 }
 
 // scroll bar
-.ps-block {
+.block {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
 }
 
-.ps-block::-webkit-scrollbar {
+.block::-webkit-scrollbar {
   height: 6px;
   width: 6px;
 }
 
-.ps-block::-webkit-scrollbar-thumb {
+.block::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.25);
   border-radius: 10px;
 }
 
-.ps-block::-webkit-scrollbar-track {
+.block::-webkit-scrollbar-track {
   background: transparent;
 }
 </style>
