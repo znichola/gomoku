@@ -8,10 +8,6 @@ const props = defineProps<{
   position: Position
 }>()
 
-// TODO : also add a button to load the position in a game, like from the main app
-// TODO : also make the config assecible from test page, it should also be used when posting to the backend
-
-// TODO : finish push new computer position from backend
 const emit = defineEmits<{
   (e: 'update:boardPosition', value: { black: number[], white: number[], lastMove: number }): void
 }>()
@@ -21,6 +17,7 @@ type Status = 'idle' | 'queued' | 'loading' | 'done' | 'error'
 const messages = ref<string[]>([])
 const status = ref<Status>('idle')
 const queue = usePositionQueueStore()
+const computedLastMove = ref<number | null>(null)
 
 const IGNORED_PREFIXES = ['{"layer"']
 const shouldIgnore = (msg: string) => IGNORED_PREFIXES.some(p => msg.trimStart().startsWith(p))
@@ -29,14 +26,15 @@ const whoseTurn = (history: number[]): 1 | 2 => history.length % 2 === 0 ? 1 : 2
 let alive = true
 onUnmounted(() => { alive = false })
 
-  const get = (path: string) => fetch(`http://${window.location.hostname}:9012${path}`).then(r => {
-    if (!r.ok) throw new Error(`${path} failed: ${r.status}`)
-    return r
-  })
+const get = (path: string) => fetch(`http://${window.location.hostname}:9012${path}`).then(r => {
+  if (!r.ok) throw new Error(`${path} failed: ${r.status}`)
+  return r
+})
 
 function scheduleStats() {
   status.value = 'queued'
   messages.value = []
+  computedLastMove.value = null
 
   queue.enqueue(async () => {
     if (!alive) return
@@ -59,8 +57,7 @@ function scheduleStats() {
 
       if (!alive) return
       messages.value = data.messages.filter(m => !shouldIgnore(m))
-      
-      // Convert grid to black and white positions (1 = black, 2 = white, 0 = empty)
+
       const black: number[] = []
       const white: number[] = []
       const grid = data.board.grid as number[]
@@ -69,9 +66,10 @@ function scheduleStats() {
         else if (cell === 2) white.push(index)
       })
       const lastMove: number = data.moveHistory[data.moveHistory.length - 1]
+      computedLastMove.value = lastMove
 
-      console.log("Black", black, "White", white, "lastMove", lastMove);
-      
+      console.log("Black", black, "White", white, "lastMove", lastMove)
+
       emit('update:boardPosition', { black, white, lastMove })
       status.value = 'done'
     } catch (err: any) {
@@ -84,12 +82,15 @@ function scheduleStats() {
 
 async function loadPosition() {
   const history = props.position.history ?? []
+  const aiMove = computedLastMove.value
+  const moves = aiMove !== null ? [...history, aiMove] : history
+
   try {
     await get('/set-config?isAIGame=0')
     await get('/reset')
-    await get(`/replay?moves=${history.join(',')}`)
+    await get(`/replay?moves=${moves.join(',')}`)
 
-    router.push('/');
+    router.push('/')
   } catch (err: any) {
     console.log('Error loading position: ', err?.message ?? err)
   }
@@ -125,7 +126,7 @@ onMounted(scheduleStats)
           'line--error':    status === 'error',
         }"
       >{{ msg.trimEnd() }}</pre>
-      
+
       <div class="ctrl-pos ctrl-spacing">
         <button
           class="ctrl-btn"
@@ -150,7 +151,6 @@ onMounted(scheduleStats)
     <div v-else-if="status === 'error'" class="empty empty--error">
       <button class="ctrl-pos ctrl-btn ctrl-btn--inline" @click="scheduleStats">↺ Retry</button>
     </div>
-
   </div>
 </template>
 
@@ -272,7 +272,6 @@ onMounted(scheduleStats)
   font-size: 0.85rem;
   padding: 0.1rem 0.35rem;
   line-height: 1;
-  // opacity: 0;
   transition: opacity 0.15s, color 0.15s;
 
   .block:hover & {
@@ -295,5 +294,4 @@ onMounted(scheduleStats)
     font-style: normal;
   }
 }
-
 </style>
