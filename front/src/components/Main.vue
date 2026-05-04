@@ -46,14 +46,18 @@ const searchDepth = computed(() => gameStore.gameState.searchDepth)
 <template>
   <div class="layout">
   <div class="header">
+    <div class="btns">
+      <button class="helper-btn" type="button" @click="rulesOpen = true">?</button>
+      <button class="helper-btn" type="button" @click="configOpen = true"><ConfigIcon size="16"/></button>
+      <router-link class="helper-btn" to="/pp">P</router-link>
+    </div>
     <div id="logo">
       <h1 @click="reload">Gomoku</h1>
       <p class="desc" v-if="aiGame" :title="searchFunction?.desc">
         Using <span v-if="searchFunction" @click="configOpen = true">{{ searchFunction.label }}</span>
         to depth <span @click="configOpen = true">{{ searchDepth }}</span>.
       </p>
-      <span class="rules" type="button" @click="rulesOpen = true">?</span>
-      <span class="config" type="button" @click="configOpen = true"><ConfigIcon size="16"/></span>
+
     </div>
 
     <controles />
@@ -107,23 +111,29 @@ h1 {
   }
 }
 
-.rules, .config {
+.helper-btn {
   cursor: pointer;
-  position: absolute;
-  padding: 5px;
-  font-size: 1.4rem;
+  font: var(--ui-font);
+  font-size: 1.6rem;
   font-weight: bold;
   color: var(--text-color);
+  padding: 0.05rem;
+  z-index: 100;
+  text-decoration: none;
 }
 
-.rules {
-  top: 0px;
-  left: -20px;
+.helper-btn:hover {
+  color: var(--accent-color);
 }
 
-.config {
-  top: 30px;
-  left: -25px;
+.btns {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-right: 0.2rem;
+  button, a {
+    background-color: initial;
+  }
 }
 
 h1::after {

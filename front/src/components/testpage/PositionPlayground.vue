@@ -27,9 +27,10 @@ const resolvedPositions = computed(() => positions.map(resolvePosition))
 <template>
   <main class="tpage">
     <header class="tpage-header">
-      <h1 class="tpage-title">Position <span>Playground</span></h1>
+      <h1 class="tpage-title"><router-link to="/">↩</router-link>Position <span>Playground</span></h1>
       <p class="tpage-sub">An interactive gallery for testing positions, and their backend evaluation</p>
     </header>
+    
 
     <div class="gallery">
       <BoardPositionsSection
@@ -58,7 +59,20 @@ const resolvedPositions = computed(() => positions.map(resolvePosition))
 .tpage-header {
   text-align: center;
   margin-bottom: 2.5rem;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    font-size: x-large;
+    color: var(--primary-color);
+    padding-right: 0.3rem;
+  }
+
+  a:hover {
+    color: var(--accent-color);
+  }
 }
+
 
 .tpage-title {
   font-family: var(--title-font-family);
