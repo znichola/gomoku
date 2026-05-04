@@ -141,7 +141,7 @@ h1::after {
   position: absolute;
   font-size: 2rem;
   right: -1.5rem;
-  top: -3rem;
+  top: -3.5rem;
   transition: all 0.5s ease-in-out;
 }
 
