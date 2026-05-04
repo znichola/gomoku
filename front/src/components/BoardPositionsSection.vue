@@ -41,6 +41,8 @@ const props = defineProps<Position>()
   padding: 1.25rem;
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: space-around;
 }
 
 .section--accent {

@@ -1,10 +1,12 @@
 import Main from '@/components/Main.vue'
-import Test from '@/components/testpage/Test.vue'
+import PositionPlayground from '@/components/testpage/PositionPlayground.vue'
+import NotFound from '@/components/NotFound.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
   { path: "/", component: Main },
-  { path: "/test", component: Test},
+  { path: "/pp", component: PositionPlayground},
+  { path: "/:pathMatch(.*)*", name: "NotFound", component: NotFound },
 ]
 
 const router = createRouter({
