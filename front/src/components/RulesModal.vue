@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppButton from '@/components/AppButton.vue'
 import PositionRules from '@/components/rulespage/PositionRules.vue'
 
 defineProps<{
@@ -21,7 +22,10 @@ function onBackdropClick(e: MouseEvent) {
       <div class="rm-modal" role="dialog" aria-modal="true" aria-label="Gomoku rules">
         <div class="rm-head">
           <h2 class="rm-title">Rules</h2>
-          <button class="rm-close" type="button" @click="emit('close')" aria-label="Close">×</button>
+          <div>
+            <router-link class="rm-btn" to='/rules'>↪</router-link> 
+            <button class="rm-btn" type="button" @click="emit('close')" aria-label="Close">X</button>
+          </div>
         </div>
 
         <div class="rm-body">
@@ -74,19 +78,20 @@ function onBackdropClick(e: MouseEvent) {
   line-height: 1;
 }
 
-.rm-close {
-  width: 2.4rem;
-  height: 2.4rem;
+.rm-btn {
   border-radius: 0.8rem;
-  background: transparent;
-  border: solid 1px var(--line-color);
+  border: solid 0.165rem var(--accent-color);
+  background-color: transparent;
+  padding: 0.35rem 0.8rem;
   color: var(--primary-color);
   font: var(--ui-font);
   font-size: 1.4rem;
   cursor: pointer;
+  text-decoration: none;
+  margin-left: 0.4rem;
 }
 
-.rm-close:hover {
+.rm-btn:hover {
   border-color: var(--accent-color);
   color: var(--accent-color);
 }
@@ -125,20 +130,6 @@ function onBackdropClick(e: MouseEvent) {
   justify-content: flex-end;
   padding: 0.7rem 0.9rem 0.9rem;
   border-top: solid 1px var(--line-color);
-}
-
-.rm-btn {
-  border: solid 0.165rem var(--accent-color);
-  background-color: transparent;
-  color: var(--primary-color);
-  border-radius: 0.9rem;
-  padding: 0.35rem 0.8rem;
-  font: var(--ui-font);
-  cursor: pointer;
-}
-
-.rm-btn:hover {
-  background-color: rgba(211, 80, 19, 0.12);
 }
 
 p {
