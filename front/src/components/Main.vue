@@ -69,7 +69,7 @@ const searchDepth = computed(() => gameStore.gameState.searchDepth)
 </div>
 <RulesModal :open="rulesOpen" @close="closeRules" />
 <ConfigModal :open="configOpen" @close="configOpen = false" />
-<WinnerModal @close="reset()" />
+<!-- <WinnerModal @close="reset()" /> -->
 </template>
 
 <style scoped lang="less">

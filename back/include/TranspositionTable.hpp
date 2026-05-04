@@ -11,7 +11,7 @@
     LOWER is an assured lowerbound, this can inform alpha
     UPPER is an assured upperbound, this can infrom beta
 */
-enum class Bound : uint8_t { EXACT, LOWER, UPPER };
+enum class Bound : uint8_t { EXACT, LOWER, UPPER, ONEOFF };
 
 struct TTEntry {
     uint64_t hash = 0;

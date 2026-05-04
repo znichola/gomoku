@@ -65,7 +65,7 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
     Bound bound = value <= origA ? Bound::UPPER
                 : value >= b     ? Bound::LOWER
                                  : Bound::EXACT;
-    tt.store(hash, value, depth, bestMove, bound);
+    tt.store(hash, value, (maxDepth - depth), bestMove, bound);
     return value;
 }
 
@@ -197,11 +197,13 @@ unsigned AI::findBestMove(const Board &board, bool isWhite) {
     This function is only called at terminal nodes of the tree (see subject p5)
 */
 float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
-    if (winningPlayer == Cell::WHITE) return WIN + depth;
-    if (winningPlayer == Cell::BLACK) return -WIN - depth;
+    if (winningPlayer == Cell::WHITE) return WIN + (maxDepth - depth);
+    if (winningPlayer == Cell::BLACK) return -WIN - (maxDepth - depth);
     if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {
         return 0;
     }
+    const TTEntry* e = tt.probe(board.grid.getHash());
+    if (e) return e->score;
 
     // 1 for the side to play, 0 for the waiting side
     Eval active  = { static_cast<float>( board.isBlackToPlay),
@@ -224,7 +226,8 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
               + (possibleCaptures * 2 + captures) / 10 * (active * 1000.0f + passive * 700.0f)
               + active * 1.2f; // move advantage
 
-    MQ << "Evaluate " << eval.white - eval.black
+    const float res = eval.white - eval.black;
+    MQ << "Evaluate " << res
        << "\n" << (board.isBlackToPlay ? "black" : "white") << " to play" 
        << "\n black:" << eval.black << " white:" << eval.white
        << "\ntwos open:" << twos.open << "  half:" << twos.half
@@ -233,7 +236,8 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
        << "\npossible captures" << possibleCaptures;
        ;
 
-    return eval.white - eval.black; // + is good for white, - good for black
+    tt.store(board.grid.getHash(), res, 0, -1, Bound::ONEOFF);
+    return res; // + is good for white, - good for black
 }
 
 AI::Eval AI::countGroupsOf(const Board &board, int size) {
@@ -475,6 +479,8 @@ bool AI::tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, f
             break;
         case Bound::UPPER:
             beta = std::min(beta, e->score);
+            break;
+        case Bound::ONEOFF:
             break;
     }
 
