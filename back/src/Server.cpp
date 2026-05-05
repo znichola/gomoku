@@ -3,13 +3,18 @@
 #include <chrono>
 #include <iostream>
 #include <sstream>
+#include <atomic>
 #include "csignal"
 
 #include "Server.hpp"
 
+#include <csignal>
+
+std::atomic<bool> g_interrupted{false};
+
 void handleSigint(int) {
     std::cout << "\nShutting down..." << std::endl;
-    exit(0);
+    g_interrupted.store(true, std::memory_order_relaxed);
 }
 
 Server::~Server() {
@@ -45,7 +50,7 @@ void Server::start() {
     if (start_at.back() == '\n') start_at.pop_back();
     std::cout << "Server started at " << start_at << std::endl;
 
-    while (true) {
+    while (!g_interrupted.load(std::memory_order_relaxed)) {
         int client = accept(server_fd, nullptr, nullptr);
         if (client < 0) { perror("accept"); continue; }
  

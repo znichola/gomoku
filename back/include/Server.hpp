@@ -7,6 +7,7 @@
 
 #include "GameState.hpp"
 
+extern std::atomic<bool> g_interrupted;
 
 class Server {
 public:
