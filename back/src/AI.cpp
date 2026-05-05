@@ -81,7 +81,7 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     }
 
     float value = -INF;
-    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, color, -1)) {
+    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
@@ -110,7 +110,8 @@ float AI::negaMax(const Board &board, int16_t depth, float color) {
         return color * evaluate(board, depth, victory);
     }
     float value = -INF;
-    for (auto move : getCandidateMoves(board.grid)) {
+    // for (auto move : getCandidateMoves(board.grid)) {
+    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
         value = std::max(value, -negaMax(newBoard, depth-1, -color));
@@ -164,8 +165,7 @@ unsigned AI::findBestMove(const Board &board, bool isWhite) {
     unsigned bestMove = Board::FIRSTMOVE;
     AI::nodeVisitCounter.assign(AI::maxDepth + 1, 0);
     tt.newSearch();
-    auto candidateMoves = getOrderedCandidateMoves2(board, Board::FIRSTMOVE, isWhite ? 1 : -1, -1);
-    for (auto move : candidateMoves) {
+    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, isWhite ? 1 : -1, AI::maxDepth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
         float score = mainSearch(board, isWhite ? 1 : -1);
