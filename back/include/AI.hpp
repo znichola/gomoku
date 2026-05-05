@@ -7,6 +7,17 @@
 #include "Board.hpp"
 #include "AI_Eval.hpp"
 
+#define __CHRONO_LABEL(name) MQ << "[CHRONO] " << #name << " took "
+
+#define CHRONO_START(name) auto name = std::chrono::high_resolution_clock::now();
+#define CHRONO_STOP(name) auto end ## name = std::chrono::high_resolution_clock::now();
+#define CHRONO_PRINT(name) { \
+    auto us = std::chrono::duration_cast<std::chrono::microseconds>(end ## name - name).count(); \
+    if (us < 1'000) { __CHRONO_LABEL(name) << us << " µs\n"; } \
+    else if (us < 1'000'000) { __CHRONO_LABEL(name) << us / 1'000.0 << " ms\n"; } \
+    else { __CHRONO_LABEL(name) << us / 1'000'000.0 << " s\n"; } }
+#define CHRONO_END(name) CHRONO_STOP(name) CHRONO_PRINT(name)
+
 namespace AI {
     enum class SearchFunction {
         MINMAX,
