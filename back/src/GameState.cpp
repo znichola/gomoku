@@ -65,44 +65,38 @@ bool GameState::playMove(unsigned id) {
  */
 Cell GameState::askAI2Play() {
     const Cell activePlayer = board.isBlackToPlay ? Cell::BLACK : Cell::WHITE;
-    if (isAIGame == activePlayer) {
-        MQ << "AI is thinking of a good move";
-        DISABLE_LOG
-        auto start = std::chrono::high_resolution_clock::now();
-        auto res = playMove(AI::play(board, activePlayer == Cell::WHITE));
-        auto end = std::chrono::high_resolution_clock::now();
-        auto us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        ENABLE_LOG
-	    for (auto move : AI::getCandidateMoves_jeteste1(board.grid, Cell::BLACK, 0)) {
-            MBL("Next BLACK,--black-bright-color", move, "B"); 
-        }
-	    for (auto move : AI::getCandidateMoves_jeteste1(board.grid, Cell::WHITE, 0)) {
-            MBL("Next WHITE,--white-bright-color", move, "W"); 
-        }
-
-        if (us < 1'000) {
-            COUT << "[AI] Move took " << us << " µs\n";
-            MQ   << "[AI] Move took " << us << " µs\n";
-        } else if (us < 1'000'000) {
-            COUT << "[AI] Move took " << us / 1'000.0 << " ms\n";
-            MQ   << "[AI] Move took " << us / 1'000.0 << " ms\n";
-        } else {
-            COUT << "[AI] Move took " << us / 1'000'000.0 << " s\n";
-            MQ   << "[AI] Move took " << us / 1'000'000.0 << " s\n";
-        }
-        float eval = AI::evaluate(board, 0, board.isVictory());
-        COUT << "[AI] eval " << board.lastMove << ": " << eval << "\n";
-        MQ << "[AI] eval " << board.lastMove << ": " << eval << "\n";
-        COUT << "[CACHE] table GT size " << tableGridTraversal.size() << " elements\n";
-        MQ << "[CACHE] table GT size " << tableGridTraversal.size() << " elements\n";
-        tableGridTraversal.clear();
-        struct sysinfo info;
-        sysinfo(&info);
-        COUT   << "[RAM] Free " << info.freeram / 1'000'000.0 << "/" << info.totalram / 1'000'000.0 << " Mb\n";
-        MQ   << "[RAM] Free " << info.freeram / 1'000'000.0 << "/" << info.totalram / 1'000'000.0 << " Mb\n";
-        return res ? activePlayer : Cell::OUTSIDE;
+    if (isAIGame != activePlayer) {
+        return Cell::EMPTY;
     }
-    return Cell::EMPTY;
+    MQ << "AI is thinking of a good move";
+    unsigned cid = AI::play(board, activePlayer == Cell::WHITE);
+    COUT << "[AI] ";
+    bool aiPlayed = playMove(cid);
+
+    for (auto move : AI::mainCandidateMoves(board, Board::FIRSTMOVE, -1, 0)) {
+        MBL("Next BLACK,--black-bright-color", move, "B"); 
+    }
+    for (auto move : AI::mainCandidateMoves(board, Board::FIRSTMOVE, 1, 0)) {
+        MBL("Next WHITE,--white-bright-color", move, "W"); 
+    }
+
+    float eval = AI::evaluate(board, 0, board.isVictory());
+    COUT << "[AI] eval " << board.lastMove << ": " << eval << "\n";
+    MQ << "[AI] eval " << board.lastMove << ": " << eval << "\n";
+    COUT << "[CACHE] table GT size " << tableGridTraversal.size() << " elements\n";
+    MQ << "[CACHE] table GT size " << tableGridTraversal.size() << " elements\n";
+    tableGridTraversal.clear();
+    struct sysinfo info;
+    sysinfo(&info);
+    COUT   << "[RAM] Free " << info.freeram / 1'000'000.0 << "/" << info.totalram / 1'000'000.0 << " Mb\n";
+    MQ   << "[RAM] Free " << info.freeram / 1'000'000.0 << "/" << info.totalram / 1'000'000.0 << " Mb\n";
+    if (aiPlayed) {
+        return activePlayer;
+    } else {
+        MQ << "[AI] Invalid move, AI asked for " << cid << "\n";
+        COUT << "[AI] Invalid move, AI asked for " << cid << "\n";
+        return Cell::OUTSIDE;
+    }
 }
 
 static Grid* rGrid = nullptr;

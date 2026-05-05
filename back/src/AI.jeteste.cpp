@@ -3,22 +3,10 @@
 #include <iostream>
 #include <algorithm>
 
-static constexpr float INF = std::numeric_limits<float>::infinity();
+// static constexpr float INF = std::numeric_limits<float>::infinity();
 // static constexpr float WIN = 100000.0F; // Then endgame in x is maxDepth - depth
 
 /*
-MinMax algo - minimizing possible losses
-https://en.wikipedia.org/wiki/Minimax#Pseudocode
-
-maximisingPlayer is a flag to toggle searching for
-lowest score or highest score possible.
-black likes low scores, so it should be called with a false here.
-
-TODO see negamax for simpler version of the function, and alpha-beta pruning for more optimised one
-*/
-/**
-* @param maximizingPlayer (color == -1.0f ? Cell::BLACK : Cell::WHITE)
-*/
 float AI::minMax_jeteste1(const Board &board, int16_t depth, bool isBlackToPlay, int16_t level) {
 	nodeVisitCounter[depth] += 1;
 	if (depth == 0 || board.winner != Cell::EMPTY) {
@@ -86,4 +74,4 @@ std::set<unsigned> AI::getCandidateMoves_jeteste1(const Grid &grid, Cell color, 
 	}
 
 	return result;
-}
+}*/

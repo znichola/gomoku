@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <string>
+#include <future>
+#include <thread>
 
 #include "TranspositionTable.hpp"
 #include "Board.hpp"
@@ -42,16 +44,16 @@ namespace AI {
 
     // MinMax and varians
 
-    float minMax(const Board &board, int16_t depth, bool maximizingPlayer);
-    float negaMax(const Board &board, int16_t depth, float color);
-    float alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color);
-    float alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b, float color);
+    float minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::stop_token st);
+    float negaMax(const Board &board, int16_t depth, float color, std::stop_token st);
+    float alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color, std::stop_token st);
+    float alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b, float color, std::stop_token st);
 
     unsigned play(const Board &board, bool isWhite);
-    unsigned findBestMove(const Board &board, bool isWhite);
+    unsigned findBestMove(const Board &board, bool isWhite, std::stop_token st);
     float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
 
-    float mainSearch(const Board &board, float color);
+    float mainSearch(const Board &board, float color, std::stop_token st);
     std::vector<unsigned>mainCandidateMoves(const Board &board, unsigned bestMove, float color, int depth);
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
@@ -62,7 +64,4 @@ namespace AI {
     EvalGroups countOpenGroupsOf(const Board &board, int size);
 
     bool tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, float &score, unsigned &bestMove);
-
-    float minMax_jeteste1(const Board &board, int16_t depth, bool isBlackToPlay, int16_t level = 0);
-    std::set<unsigned>getCandidateMoves_jeteste1(const Grid &grid, Cell color, int16_t level); 
 };

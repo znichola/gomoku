@@ -3,6 +3,7 @@
 #include <numeric>
 
 #include "AI.hpp"
+#include "Server.hpp"
 #include "MessageQueue.hpp"
 #include <iomanip>
 #include <algorithm>
@@ -14,8 +15,51 @@ static constexpr float WIN = 100000.0F; // Then endgame in x is maxDepth - depth
 
 // https://en.wikipedia.org/wiki/Minimax#Pseudocode
 unsigned AI::play(const Board &board, bool isWhite) {
-    unsigned move = findBestMove(board, isWhite);
-    if (move == Board::FIRSTMOVE) return 180;
+    using namespace std::chrono_literals;
+
+    int64_t us = 0;
+
+    std::promise<int> pMove;
+    std::future<int> fMove = pMove.get_future();
+    DISABLE_LOG
+    std::jthread tMove([&](std::stop_token st){
+        auto start = std::chrono::high_resolution_clock::now();
+        unsigned cid = findBestMove(board, isWhite, st);
+        auto end = std::chrono::high_resolution_clock::now();
+        us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+        pMove.set_value_at_thread_exit(cid);
+    });
+    std::cout << "[";
+
+    std::future_status status;
+    int i = 0;
+    do {
+        status = fMove.wait_for(50ms);
+        if (i++ > 60 || g_interrupted.load(std::memory_order_relaxed)) { // 20 fps = ~1sec
+            std::cout << "k" << std::flush;
+            tMove.request_stop();
+        } else {
+            std::cout << "." << std::flush;
+        }
+    } while (status != std::future_status::ready);
+
+    ENABLE_LOG
+    if (us < 1'000) {
+        COUT << "] " << us << " µs\n";
+        MQ   << "[AI] Move took " << us << " µs\n";
+    } else if (us < 1'000'000) {
+        COUT << "] " << us / 1'000.0 << " ms\n";
+        MQ   << "[AI] Move took " << us / 1'000.0 << " ms\n";
+    } else {
+        COUT << "] " << us / 1'000'000.0 << " s\n";
+        MQ   << "[AI] Move took " << us / 1'000'000.0 << " s\n";
+    }
+    unsigned move = fMove.get();
+    if (move == Board::FIRSTMOVE) {
+        COUT << "[AI] No best move found\n";
+        return 180;
+    }
     return move;
 }
 
@@ -32,7 +76,10 @@ unsigned AI::play(const Board &board, bool isWhite) {
 
     Much like negamax, as black pass color=-1 as white color=1.
 */
-float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b, float color) {
+float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b, float color, std::stop_token st) {
+    if (st.stop_requested()) {
+        return 0;
+    }
     nodeVisitCounter[depth] += 1;
     uint64_t hash = board.grid.getHash();
 
@@ -55,7 +102,7 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
-        float score = -alphaBetaNegaMaxTT(newBoard, depth-1, -b, -a, -color);
+        float score = -alphaBetaNegaMaxTT(newBoard, depth-1, -b, -a, -color, st);
         if (score > value) { value = score; bestMove = move; }
         a = std::max(a, value);
         if (a >= b) break;
@@ -72,7 +119,10 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
 /*
     Alpha Beta - variant with no Transposition table
 */
-float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color) {
+float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color, std::stop_token st) {
+    if (st.stop_requested()) {
+        return 0;
+    }
     nodeVisitCounter[depth] += 1;
 
     Cell victory = board.isVictory();
@@ -85,7 +135,7 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
-        float child = -alphaBetaNegaMax(newBoard, depth-1, -b, -a, -color);
+        float child = -alphaBetaNegaMax(newBoard, depth-1, -b, -a, -color, st);
         if (child > value) value = child;
         a = std::max(a, value);
         if (a >= b) break;
@@ -103,7 +153,10 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     Evaluation always returns + for white and - for black.
     If black to play, call with color=-1
 */
-float AI::negaMax(const Board &board, int16_t depth, float color) {
+float AI::negaMax(const Board &board, int16_t depth, float color, std::stop_token st) {
+    if (st.stop_requested()) {
+        return 0;
+    }
     nodeVisitCounter[depth] += 1;
     Cell victory = board.isVictory();
     if (depth == 0 || victory != Cell::EMPTY) {
@@ -114,7 +167,7 @@ float AI::negaMax(const Board &board, int16_t depth, float color) {
     for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
-        value = std::max(value, -negaMax(newBoard, depth-1, -color));
+        value = std::max(value, -negaMax(newBoard, depth-1, -color, st));
     }
     return value;
 }
@@ -129,64 +182,61 @@ float AI::negaMax(const Board &board, int16_t depth, float color) {
 
     TODO see negamax for simpler version of the function, and alpha-beta pruning for more optimised one
 */
-float AI::minMax(const Board &board, int16_t depth, bool maximizingPlayer) {
-    nodeVisitCounter[depth] += 1;
-    Cell victory = board.isVictory();
-    if (depth == 0 || victory != Cell::EMPTY) {
-        return evaluate(board, depth, victory); // evaluation/heuristic is only run for terminal nodes
-    }
-    if (maximizingPlayer) {
-        float best = -INF;
-        for (auto move : getCandidateMoves(board.grid)) {
-            Board newBoard(board); // Optimise, maybe with an undoMove, to remove the constructor/destructor in a loop
-            if (newBoard.playMove(move) == false) continue; // skip illegal moves
-            float score = minMax(newBoard, depth-1, false);
-            best = std::max(score, best);
-        }
-        return best;
-    } else {
-        float best = INF;
-        for (auto move : getCandidateMoves(board.grid)) {
-            Board newBoard(board);
-            if (newBoard.playMove(move) == false) continue;
-            float score = minMax(newBoard, depth-1, true);
-            best = std::min(score, best);
-        }
-        return best;
-    }
+float AI::minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::stop_token st) {
+	if (st.stop_requested()) {
+		return 0;
+	}
+	nodeVisitCounter[depth] += 1;
+	if (depth == 0 || board.winner != Cell::EMPTY) {
+		return evaluate(board, depth, board.winner); // evaluation/heuristic is only run for terminal nodes
+	}
+	
+	float best = isBlackToPlay ? -INF : INF;
+	//auto minmax = (isBlackToPlay) ? std::max<float> : std::min<float>;
+	
+	for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, isBlackToPlay ? -1 : 1, depth)) {
+		if (!board.isValidMove(move)) continue; // skip illegal moves
+		float score = minMax(Board(board.grid, move), depth-1, !isBlackToPlay, st);
+		best = (isBlackToPlay) ? std::max(score, best) : std::min(score, best);
+	}
+	return best;
 }
-
 
 /*
     Choosing the best move by using minMax
 */
-unsigned AI::findBestMove(const Board &board, bool isWhite) {
+unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) {
     float bestScore = isWhite ? -INF : INF;
     unsigned bestMove = Board::FIRSTMOVE;
     AI::nodeVisitCounter.assign(AI::maxDepth + 1, 0);
     tt.newSearch();
     for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, isWhite ? 1 : -1, AI::maxDepth)) {
+        if (st.stop_requested())
+            break ;
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
-        float score = mainSearch(board, isWhite ? 1 : -1);
+        float score = mainSearch(board, isWhite ? 1 : -1, st);
         ENABLE_LOG MBL("findBestMove", move, score); DISABLE_LOG
-        if (isWhite ? score > bestScore : score < bestScore) { // if white we look for highest score, if black we look for lowest
+        if (isWhite ? (score >= bestScore) : (score <= bestScore)) { // if white we look for highest score, if black we look for lowest
             bestMove = move;
             bestScore = score;
         }
+
     }
     ENABLE_LOG
     if (bestMove == Board::FIRSTMOVE) {
         MQ << "[AI] No best move found";
-        COUT << "[AI] No best move found\n";
     }
     MQ << "[AI] explored " << std::accumulate(nodeVisitCounter.begin(), nodeVisitCounter.end(), 0) << " nodes\n"
        << [](){
         std::stringstream ss;
-        for (int i = static_cast<int>(nodeVisitCounter.size()) - 1; 0 <= i; i--) {
-            ss << "Depth: " << maxDepth - i << " :: " << nodeVisitCounter[i] << " nodes\n";
+        for (int i = static_cast<int>(nodeVisitCounter.size()) - 1, last = 1; 0 < i; i--) {
+            ss << "Depth " << (maxDepth - i + 1) << ": " << nodeVisitCounter[i] << " nodes (x"
+                << (nodeVisitCounter[i] * 100 / std::max(1, last)) / 100.0 << ")\n";
+            last = nodeVisitCounter[i];
         }
-        return ss.str();}();
+        return ss.str();
+    }();
     DISABLE_LOG
     return bestMove;
 }
@@ -313,26 +363,25 @@ std::vector<unsigned> AI::mainCandidateMoves(
     case MoveFunction::CANDIDATE_MOVES_2:
         return getOrderedCandidateMoves2(board, bestMove, color, depth);
     case MoveFunction::JETEST:
-        m = getCandidateMoves_jeteste1(board.grid, cColor, depth);
-        return std::vector<unsigned>(m.begin(), m.end());
+        return getOrderedCandidateMoves2(board, bestMove, color, depth);
     }
     std::runtime_error("Must select valid Move function");
 }
 
-float AI::mainSearch(const Board &board, float color) {
+float AI::mainSearch(const Board &board, float color, std::stop_token st) {
     bool isWhite = color == 1;
     switch (searchFunction) {
         case SearchFunction::MINMAX:
-            return minMax(board, AI::maxDepth, !isWhite);
+            return minMax(board, AI::maxDepth, !isWhite, st);
         case SearchFunction::MINMAX_JETESTE:
-            return minMax_jeteste1(board, AI::maxDepth, !isWhite);
+            return minMax(board, AI::maxDepth, !isWhite, st);
         case SearchFunction::NEGAMAX:
-            return negaMax(board, AI::maxDepth, color);
+            return negaMax(board, AI::maxDepth, color, st);
         case SearchFunction::ALPHABETA_NEGAMAX:
-            return alphaBetaNegaMax(board, AI::maxDepth, -INF, INF, color);
+            return alphaBetaNegaMax(board, AI::maxDepth, -INF, INF, color, st);
         case SearchFunction::ALPHABETA_NEGAMAX_TT:
-            return alphaBetaNegaMaxTT(board, AI::maxDepth, -INF, INF, color);
-        }
+            return alphaBetaNegaMaxTT(board, AI::maxDepth, -INF, INF, color, st);
+    }
     throw std::runtime_error("Must select valid Search function");
 }
 
@@ -445,8 +494,9 @@ std::vector<unsigned> AI::getOrderedCandidateMoves2(const Board &board, unsigned
 
     constexpr size_t MAX_MOVES = 3;
 
-	// Trier seulement les MAX_MOVES (3) premiers
-	std::partial_sort(scoredMoves.begin(), scoredMoves.begin() + MAX_MOVES, scoredMoves.end(),
+	// Trie seulement les 3 premiers
+	size_t count = std::min(MAX_MOVES, scoredMoves.size());
+	std::partial_sort(scoredMoves.begin(), scoredMoves.begin() + count, scoredMoves.end(),
 		[](const auto& a, const auto& b) {
 			return a.second > b.second;  // Ordre décroissant
 		});
