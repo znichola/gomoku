@@ -42,6 +42,7 @@ watch(
     if (!open) return
 
     localSearch.value = gameStore.gameState.searchFunction
+    localMove.value = gameStore.gameState.moveFunction
     localDepth.value = gameStore.gameState.searchDepth
     localSuggest.value = gameStore.gameState.moveSuggestion
   }
