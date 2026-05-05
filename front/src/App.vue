@@ -132,4 +132,17 @@ h1 {
     }
   }
 }
+
+@media all and (max-width: 500px) {
+  .header .controles {
+    margin-left: 0.5rem !important;
+  }
+  .header .hud {
+    margin: 0;
+    margin-left: 1.4rem;
+    flex-direction: column;
+    gap: 0;
+    max-height: 5rem;
+  }
+}
 </style>

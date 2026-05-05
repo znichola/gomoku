@@ -89,7 +89,6 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
   padding-top: 0.8rem;
 }
 
