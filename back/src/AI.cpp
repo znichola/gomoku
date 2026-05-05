@@ -211,7 +211,8 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
     AI::nodeVisitCounter.assign(AI::maxDepth + 1, 0);
     AI::nodeEvalCounter.assign(AI::maxDepth + 1, 0);
     tt.newSearch();
-    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, isWhite ? 1 : -1, AI::maxDepth)) {
+    auto candidateMoves = mainCandidateMoves(board, Board::FIRSTMOVE, isWhite ? 1 : -1, AI::maxDepth);
+    for (auto move : candidateMoves) {
         if (st.stop_requested())
             break ;
         Board newBoard(board);
@@ -227,12 +228,18 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
     ENABLE_LOG
     if (bestMove == Board::FIRSTMOVE) {
         MQ << "[AI] No best move found";
+        if (candidateMoves.empty()) {
+            MQ << " (no candidates)";
+        }  else {
+            MQ << " (first candirate move played instead)";
+            bestMove = *candidateMoves.begin();
+        }
     }
     MQ << "[AI] explored " << std::accumulate(nodeVisitCounter.begin(), nodeVisitCounter.end(), 0) << " nodes\n"
        << "and evaluated " << std::accumulate(nodeEvalCounter.begin(), nodeEvalCounter.end(), 0) << " positions\n"
        << [](){
         std::stringstream ss;
-        for (int i = static_cast<int>(nodeVisitCounter.size()) - 1, last = 1; 0 < i; i--) {
+        for (int i = static_cast<int>(nodeVisitCounter.size()) - 1, last = 1; 0 <= i; i--) {
             ss << "Depth " << (maxDepth - i + 1) << ": " << nodeVisitCounter[i] << " nodes (x"
                 << (nodeVisitCounter[i] * 100 / std::max(1, last)) / 100.0 << ")\n";
             last = nodeVisitCounter[i];
