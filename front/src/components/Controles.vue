@@ -240,7 +240,7 @@ button, div.menu span {
   position: absolute;
   font-size: 1rem;
   right: -1rem;
-  top: -3.5rem;
+  top: -4rem;
   transition: all 0.5s ease-in-out;
 }
 
