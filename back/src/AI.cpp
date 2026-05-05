@@ -443,9 +443,15 @@ std::vector<unsigned> AI::getOrderedCandidateMoves2(const Board &board, unsigned
         scoredMoves.push_back({move, s});
     }
 
-    std::sort(scoredMoves.begin(), scoredMoves.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
-
     constexpr size_t MAX_MOVES = 3;
+
+	// Trier seulement les MAX_MOVES (3) premiers
+	std::partial_sort(scoredMoves.begin(), scoredMoves.begin() + MAX_MOVES, scoredMoves.end(),
+		[](const auto& a, const auto& b) {
+			return a.second > b.second;  // Ordre décroissant
+		});
+    //std::sort(scoredMoves.begin(), scoredMoves.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
+
     size_t width = std::min(MAX_MOVES, moves.size());
 
     std::vector<unsigned> orderedMoves;
