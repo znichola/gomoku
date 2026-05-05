@@ -209,6 +209,7 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
     float bestScore = isWhite ? -INF : INF;
     unsigned bestMove = Board::FIRSTMOVE;
     AI::nodeVisitCounter.assign(AI::maxDepth + 1, 0);
+    AI::nodeEvalCounter.assign(AI::maxDepth + 1, 0);
     tt.newSearch();
     for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, isWhite ? 1 : -1, AI::maxDepth)) {
         if (st.stop_requested())
@@ -228,6 +229,7 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
         MQ << "[AI] No best move found";
     }
     MQ << "[AI] explored " << std::accumulate(nodeVisitCounter.begin(), nodeVisitCounter.end(), 0) << " nodes\n"
+       << "and evaluated " << std::accumulate(nodeEvalCounter.begin(), nodeEvalCounter.end(), 0) << " positions\n"
        << [](){
         std::stringstream ss;
         for (int i = static_cast<int>(nodeVisitCounter.size()) - 1, last = 1; 0 < i; i--) {
@@ -247,6 +249,7 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
     This function is only called at terminal nodes of the tree (see subject p5)
 */
 float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
+    nodeEvalCounter[depth] += 1;
     if (winningPlayer == Cell::WHITE) return WIN + (maxDepth - depth);
     if (winningPlayer == Cell::BLACK) return -WIN - (maxDepth - depth);
     if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {

@@ -40,6 +40,7 @@ namespace AI {
     inline MoveFunction moveFunction = MoveFunction::CANDIDATE_MOVES_2;
 
     inline std::vector<int> nodeVisitCounter;
+    inline std::vector<int> nodeEvalCounter;
     inline TranspositionTable tt;
 
     // MinMax and varians
