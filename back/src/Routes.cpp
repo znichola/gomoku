@@ -21,7 +21,6 @@ void registerRoutes(Server& server, GameState& gs) {
         if (it == req.query.end())
             return Response{400, "missing 'id' query parameter"};
         unsigned id = static_cast<unsigned>(std::stoul(it->second));
-        MessageQueue::drain(); // Draing before doing next move and refilling messages TODO: should be an API endpoint
         
         it = req.query.find("force_color");
         if (it != req.query.end()) // Debug
@@ -43,6 +42,8 @@ void registerRoutes(Server& server, GameState& gs) {
 
         if (!played)
             return Response{200, output};
+
+        MessageQueue::drain(); // Draing before doing next move and refilling messages TODO: should be an API endpoint
         
         const Cell aiPlayed = gs.askAI2Play();
         if (aiPlayed == Cell::OUTSIDE)
