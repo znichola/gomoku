@@ -13,7 +13,7 @@ import RulesModal from './RulesModal.vue'
 import ConfigModal from './ConfigModal.vue'
 import WinnerModal from './WinnerModal.vue'
 import ConfigIcon from "./icons/ConfigIcon.vue";
-import { searchOptions } from '@/helpers/helpers'
+import { searchOptions, moveOptions } from '@/helpers/helpers'
 
 const reload = () => window.location.reload()
 
@@ -40,6 +40,7 @@ function closeRules() {
 
 const aiGame = computed(() => gameStore.gameState.isAIGame)
 const searchFunction = computed(() => searchOptions.find((a) => a.value === gameStore.gameState.searchFunction) || null)
+const moveFunction = computed(() => moveOptions.find((a) => a.value === gameStore.gameState.moveFunction) || null)
 const searchDepth = computed(() => gameStore.gameState.searchDepth)
 </script>
 
@@ -55,6 +56,7 @@ const searchDepth = computed(() => gameStore.gameState.searchDepth)
       <h1 @click="reload">Gomoku</h1>
       <p class="desc" v-if="aiGame" :title="searchFunction?.desc">
         Using <span v-if="searchFunction" @click="configOpen = true">{{ searchFunction.label }}</span>
+        with <span v-if="moveFunction" @click="configOpen = true">{{ moveFunction.label }}</span>
         to depth <span @click="configOpen = true">{{ searchDepth }}</span>.
       </p>
 
@@ -97,11 +99,13 @@ h1 {
     font: var(--ui-font);
     font-size: 0.8rem;
     position: absolute;
-    right: -1rem;
-    bottom: -0.2rem;
+    left: 2.4rem;
+    bottom: -0.4rem;
     z-index: 20;
     cursor: default;
     color: var(--white-color);
+    width: calc(100% - 36px);
+    white-space: nowrap;
 
     span {
       font-size: 0.8rem;
