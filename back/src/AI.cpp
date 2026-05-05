@@ -68,6 +68,7 @@ unsigned AI::play(const Board &board, bool isWhite) {
     https://en.wikipedia.org/wiki/Negamax
     https://en.wikipedia.org/wiki/Negamax#Negamax_with_alpha_beta_pruning_and_transposition_tables
 
+    RETURN VALUE: Perspective-relative
 
     alpha & beta reprisent the search window for the position score.
 
@@ -118,6 +119,10 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
 
 /*
     Alpha Beta - variant with no Transposition table
+
+    RETURN VALUE: Perspective-relative
+
+    Positive scores favor the player to move, negative scores favor the opponent.
 */
 float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color, std::stop_token st) {
     if (st.stop_requested()) {
@@ -149,6 +154,8 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     NegaMax algo - alt for miniMax, minimise losses
     https://en.wikipedia.org/wiki/Negamax
 
+    RETURN VALUE: Perspective-relative
+s
     The color is used to invert the evaluation value.
     Evaluation always returns + for white and - for black.
     If black to play, call with color=-1
@@ -175,6 +182,8 @@ float AI::negaMax(const Board &board, int16_t depth, float color, std::stop_toke
 /*
     MinMax algo - minimizing possible losses
     https://en.wikipedia.org/wiki/Minimax#Pseudocode
+
+    RETURN VALUE: Absolute perspective
 
     maximisingPlayer is a flag to toggle searching for
     lowest score or highest score possible.
@@ -217,9 +226,9 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
             break ;
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
-        float score = mainSearch(board, isWhite ? 1 : -1, st);
+        float score = mainSearch(newBoard, isWhite ? 1 : -1, st);
         ENABLE_LOG MBL("findBestMove", move, score); DISABLE_LOG
-        if (isWhite ? (score >= bestScore) : (score <= bestScore)) { // if white we look for highest score, if black we look for lowest
+        if (score >= bestScore) {
             bestMove = move;
             bestScore = score;
         }
@@ -378,13 +387,19 @@ std::vector<unsigned> AI::mainCandidateMoves(
     std::runtime_error("Must select valid Move function");
 }
 
+/*
+    Wrapper function to select the search algo used
+
+    Normalizes all results to perspective-relative
+    + is for the searching player - for the opponent
+*/
 float AI::mainSearch(const Board &board, float color, std::stop_token st) {
     bool isWhite = color == 1;
     switch (searchFunction) {
         case SearchFunction::MINMAX:
-            return minMax(board, AI::maxDepth, !isWhite, st);
+            return color * minMax(board, AI::maxDepth, !isWhite, st);
         case SearchFunction::MINMAX_JETESTE:
-            return minMax(board, AI::maxDepth, !isWhite, st);
+            return color * minMax(board, AI::maxDepth, !isWhite, st);
         case SearchFunction::NEGAMAX:
             return negaMax(board, AI::maxDepth, color, st);
         case SearchFunction::ALPHABETA_NEGAMAX:
