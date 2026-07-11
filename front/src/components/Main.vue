@@ -22,6 +22,7 @@ const configOpen = ref(false)
 
 async function reset() {
   try {
+    gameStore.startThinking()
     const resp = await fetch(`http://${window.location.hostname}:9012/reset`, {
       method: 'GET',
     })
@@ -30,6 +31,7 @@ async function reset() {
     } catch (err) {
     console.warn(err)
   }
+  gameStore.stopThinking()
 }
 
 function closeRules() {

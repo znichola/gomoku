@@ -55,6 +55,7 @@ unsigned AI::play(const Board &board, bool isWhite) {
         COUT << "] " << us / 1'000'000.0 << " s\n";
         MQ   << "[AI] Move took " << us / 1'000'000.0 << " s\n";
     }
+    AI::lastMoveMicros = us;
     unsigned move = fMove.get();
     if (move == Board::FIRSTMOVE) {
         COUT << "[AI] No best move found\n";
@@ -99,7 +100,18 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
     float origA = a;
 
     float value = -INF;
-    for (auto move : mainCandidateMoves(board, bestMove, -1.0f, depth)) {
+    // `color` here is the perspective the RETURNED score favors (positive = good for
+    // whoever `color` represents) - but board reflects the position after the OTHER
+    // player's move, so the move being chosen AT this node belongs to color's opponent,
+    // i.e. -color. mainCandidateMoves(..., color, ...) - passing color unnegated - was
+    // still wrong (an earlier fix that replaced a hardcoded -1.0f/always-black with this,
+    // which was an improvement but not the actual fix): it ranked candidates as if
+    // ranking the wrong side's move, which alpha-beta pruning trusts to be correctly
+    // ordered - so it could prune away the branch that would have revealed an opponent's
+    // forced win, well before evaluate() ever got a chance to see it. Confirmed by
+    // comparing against negaMax (no pruning, so a bad ranking only costs speed, never
+    // correctness) finding the right move on a position this got wrong.
+    for (auto move : mainCandidateMoves(board, bestMove, -color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
@@ -113,7 +125,15 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
     Bound bound = value <= origA ? Bound::UPPER
                 : value >= b     ? Bound::LOWER
                                  : Bound::EXACT;
-    tt.store(hash, value, (maxDepth - depth), bestMove, bound);
+    // Store `depth` itself (how many plies were searched BELOW this position), not
+    // (maxDepth - depth) (ply-from-root). tryApplyTTBounds compares the stored value
+    // against the remaining depth still needed (e->depth < depth => not deep enough,
+    // don't trust it) - that only works if both sides mean "remaining depth searched".
+    // (maxDepth - depth) is ply-from-root instead, which moves in the OPPOSITE
+    // direction (small near the root, large near the leaves) and made the freshness
+    // check nearly meaningless: entries near leaves (computed from little to no further
+    // search) could pass the check and get reused as if they reflected a deep search.
+    tt.store(hash, value, depth, bestMove, bound);
     return value;
 }
 
@@ -136,7 +156,9 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     }
 
     float value = -INF;
-    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, color, depth)) {
+    // See the identical fix + explanation in alphaBetaNegaMaxTT just above: the move being
+    // chosen at this node belongs to -color, not color.
+    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, -color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
@@ -170,8 +192,11 @@ float AI::negaMax(const Board &board, int16_t depth, float color, std::stop_toke
         return color * evaluate(board, depth, victory);
     }
     float value = -INF;
-    // for (auto move : getCandidateMoves(board.grid)) {
-    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, color, depth)) {
+    // Same fix as alphaBetaNegaMax/alphaBetaNegaMaxTT: the move chosen here belongs to
+    // -color, not color. negaMax explores every shortlisted candidate with no pruning, so
+    // this mattered less (a wrong ranking only risks the true best move falling outside
+    // the top MAX_MOVES, not being pruned after being seen) but the fix is the same.
+    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, -color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
         value = std::max(value, -negaMax(newBoard, depth-1, -color, st));
@@ -212,31 +237,128 @@ float AI::minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::sto
 }
 
 /*
-    Choosing the best move by using minMax
+    Cheap tactical safety net, checked before the heuristic search even starts: does ANY
+    candidate move win outright for `myColor` right now? If not, is there a cell where the
+    OPPONENT would win outright if they got to play there next? A handful of direct
+    isVictory()/getWinningLineColor() checks (one Board copy per raw candidate, no
+    recursion) is a few orders of magnitude cheaper than a full search, and unlike the
+    heuristic search below it can't be fooled: it's not an approximation, it's just asking
+    the same rules engine that ends the game whether this exact move ends it.
+
+    This exists because the heuristic search (localTacticalScore ordering, MAX_MOVES-wide
+    candidate lists, alpha-beta pruning trusting that ordering) is fundamentally an
+    approximation, and in some board configurations it can fail to notice or properly
+    prioritize exactly this kind of forced, unambiguous tactic - regardless of how deep it
+    searches. Confirmed against two real lost games (see the "half-open four" and
+    "diagonal four" regression tests in test/tactics.py) where the AI had a forced block
+    available and searched right past it.
+*/
+unsigned AI::findForcedMove(const Board &board, Cell myColor) {
+    const Cell opponent = (myColor == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
+    std::set<unsigned> candidates = getCandidateMoves(board.grid);
+
+    for (unsigned move : candidates) {
+        Board myTry(board);
+        if (!myTry.playMove(move)) continue;
+        if (myTry.winner == myColor) return move;
+    }
+
+    for (unsigned move : candidates) {
+        if (!board.isValidMove(move)) continue; // has to be legal for me to actually play here
+        Board oppTry(board);
+        oppTry.grid.set(move, opponent);
+        if (oppTry.grid.getWinningLineColor() == opponent) return move;
+    }
+
+    return Board::FIRSTMOVE;
+}
+
+/*
+    Choosing the best move by using iterative deepening: search depth 1, then 2, then 3...
+    up to the configured AI::maxDepth, always keeping the move found by the LAST FULLY
+    COMPLETED depth as the answer.
+
+    Why: a plain fixed-depth search has no valid move to fall back on if the time budget
+    (the stop_token, see AI::play) runs out mid-search - alphaBetaNegaMaxTT returns 0 for
+    any node it had to abandon, and that 0 can silently bubble up and corrupt the score of
+    whichever root move was being explored when time ran out. Iterative deepening sidesteps
+    this: each depth is only ever accepted once it has finished normally, so a timeout just
+    means "we stop at the deepest depth we had time to finish", never a corrupted pick.
+
+    It also happens to make deeper searches cheaper: the best move from depth d-1 is passed
+    back in as the move-ordering hint for depth d (mainCandidateMoves' bestMove param), and
+    the transposition table carries over across depths (single tt.newSearch() for the whole
+    call), so alpha-beta gets much tighter bounds earlier at each new depth.
 */
 unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) {
-    float bestScore = isWhite ? -INF : INF;
+    Cell myColor = isWhite ? Cell::WHITE : Cell::BLACK;
+    unsigned forced = findForcedMove(board, myColor);
+    if (forced != Board::FIRSTMOVE) {
+        ENABLE_LOG MQ << "[AI] forced move (immediate win, or forced block): " << forced << "\n"; DISABLE_LOG
+        return forced;
+    }
+
+    const int16_t targetDepth = AI::maxDepth;
     unsigned bestMove = Board::FIRSTMOVE;
-    AI::nodeVisitCounter.assign(AI::maxDepth + 1, 0);
-    AI::nodeEvalCounter.assign(AI::maxDepth + 1, 0);
+    int16_t lastDepthRun = 0;
     tt.newSearch();
-    auto candidateMoves = mainCandidateMoves(board, Board::FIRSTMOVE, isWhite ? 1 : -1, AI::maxDepth);
-    for (auto move : candidateMoves) {
+
+    for (int16_t d = 1; d <= targetDepth; ++d) {
         if (st.stop_requested())
-            break ;
-        Board newBoard(board);
-        if (newBoard.playMove(move) == false) continue;
-        float score = mainSearch(newBoard, isWhite ? 1 : -1, st);
-        ENABLE_LOG MBL("findBestMove", move, score); DISABLE_LOG
-        if (score >= bestScore) {
-            bestMove = move;
-            bestScore = score;
+            break;
+
+        // tableGridTraversal (the per-position GridTraversal cache) used to only get cleared
+        // once per completed AI turn. With iterative deepening now running up to `targetDepth`
+        // full searches back to back within a single turn instead of just one, it would keep
+        // accumulating unique positions across every depth pass and balloon well past what any
+        // single pass actually needs (seen growing to 50k+ entries, several seconds of slowdown
+        // and most of the machine's free RAM gone). A previous iteration's cached positions
+        // aren't needed once that iteration is done, so clear it between depths.
+        tableGridTraversal.clear();
+
+        AI::maxDepth = d; // drives evaluate()'s mate-distance scoring and mainSearch's depth for this iteration
+        AI::nodeVisitCounter.assign(d + 1, 0);
+        AI::nodeEvalCounter.assign(d + 1, 0);
+
+        // mainSearch() returns a perspective-relative score (positive = good for whoever is
+        // to move, regardless of color - see its docstring), so we always want the MAXIMUM,
+        // not "max for white / min for black". Seeding this at +INF for black meant no real
+        // score could ever beat it, so bestMoveThisDepth never got set and every single black
+        // move silently fell back to "first candidate" further down - never a real search.
+        float bestScoreThisDepth = -INF;
+        unsigned bestMoveThisDepth = Board::FIRSTMOVE;
+        bool interrupted = false;
+
+        auto candidateMoves = mainCandidateMoves(board, bestMove, isWhite ? 1 : -1, d);
+        for (auto move : candidateMoves) {
+            if (st.stop_requested()) { interrupted = true; break; }
+            Board newBoard(board);
+            if (newBoard.playMove(move) == false) continue;
+            float score = mainSearch(newBoard, isWhite ? 1 : -1, st);
+            if (st.stop_requested()) { interrupted = true; break; } // score may be 0-contaminated, don't trust it
+            ENABLE_LOG MBL("findBestMove", move, score); DISABLE_LOG
+            if (score >= bestScoreThisDepth) {
+                bestMoveThisDepth = move;
+                bestScoreThisDepth = score;
+            }
         }
 
+        if (interrupted || bestMoveThisDepth == Board::FIRSTMOVE) {
+            ENABLE_LOG MQ << "[AI] depth " << d << " interrupted, keeping depth " << lastDepthRun << "'s move\n"; DISABLE_LOG
+            break;
+        }
+
+        bestMove = bestMoveThisDepth;
+        lastDepthRun = d;
+        ENABLE_LOG MQ << "[AI] depth " << d << " complete: move " << bestMove << " (" << bestScoreThisDepth << ")\n"; DISABLE_LOG
     }
+
+    AI::maxDepth = targetDepth; // restore the configured depth (used by evaluate()/UI outside of a search)
+
     ENABLE_LOG
     if (bestMove == Board::FIRSTMOVE) {
         MQ << "[AI] No best move found";
+        auto candidateMoves = mainCandidateMoves(board, Board::FIRSTMOVE, isWhite ? 1 : -1, 1);
         if (candidateMoves.empty()) {
             MQ << " (no candidates)";
         }  else {
@@ -244,12 +366,13 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
             bestMove = *candidateMoves.begin();
         }
     }
-    MQ << "[AI] explored " << std::accumulate(nodeVisitCounter.begin(), nodeVisitCounter.end(), 0) << " nodes\n"
+    MQ << "[AI] reached depth " << lastDepthRun << "/" << targetDepth << ", explored "
+       << std::accumulate(nodeVisitCounter.begin(), nodeVisitCounter.end(), 0) << " nodes\n"
        << "and evaluated " << std::accumulate(nodeEvalCounter.begin(), nodeEvalCounter.end(), 0) << " positions\n"
        << [](){
         std::stringstream ss;
         for (int i = static_cast<int>(nodeVisitCounter.size()) - 1, last = 1; 0 <= i; i--) {
-            ss << "Depth " << (maxDepth - i + 1) << ": " << nodeVisitCounter[i] << " nodes (x"
+            ss << "Ply " << (nodeVisitCounter.size() - i) << ": " << nodeVisitCounter[i] << " nodes (x"
                 << (nodeVisitCounter[i] * 100 / std::max(1, last)) / 100.0 << ")\n";
             last = nodeVisitCounter[i];
         }
@@ -265,7 +388,8 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
     This function is only called at terminal nodes of the tree (see subject p5)
 */
 float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
-    nodeEvalCounter[depth] += 1;
+    if (depth >= 0 && static_cast<size_t>(depth) < nodeEvalCounter.size())
+        nodeEvalCounter[depth] += 1;
     if (winningPlayer == Cell::WHITE) return WIN + (maxDepth - depth);
     if (winningPlayer == Cell::BLACK) return -WIN - (maxDepth - depth);
     if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {
@@ -279,12 +403,13 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
                      static_cast<float>(!board.isBlackToPlay) };
     Eval passive = 1.0f - active;
 
-    EvalGroups twos   = countOpenGroupsOf(board, 2);
-    EvalGroups threes = countOpenGroupsOf(board, 3);
-    EvalGroups fours  = countOpenGroupsOf(board, 4);
+    BoardStats stats = gatherBoardStats(board);
+    EvalGroups &twos   = stats.twos;
+    EvalGroups &threes = stats.threes;
+    EvalGroups &fours  = stats.fours;
 
     Eval captures = {static_cast<float>(board.blackCaptured), static_cast<float>(board.whiteCaptured)};
-    Eval possibleCaptures = countCaptures(board);
+    Eval &possibleCaptures = stats.captures;
 
     Eval eval = fours.open  * (active * 1000.0f + passive * 900.0f)
               + fours.half  * (active *  950.0f + passive * 400.0f)
@@ -323,21 +448,52 @@ AI::Eval AI::countGroupsOf(const Board &board, int size) {
     return eval;
 }
 
-AI::EvalGroups AI::countOpenGroupsOf(const Board &board, int size) {
+/*
+    Single pass over the board's line segments (NodeCellRow) that used to be
+    4 separate full scans (countOpenGroupsOf(2/3/4) + countCaptures). Each
+    segment can only match one of: a capturable pair, an empty gap between two
+    same-color runs (half-open Nth), or a contiguous same-color run of 2/3/4 -
+    so the three checks below are mutually exclusive per node.
+*/
+AI::BoardStats AI::gatherBoardStats(const Board &board) {
     const auto &nodes = board.grid.nodes().getCellRowsGarbage();
 
-    EvalGroups eg;
+    BoardStats stats;
+
+    auto groupsFor = [&](unsigned size) -> EvalGroups* {
+        switch (size) {
+            case 2: return &stats.twos;
+            case 3: return &stats.threes;
+            case 4: return &stats.fours;
+            default: return nullptr;
+        }
+    };
+
     for (const NodeCellRow &n : nodes) {
-        if (n.size == 1 
+        if (n.size == 2 && (n.type == Cell::BLACK || n.type == Cell::WHITE)) {
+            Cell opponent = (n.type == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
+            bool canCapture = n.prev && n.next && (
+                (n.next->type == opponent && n.prev->type == Cell::EMPTY) ||
+                (n.next->type == Cell::EMPTY && n.prev->type == opponent)
+            );
+            if (n.type == Cell::WHITE) stats.captures.black += int(canCapture);
+            else stats.captures.white += int(canCapture);
+        }
+
+        if (n.size == 1
                 && n.type == Cell::EMPTY
                 && n.prev && n.next
                 && (n.next->type == Cell::BLACK || n.next->type == Cell::WHITE)
-                && n.next->type == n.prev->type
-                && (n.next->size + n.prev->size) == size) {
-            if (n.next->type == Cell::BLACK) eg.half.black++; else eg.half.white++;
+                && n.next->type == n.prev->type) {
+            if (EvalGroups* eg = groupsFor(n.next->size + n.prev->size)) {
+                if (n.next->type == Cell::BLACK) eg->half.black++; else eg->half.white++;
+            }
+            continue;
         }
-        if (n.size != size) continue;
+
         if (n.type != Cell::BLACK && n.type != Cell::WHITE) continue;
+        EvalGroups* eg = groupsFor(n.size);
+        if (!eg) continue;
 
         bool openL = n.prev && n.prev->type == Cell::EMPTY;
         bool openR = n.next && n.next->type == Cell::EMPTY;
@@ -345,30 +501,10 @@ AI::EvalGroups AI::countOpenGroupsOf(const Board &board, int size) {
 
         if (openEnds == 0) continue; // closed, skip
 
-        Eval& target = (openEnds == 2) ? eg.open : eg.half;
+        Eval& target = (openEnds == 2) ? eg->open : eg->half;
         if (n.type == Cell::BLACK) target.black++; else target.white++;
     }
-    return eg;
-}
-
-AI::Eval AI::countCaptures(const Board &board) {
-    const auto &nodes = board.grid.nodes().getCellRowsGarbage();
-
-    Eval eval;
-    for (const NodeCellRow &n : nodes) {
-        if (n.size != 2) continue;
-        if (n.type != Cell::BLACK && n.type != Cell::WHITE) continue;
-
-        Cell opponent = (n.type == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
-
-        bool canCapture = n.prev && n.next && (
-            (n.next->type == opponent && n.prev->type == Cell::EMPTY) ||
-            (n.next->type == Cell::EMPTY && n.prev->type == opponent)
-        );
-
-        if (n.type == Cell::WHITE) eval.black += int(canCapture); else eval.white += int(canCapture);
-    }
-    return eval;
+    return stats;
 }
 
 std::vector<unsigned> AI::mainCandidateMoves(
@@ -500,21 +636,98 @@ inline float scoreEntropy(const std::vector<std::pair<unsigned, float>> &scoredM
     return topFraction; // rename to "forcedness" if you like
 }
 
+/*
+    Local (no board copy, no GridTraversal rebuild) estimate of how good playing `color` at
+    `id` looks. For each of the 4 line axes through `id` (using the 8 EXTREMITIES directions,
+    opposite pairs forming an axis), walks outward in both directions counting consecutive
+    same-color stones - once for `color` (offense) and once for the opponent (defense/blocking).
+    Longer and more open runs score higher, roughly mirroring evaluate()'s own ordering (open
+    four > half four > open three > ...). Also checks for an immediate capture via
+    Grid::detectCaptures, which - like the rest of this function - reads the board directly at
+    fixed offsets around `id` without needing the move actually played.
+
+    This replaces move ordering that used to copy the board and run the full evaluate() (4
+    board-wide scans + a fresh GridTraversal construction) for every single candidate at every
+    node of the search tree. An earlier version of this function tried to reuse the cached
+    GridTraversal's line segments instead of walking the grid directly, gating on the flanking
+    segment's size - that was wrong: a segment's size is the length of the WHOLE contiguous
+    empty run id belongs to, not id's distance from the stone it's touching, so it silently
+    skipped axes where id was directly touching a critical run (e.g. failed to find an obvious
+    forced block). Walking the grid directly has no such ambiguity.
+*/
+static float localTacticalScore(const Board &board, unsigned id, Cell color) {
+    const Grid &grid = board.grid;
+    const Cell opponent = (color == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
+    const Vector2D origin = grid.idToVec(id);
+
+    auto runWeight = [](int size, bool open) -> float {
+        static constexpr float OPEN[] = {0, 1, 8, 60, 400, 5000};
+        static constexpr float HALF[] = {0, 1, 3, 20, 150, 5000};
+        size = std::min(size, 5);
+        return open ? OPEN[size] : HALF[size];
+    };
+
+    // Walk outward from `origin` in direction EXTREMITIES[dirIdx]: first count consecutive
+    // `who` stones (the run itself), then keep counting past it as long as cells are EMPTY
+    // (room the run could still grow into). `stones` is what's already placed; `room` is how
+    // much further it could theoretically reach on this side alone.
+    auto walk = [&](int dirIdx, Cell who) -> std::pair<int, int> {
+        const Vector2D &dir = EXTREMITIES[dirIdx];
+        int stones = 0;
+        Vector2D p = origin + dir;
+        while (grid.isInside(p) && grid[grid.vecToId(p)] == who) {
+            ++stones;
+            p = p + dir;
+        }
+        int room = 0;
+        while (grid.isInside(p) && grid[grid.vecToId(p)] == Cell::EMPTY) {
+            ++room;
+            p = p + dir;
+        }
+        return {stones, room};
+    };
+
+    static constexpr int AXES[4][2] = {{0, 4}, {1, 5}, {2, 6}, {3, 7}}; // opposite EXTREMITIES pairs
+    float score = 0;
+    for (const auto &axis : AXES) {
+        for (Cell who : {color, opponent}) {
+            auto [stonesPos, roomPos] = walk(axis[0], who);
+            auto [stonesNeg, roomNeg] = walk(axis[1], who);
+            int connected = 1 + stonesPos + stonesNeg; // the stone we'd place, plus both directions
+            if (connected <= 1) continue;
+
+            // Life-or-death check: even filling every reachable empty cell on both sides,
+            // can this run ever reach five? If not it's dead - e.g. boxed in near the edge,
+            // or already capped by the opponent within reach - and shouldn't be scored as
+            // a real threat no matter how many stones are already connected.
+            int maxReach = connected + roomPos + roomNeg;
+            if (maxReach < 5) continue;
+
+            float w = runWeight(connected, roomPos > 0 && roomNeg > 0);
+            score += (who == color) ? w : w * 0.85f; // blocking matters, but slightly less than extending
+        }
+    }
+
+    if (grid.detectCaptures(id, color) > 0) score += 250;
+    return score;
+}
+
 std::vector<unsigned> AI::getOrderedCandidateMoves2(const Board &board, unsigned bestMove, float color, int depth) {
     std::set<unsigned> moves = getCandidateMoves(board.grid);
+    const Cell cColor = color == -1 ? Cell::BLACK : Cell::WHITE;
+
     std::vector<std::pair<unsigned, float>> scoredMoves;
     scoredMoves.reserve(moves.size());
 
-    float baseScore = evaluate(board, 0, board.isVictory());
-
     for (auto move : moves) {
         if (bestMove != Board::FIRSTMOVE && bestMove == move) {
-            scoredMoves.push_back({move, 1000});
+            scoredMoves.push_back({move, INF});
+            continue;
         }
-        Board newBoard = Board(board);
-        if (!newBoard.playMove(move)) continue;
-        float s = color * (evaluate(newBoard, 0, newBoard.isVictory()) - baseScore);
-        scoredMoves.push_back({move, s});
+        // Same legality rule Board::isValidMove enforces - skip it here too (cheap, no board
+        // copy needed) so a forbidden double-three doesn't waste one of the top MAX_MOVES slots.
+        if (board.grid.isDoubleThree(move, cColor)) continue;
+        scoredMoves.push_back({move, localTacticalScore(board, move, cColor)});
     }
 
     constexpr size_t MAX_MOVES = 3;
@@ -525,9 +738,8 @@ std::vector<unsigned> AI::getOrderedCandidateMoves2(const Board &board, unsigned
 		[](const auto& a, const auto& b) {
 			return a.second > b.second;  // Ordre décroissant
 		});
-    //std::sort(scoredMoves.begin(), scoredMoves.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
 
-    size_t width = std::min(MAX_MOVES, moves.size());
+    size_t width = std::min(MAX_MOVES, scoredMoves.size());
 
     std::vector<unsigned> orderedMoves;
     orderedMoves.reserve(width);

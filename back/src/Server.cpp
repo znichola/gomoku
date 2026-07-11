@@ -15,6 +15,10 @@ std::atomic<bool> g_interrupted{false};
 void handleSigint(int) {
     std::cout << "\nShutting down..." << std::endl;
     g_interrupted.store(true, std::memory_order_relaxed);
+    // accept() below is blocking and gets auto-restarted by the OS after this handler
+    // returns (SA_RESTART), so the main loop never gets to re-check g_interrupted unless
+    // a new client happens to connect. Exit directly instead of relying on that.
+    std::exit(0);
 }
 
 Server::~Server() {
