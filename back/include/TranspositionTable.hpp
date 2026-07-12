@@ -2,6 +2,7 @@
 
 #include "Grid.hpp"
 #include "Board.hpp"
+#include "AI_Score.hpp"
 #include <vector>
 #include <cstdint>
 
@@ -14,12 +15,12 @@
 enum class Bound : uint8_t { EXACT, LOWER, UPPER, ONEOFF };
 
 struct TTEntry {
-    uint64_t hash = 0;
-    float    score = 0.0f;
-    int16_t  depth = 0;
-    int      move = -1; // best move index, -1 if none, TT move heuristic
-    Bound    bound = Bound::EXACT;
-    uint8_t  age = 0; // Each move in a game increments age, so we can prefer later moves
+    uint64_t     hash = 0;
+    AI::RelScore score = 0.0f; // always mover-relative - see AI_Score.hpp
+    int16_t      depth = 0;
+    int          move = -1; // best move index, -1 if none, TT move heuristic
+    Bound        bound = Bound::EXACT;
+    uint8_t      age = 0; // Each move in a game increments age, so we can prefer later moves
 };
 
 class TranspositionTable {
@@ -30,7 +31,7 @@ public:
 
     void resetAge();
     void newSearch();
-    void store(uint64_t hash, float score, int16_t depth, int move, Bound bound);
+    void store(uint64_t hash, AI::RelScore score, int16_t depth, int move, Bound bound);
     const TTEntry* probe(uint64_t hash) const;
     int bestMove(uint64_t hash) const;
     void clear();
