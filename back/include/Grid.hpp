@@ -56,7 +56,7 @@ public:
     bool isCellDead(unsigned id) const;
     long detectCaptures(unsigned const id, const Cell myColor) const;
     long handleCaptures(unsigned const id, bool const apply);
-    long calcAlignedCells(unsigned const id, long const ext, Cell &bc,
+    long calcAlignedCells(unsigned const id, long const ext, Cell &bc, const Cell myColor,
                     std::set<long> *alignedCells, long const offset = 0, long count = 0) const;
     bool isDoubleThree(unsigned const id, const Cell myColor) const;
 };

@@ -276,9 +276,8 @@ long Grid::handleCaptures(unsigned const id, bool const apply) {
     return c;
 }
 
-long Grid::calcAlignedCells(unsigned const id, long const ext, Cell &bc,
+long Grid::calcAlignedCells(unsigned const id, long const ext, Cell &bc, const Cell myColor,
                         std::set<long> *alignedCells, long const offset, long count) const {
-    const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return false;
 
     const Vector2D cellPoint = Vector2D::createFromIndex(id, width);
@@ -305,18 +304,18 @@ bool Grid::isDoubleThree(unsigned const id, const Cell myColor) const {
         // std::set<long> alignedCells = { id };
 
         Cell lc = Cell::OUTSIDE;
-        long l = calcAlignedCells(id, ext, lc, NULL); //&alignedCells);
+        long l = calcAlignedCells(id, ext, lc, myColor, NULL); //&alignedCells);
 
         Cell rc = Cell::OUTSIDE;
-        long r = calcAlignedCells(id, ext, rc, NULL, 4); //&alignedCells, 4);
+        long r = calcAlignedCells(id, ext, rc, myColor, NULL, 4); //&alignedCells, 4);
 
         bool specialThree = false;
         if (l + r <= 1 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
             long needed = (l + r == 0) ? 2 : 1;
             Cell lc2 = Cell::OUTSIDE;
-            long l2 = calcAlignedCells(id, ext, lc2, NULL, 0, l + 1) - l - 1;
+            long l2 = calcAlignedCells(id, ext, lc2, myColor, NULL, 0, l + 1) - l - 1;
             Cell rc2 = Cell::OUTSIDE;
-            long r2 = calcAlignedCells(id, ext, rc2, NULL, 4, r + 1) - r - 1;
+            long r2 = calcAlignedCells(id, ext, rc2, myColor, NULL, 4, r + 1) - r - 1;
             if ((needed == l2 && lc2 == Cell::EMPTY) || (needed == r2 && rc2 == Cell::EMPTY)) {
                 specialThree = true;
             }
