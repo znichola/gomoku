@@ -83,7 +83,7 @@ Grid &Grid::setEmpty(unsigned id) {
 
 void Grid::generateHash() {
     uint64_t h = 0;
-    for (unsigned id = 0; id < 361; ++id) {
+    for (unsigned id = 0; id < grid.size(); ++id) {
         if (grid[id] != Cell::EMPTY)
             h ^= zob[id][static_cast<int>(grid[id])];
     }
