@@ -238,11 +238,34 @@ unsigned AI::findForcedMove(const Board &board, Cell myColor) {
         if (myTry.winner == myColor) return move;
     }
 
+    std::vector<unsigned> oppWinningMoves;
     for (unsigned move : candidates) {
         if (!board.isValidMove(move)) continue; // has to be legal for me to actually play here
         Board oppTry(board);
         oppTry.grid.set(move, opponent);
-        if (oppTry.grid.getWinningLineColorNear(move) == opponent) return move;
+        if (oppTry.grid.getWinningLineColorNear(move) == opponent) oppWinningMoves.push_back(move);
+    }
+
+    if (oppWinningMoves.size() == 1) return oppWinningMoves.front();
+
+    if (oppWinningMoves.size() > 1) {
+        for (unsigned move : candidates) {
+            if (!board.isValidMove(move)) continue;
+            if (board.grid.detectCaptures(move, myColor) <= 0) continue; // only captures can kill a shared stone
+
+            Board myTry(board);
+            if (!myTry.playMove(move)) continue;
+
+            bool stillForked = false;
+            for (unsigned oppMove : oppWinningMoves) {
+                Board oppTry(myTry);
+                oppTry.grid.set(oppMove, opponent);
+                if (oppTry.grid.getWinningLineColorNear(oppMove) == opponent) { stillForked = true; break; }
+            }
+            if (!stillForked) return move;
+        }
+        // No capture rescues it: the position is genuinely lost to this fork. Don't return
+        // a block that doesn't work - fall through to the real search.
     }
 
     return Board::FIRSTMOVE;
@@ -371,16 +394,22 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
     EvalGroups &threes = stats.threes;
     EvalGroups &fours  = stats.fours;
 
-    Eval captures = {static_cast<float>(board.blackCaptured), static_cast<float>(board.whiteCaptured)};
     Eval &possibleCaptures = stats.captures;
 
-    Eval eval = fours.open  * (active * 1000.0f + passive * 900.0f)
+    auto captureDanger = [](unsigned capturedStones) -> float {
+        float pairs = static_cast<float>(capturedStones) / 2.0f;
+        return pairs * pairs * 150.0f;
+    };
+    Eval captureBanked = {captureDanger(board.blackCaptured), captureDanger(board.whiteCaptured)};
+
+    Eval eval = fours.open  * (active * 5000.0f + passive * 4200.0f)
               + fours.half  * (active *  950.0f + passive * 400.0f)
               + threes.open * (active *  700.0f + passive * 600.0f)
               + threes.half * (active *  200.0f + passive * 90.0f)
               + twos.open   * (active *   10.0f + passive * 6.0f)
               + twos.half   * (active *    8.5f + passive * 3.2f)
-              + (possibleCaptures * 2 + captures) / 10 * (active * 1000.0f + passive * 700.0f)
+              + possibleCaptures * (active * 200.0f + passive * 140.0f)
+              + captureBanked
               + active * 1.2f; // move advantage
 
     const float res = eval.white - eval.black;
@@ -624,7 +653,7 @@ static float localTacticalScore(const Board &board, unsigned id, Cell color) {
     const Vector2D origin = grid.idToVec(id);
 
     auto runWeight = [](int size, bool open) -> float {
-        static constexpr float OPEN[] = {0, 1, 8, 60, 400, 5000};
+        static constexpr float OPEN[] = {0, 1, 8, 60, 1500, 5000};
         static constexpr float HALF[] = {0, 1, 3, 20, 150, 5000};
         size = std::min(size, 5);
         return open ? OPEN[size] : HALF[size];
@@ -678,6 +707,28 @@ static float localTacticalScore(const Board &board, unsigned id, Cell color) {
         const bool backEnemy = backC == opponent, backEmpty = backC == Cell::EMPTY;
         const bool frontEnemy = frontC == opponent, frontEmpty = frontC == Cell::EMPTY;
         if ((backEnemy && frontEmpty) || (backEmpty && frontEnemy)) score -= 100;
+    }
+
+    // Defensive bonus: does this move DEFUSE an existing vulnerable pair of mine (already
+    // on the board, from an earlier move) by extending it to a run of 3+? A pair flanked by
+    // one enemy stone and one empty cell is one legal move away from being captured; if
+    // `id` is that empty flank, playing there removes the vulnerability outright (a run of
+    // 3+ can never be captured, per the rules), which is worth more than the ordinary
+    // alignment-extension score alone - without this, the AI has no reason to prefer
+    // defusing an active threat over any other similarly-scored extension, and a pair can
+    // sit exposed for turns until the opponent finally cashes it in (confirmed against a
+    // real lost game: white had 4 spare turns to play the exact cell that would have
+    // defused pair 84-85 flanked by black at 83, played elsewhere every time, and black
+    // captured it - one of 5 pairs lost that game).
+    for (const Vector2D &dir : EXTREMITIES) {
+        const Vector2D p1 = origin + dir;
+        const Vector2D p2 = origin + dir * 2;
+        const Vector2D p3 = origin + dir * 3;
+        if (!grid.isInside(p1) || !grid.isInside(p2) || !grid.isInside(p3)) continue;
+        if (grid[grid.vecToId(p1)] == color && grid[grid.vecToId(p2)] == color &&
+            grid[grid.vecToId(p3)] == opponent) {
+            score += 250;
+        }
     }
 
     return score;

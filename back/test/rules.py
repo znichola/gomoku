@@ -165,6 +165,29 @@ def _(host, port):
     return ok, f"winner={d['board']['winner']} (want {BLACK})"
 
 
+@check("Endgame Capture: a capture ELSEWHERE on the board can revive an already-complete line")
+def _(host, port):
+    # Diagonal five (80,100,120,140,160), but 100 is kept dead by pairing with 119, flanked
+    # by white 81 (empty on the other side at 138) - so this starts out as a real, currently
+    # unbreakable-looking five that's nonetheless not a win yet (same shape as the check
+    # above). White 81 is ALSO half of a totally separate capturable pair (81,82), with
+    # black already at 80 on the near side - so playing 83 captures (81,82), which frees
+    # 100/119 from the pair that was keeping them dead, and the diagonal should become a
+    # genuine win THE INSTANT that capture lands - even though the capturing move (83) isn't
+    # anywhere near the diagonal itself.
+    #
+    # Found via a real game where this exact situation went undetected for 5 more moves:
+    # isVictoryNear(id) only re-examines lines through the stone just placed, so a capture
+    # that revives a DIFFERENT line (by removing the enemy stone that was keeping it dead)
+    # went unnoticed until Board::playMove was taught to also check around every cell a
+    # capture just emptied, not just the move played.
+    grid = {80: BLACK, 100: BLACK, 120: BLACK, 140: BLACK, 160: BLACK,
+            119: BLACK, 81: WHITE, 82: WHITE}
+    b = setup_and_play(host, port, grid, black_to_play=True, move_id=83)
+    ok = b["blackCaptured"] == 2 and b["winner"] == BLACK
+    return ok, f"blackCaptured={b['blackCaptured']} (want 2), winner={b['winner']} (want {BLACK})"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--host", default="localhost")

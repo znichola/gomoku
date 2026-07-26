@@ -26,7 +26,7 @@ BLACK, WHITE = 1, 2
 
 
 def analyze(host, port, grid_overrides, black_to_play, ai_color, depth,
-            black_captured=0, white_captured=0):
+            black_captured=0, white_captured=0, search_function=None):
     grid = [0] * (WIDTH * WIDTH)
     for idx, val in grid_overrides.items():
         grid[idx] = val
@@ -40,6 +40,8 @@ def analyze(host, port, grid_overrides, black_to_play, ai_color, depth,
         f"&isAIGame={ai_color}"
         f"&searchDepth={depth}"
     )
+    if search_function:
+        params += f"&searchFunction={search_function}"
     url = f"http://{host}:{port}/analyze?{params}"
     with urllib.request.urlopen(url, timeout=15) as r:
         return json.load(r)
@@ -153,6 +155,97 @@ def check_self_capture_regression(host, port, depth):
     return ok
 
 
+def check_defend_vulnerable_pair_regression(host, port, depth):
+    """
+    Regression test for a real lost game (searchFunction=MINMAX): white had an existing
+    pair (84,85) flanked by black at 83 on one side and empty at 86 on the other - one
+    legal move away from being captured - and spent 4 spare turns playing elsewhere before
+    black finally captured it (one of 5 pairs lost that game, enough to lose outright via
+    the 10-capture rule). localTacticalScore had a term for not CREATING a new vulnerable
+    pair, but nothing rewarding DEFUSING an existing one by extending it to an uncapturable
+    run of 3 - so the AI had no reason to prefer playing 86 over any other similarly-scored
+    move, and let the threat sit until the opponent cashed it in.
+
+    Minimal repro: black at 83, white at 84 and 85. Playing 86 extends the pair to a run of
+    3 (83 is black, 84-85-86 would all be white), removing the vulnerability outright.
+    """
+    grid = {83: BLACK, 84: WHITE, 85: WHITE}
+    data = analyze(host, port, grid, black_to_play=False, ai_color=WHITE, depth=depth)
+    move = data["moveHistory"][-1] if data["moveHistory"] else None
+
+    ok = move == 86
+    print(f"[{'PASS' if ok else 'FAIL'}] defend vulnerable pair regression (defuse a capture threat by extending to 3) "
+          f"-> played {move}, expected 86")
+    return ok
+
+
+def check_fork_no_false_block_regression(host, port, depth):
+    """
+    Regression test for findForcedMove: it used to return the FIRST cell where the
+    opponent would win, as if finding one such cell always meant a single block settles
+    it. For a clean open four (176-179, nothing capturable anywhere), BOTH ends (175 and
+    180) independently let black win - blocking one is a false sense of security, since
+    black just plays the other end next turn. There's no way to rescue this (any stone
+    within the four capturable enough to matter would already make that end not count as
+    a win at all, via the Endgame Capture rule - see the git history around this test for
+    why an earlier version of it tried exactly that and was wrong), so the only correct
+    behavior is to recognize the block doesn't work and let the real search run instead
+    of confidently returning a move that provably doesn't save the game.
+
+    Checked indirectly via the message log: findForcedMove short-circuiting logs "forced
+    move" and returns without ever running the depth-by-depth search; falling through logs
+    "reached depth X/Y, explored N nodes" instead.
+    """
+    grid = {176: BLACK, 177: BLACK, 178: BLACK, 179: BLACK}
+    data = analyze(host, port, grid, black_to_play=False, ai_color=WHITE, depth=depth)
+    messages = data.get("messages", [])
+
+    forced = any("forced move" in m for m in messages)
+    searched = any("reached depth" in m for m in messages)
+
+    ok = not forced and searched
+    print(f"[{'PASS' if ok else 'FAIL'}] fork non-rescue regression (open four doesn't get a false-confidence block) "
+          f"-> forced_move_shortcut={forced}, real_search_ran={searched}")
+    return ok
+
+
+def check_minmax_board_state_regression(host, port, depth):
+    """
+    Regression test for searchFunction=MINMAX specifically: AI::minMax's recursive step
+    used to build each child position via Board(board.grid, move) - a constructor that
+    only copies the grid, silently resetting blackCaptured/whiteCaptured to 0 and
+    isBlackToPlay to its default (true) at EVERY node. That meant every simulated move got
+    played as BLACK regardless of whose turn it actually was, and all capture-count context
+    was wiped throughout the whole search - MINMAX failed even a trivial "take a free
+    capture" position because of it (a real lost game surfaced this: the user reported the
+    AI playing badly, which traced back to this, not to a heuristic regression).
+
+    Fixed by copying the whole board and using its normal playMove instead. This replays
+    the two simplest tests from TESTS above but forcing searchFunction=MINMAX, since the
+    rest of this file's tests all rely on the default (ALPHABETA_NEGAMAX_TT) and would not
+    have caught a MINMAX-only bug.
+    """
+    ok = True
+
+    data = analyze(host, port, {171: WHITE, 172: BLACK, 173: BLACK}, black_to_play=False,
+                    ai_color=WHITE, depth=depth, search_function="MINMAX")
+    move = data["moveHistory"][-1] if data["moveHistory"] else None
+    this_ok = move == 174
+    ok &= this_ok
+    print(f"[{'PASS' if this_ok else 'FAIL'}] MINMAX board-state regression (take a free capture) "
+          f"-> played {move}, expected 174")
+
+    data = analyze(host, port, {175: WHITE, 176: BLACK, 177: BLACK, 178: BLACK, 179: BLACK},
+                    black_to_play=False, ai_color=WHITE, depth=depth, search_function="MINMAX")
+    move = data["moveHistory"][-1] if data["moveHistory"] else None
+    this_ok = move == 180
+    ok &= this_ok
+    print(f"[{'PASS' if this_ok else 'FAIL'}] MINMAX board-state regression (block a half-open four) "
+          f"-> played {move}, expected 180")
+
+    return ok
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--host", default="localhost")
@@ -161,7 +254,7 @@ def main():
     args = parser.parse_args()
 
     passed = 0
-    total = len(TESTS) + 2
+    total = len(TESTS) + 5
     for t in TESTS:
         try:
             data = analyze(args.host, args.port, t["grid"], t["black_to_play"], t["ai_color"], args.depth)
@@ -183,6 +276,21 @@ def main():
         passed += check_self_capture_regression(args.host, args.port, args.depth)
     except Exception as e:
         print(f"[ERROR] self-capture regression: {e}")
+
+    try:
+        passed += check_defend_vulnerable_pair_regression(args.host, args.port, args.depth)
+    except Exception as e:
+        print(f"[ERROR] defend vulnerable pair regression: {e}")
+
+    try:
+        passed += check_minmax_board_state_regression(args.host, args.port, args.depth)
+    except Exception as e:
+        print(f"[ERROR] MINMAX board-state regression: {e}")
+
+    try:
+        passed += check_fork_no_false_block_regression(args.host, args.port, args.depth)
+    except Exception as e:
+        print(f"[ERROR] fork capture-rescue regression: {e}")
 
     print(f"\n{passed}/{total} passed")
     sys.exit(0 if passed == total else 1)
