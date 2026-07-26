@@ -13,7 +13,7 @@ void TranspositionTable::resetAge() {
     age = 0;
 }
 
-void TranspositionTable::store(uint64_t hash, float score, int16_t depth, int move, Bound bound) {
+void TranspositionTable::store(uint64_t hash, AI::RelScore score, int16_t depth, int move, Bound bound) {
     TTEntry& e = table[hash & mask];
 
     // Keep deeper entries unless they're stale

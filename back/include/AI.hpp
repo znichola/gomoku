@@ -8,6 +8,7 @@
 #include "TranspositionTable.hpp"
 #include "Board.hpp"
 #include "AI_Eval.hpp"
+#include "AI_Score.hpp"
 
 #define __CHRONO_LABEL(name) MQ << "[CHRONO] " << #name << " took "
 
@@ -46,17 +47,17 @@ namespace AI {
 
     // MinMax and varians
 
-    float minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::stop_token st);
-    float negaMax(const Board &board, int16_t depth, float color, std::stop_token st);
-    float alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color, std::stop_token st);
-    float alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b, float color, std::stop_token st);
+    AbsScore minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::stop_token st);
+    RelScore negaMax(const Board &board, int16_t depth, float color, std::stop_token st);
+    RelScore alphaBetaNegaMax(const Board &board, int16_t depth, RelScore a, RelScore b, float color, std::stop_token st);
+    RelScore alphaBetaNegaMaxTT(const Board &board, int16_t depth, RelScore a, RelScore b, float color, std::stop_token st);
 
     unsigned play(const Board &board, bool isWhite);
     unsigned findBestMove(const Board &board, bool isWhite, std::stop_token st);
     unsigned findForcedMove(const Board &board, Cell myColor);
-    float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
+    AbsScore evaluate(const Board &board, int16_t depth, Cell winningPlayer);
 
-    float mainSearch(const Board &board, float color, std::stop_token st);
+    RelScore mainSearch(const Board &board, float color, std::stop_token st);
     std::vector<unsigned>mainCandidateMoves(const Board &board, unsigned bestMove, float color, int depth);
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
@@ -72,5 +73,5 @@ namespace AI {
     };
     BoardStats gatherBoardStats(const Board &board);
 
-    bool tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, float &score, unsigned &bestMove);
+    bool tryApplyTTBounds(uint64_t hash, int depth, RelScore &alpha, RelScore &beta, RelScore &score, unsigned &bestMove);
 };

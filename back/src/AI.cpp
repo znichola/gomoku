@@ -78,7 +78,7 @@ unsigned AI::play(const Board &board, bool isWhite) {
 
     Much like negamax, as black pass color=-1 as white color=1.
 */
-float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b, float color, std::stop_token st) {
+AI::RelScore AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, RelScore a, RelScore b, float color, std::stop_token st) {
     if (st.stop_requested()) {
         return 0;
     }
@@ -87,24 +87,24 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
 
     // Lookup previous position, either tighten search window (adjust a b bestMove)
     // or return exact score if it's already stored
-    float ttScore = 0;
+    RelScore ttScore = 0;
     unsigned bestMove = Board::FIRSTMOVE;
     if (tryApplyTTBounds(hash, depth, a, b, ttScore, bestMove))
         return ttScore;
 
     Cell victory = board.winner;
     if (depth == 0 || victory != Cell::EMPTY) {
-        return color * evaluate(board, depth, victory);
+        return toRelative(evaluate(board, depth, victory), color);
     }
 
-    float origA = a;
+    RelScore origA = a;
 
-    float value = -INF;
+    RelScore value = -INF;
     for (auto move : mainCandidateMoves(board, bestMove, -color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
-        float score = -alphaBetaNegaMaxTT(newBoard, depth-1, -b, -a, -color, st);
+        RelScore score = -alphaBetaNegaMaxTT(newBoard, depth-1, -b, -a, -color, st);
         if (score > value) { value = score; bestMove = move; }
         a = std::max(a, value);
         if (a >= b) break;
@@ -125,7 +125,7 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
 
     Positive scores favor the player to move, negative scores favor the opponent.
 */
-float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, float color, std::stop_token st) {
+AI::RelScore AI::alphaBetaNegaMax(const Board &board, int16_t depth, RelScore a, RelScore b, float color, std::stop_token st) {
     if (st.stop_requested()) {
         return 0;
     }
@@ -133,15 +133,15 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
 
     Cell victory = board.winner;
     if (depth == 0 || victory != Cell::EMPTY) {
-        return color * evaluate(board, depth, victory);
+        return toRelative(evaluate(board, depth, victory), color);
     }
 
-    float value = -INF;
+    RelScore value = -INF;
     for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, -color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
-        float child = -alphaBetaNegaMax(newBoard, depth-1, -b, -a, -color, st);
+        RelScore child = -alphaBetaNegaMax(newBoard, depth-1, -b, -a, -color, st);
         if (child > value) value = child;
         a = std::max(a, value);
         if (a >= b) break;
@@ -161,16 +161,16 @@ s
     Evaluation always returns + for white and - for black.
     If black to play, call with color=-1
 */
-float AI::negaMax(const Board &board, int16_t depth, float color, std::stop_token st) {
+AI::RelScore AI::negaMax(const Board &board, int16_t depth, float color, std::stop_token st) {
     if (st.stop_requested()) {
         return 0;
     }
     nodeVisitCounter[depth] += 1;
     Cell victory = board.winner;
     if (depth == 0 || victory != Cell::EMPTY) {
-        return color * evaluate(board, depth, victory);
+        return toRelative(evaluate(board, depth, victory), color);
     }
-    float value = -INF;
+    RelScore value = -INF;
     for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, -color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
@@ -191,7 +191,7 @@ float AI::negaMax(const Board &board, int16_t depth, float color, std::stop_toke
 
     TODO see negamax for simpler version of the function, and alpha-beta pruning for more optimised one
 */
-float AI::minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::stop_token st) {
+AI::AbsScore AI::minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::stop_token st) {
 	if (st.stop_requested()) {
 		return 0;
 	}
@@ -199,13 +199,13 @@ float AI::minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::sto
 	if (depth == 0 || board.winner != Cell::EMPTY) {
 		return evaluate(board, depth, board.winner); // evaluation/heuristic is only run for terminal nodes
 	}
-	
-	float best = isBlackToPlay ? -INF : INF;
+
+	AbsScore best = isBlackToPlay ? -INF : INF;
 	//auto minmax = (isBlackToPlay) ? std::max<float> : std::min<float>;
-	
+
 	for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, isBlackToPlay ? -1 : 1, depth)) {
 		if (!board.isValidMove(move)) continue; // skip illegal moves
-		float score = minMax(Board(board, move), depth-1, !isBlackToPlay, st);
+		AbsScore score = minMax(Board(board, move), depth-1, !isBlackToPlay, st);
 		best = (isBlackToPlay) ? std::max(score, best) : std::min(score, best);
 	}
 	return best;
@@ -311,7 +311,8 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
         AI::nodeVisitCounter.assign(d + 1, 0);
         AI::nodeEvalCounter.assign(d + 1, 0);
 
-        float bestScoreThisDepth = -INF;
+        RelScore bestScoreThisDepth = -INF;
+
         unsigned bestMoveThisDepth = Board::FIRSTMOVE;
         bool interrupted = false;
 
@@ -320,7 +321,7 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
             if (st.stop_requested()) { interrupted = true; break; }
             Board newBoard(board);
             if (newBoard.playMove(move) == false) continue;
-            float score = mainSearch(newBoard, isWhite ? 1 : -1, st);
+            RelScore score = mainSearch(newBoard, isWhite ? 1 : -1, st);
             if (st.stop_requested()) { interrupted = true; break; } // score may be 0-contaminated, don't trust it
             ENABLE_LOG MBL("findBestMove", move, score); DISABLE_LOG
             if (score >= bestScoreThisDepth) {
@@ -373,7 +374,7 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
     return a score of the position: - for black and + for white
     This function is only called at terminal nodes of the tree (see subject p5)
 */
-float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
+AI::AbsScore AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
     if (depth >= 0 && static_cast<size_t>(depth) < nodeEvalCounter.size())
         nodeEvalCounter[depth] += 1;
     if (winningPlayer == Cell::WHITE) return WIN + (maxDepth - depth);
@@ -381,8 +382,14 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
     if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {
         return 0;
     }
+
+    // TTEntry::score is always RelScore (mover-relative) - see AI_Score.hpp. At this
+    // exact board, board.isBlackToPlay fully determines who that mover is, so this
+    // conversion is unambiguous regardless of whether the entry was written by the
+    // search below (alphaBetaNegaMaxTT) or by this function's own store further down.
+    const float moverColor = board.isBlackToPlay ? -1.0f : 1.0f;
     const TTEntry* e = tt.probe(board.grid.getHash());
-    if (e) return e->score;
+    if (e) return toAbsolute(e->score, moverColor);
 
     // 1 for the side to play, 0 for the waiting side
     Eval active  = { static_cast<float>( board.isBlackToPlay),
@@ -412,9 +419,9 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
               + captureBanked
               + active * 1.2f; // move advantage
 
-    const float res = eval.white - eval.black;
+    const AbsScore res = eval.white - eval.black;
     MQ << "Evaluate " << res
-       << "\n" << (board.isBlackToPlay ? "black" : "white") << " to play" 
+       << "\n" << (board.isBlackToPlay ? "black" : "white") << " to play"
        << "\n black:" << eval.black << " white:" << eval.white
        << "\ntwos open:" << twos.open << "  half:" << twos.half
        << "\nthrees open:" << threes.open << "  half:" << threes.half
@@ -422,7 +429,7 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
        << "\npossible captures" << possibleCaptures;
        ;
 
-    tt.store(board.grid.getHash(), res, 0, -1, Bound::ONEOFF);
+    tt.store(board.grid.getHash(), toRelative(res, moverColor), 0, -1, Bound::ONEOFF);
     return res; // + is good for white, - good for black
 }
 
@@ -512,7 +519,7 @@ std::vector<unsigned> AI::mainCandidateMoves(
     case MoveFunction::JETEST:
         return getOrderedCandidateMoves2(board, bestMove, color, depth);
     }
-    std::runtime_error("Must select valid Move function");
+    throw std::runtime_error("Must select valid Move function");
 }
 
 /*
@@ -521,13 +528,13 @@ std::vector<unsigned> AI::mainCandidateMoves(
     Normalizes all results to perspective-relative
     + is for the searching player - for the opponent
 */
-float AI::mainSearch(const Board &board, float color, std::stop_token st) {
+AI::RelScore AI::mainSearch(const Board &board, float color, std::stop_token st) {
     bool isWhite = color == 1;
     switch (searchFunction) {
         case SearchFunction::MINMAX:
-            return color * minMax(board, AI::maxDepth, !isWhite, st);
+            return toRelative(minMax(board, AI::maxDepth, !isWhite, st), color);
         case SearchFunction::MINMAX_JETESTE:
-            return color * minMax(board, AI::maxDepth, !isWhite, st);
+            return toRelative(minMax(board, AI::maxDepth, !isWhite, st), color);
         case SearchFunction::NEGAMAX:
             return negaMax(board, AI::maxDepth, color, st);
         case SearchFunction::ALPHABETA_NEGAMAX:
@@ -778,7 +785,7 @@ std::vector<unsigned> AI::getOrderedCandidateMoves2(const Board &board, unsigned
 /*
 
 */
-bool AI::tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, float &score, unsigned &bestMove) {
+bool AI::tryApplyTTBounds(uint64_t hash, int depth, RelScore &alpha, RelScore &beta, RelScore &score, unsigned &bestMove) {
     const TTEntry* e = tt.probe(hash);
     if (!e || e->depth < depth) return false;
 
