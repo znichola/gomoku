@@ -95,6 +95,7 @@ async function move(event: MouseEvent) {
     if (!gameStore.fetchIsAvailable.get())
       return false;
     gameStore.fetchIsAvailable.set(false);
+    gameStore.startThinking()
     clearTimeout(_timeout_delay_ai)
     const objQuery: { id: string, force_color?: string } = {
       id: cellId.toString()
@@ -103,6 +104,7 @@ async function move(event: MouseEvent) {
       objQuery.force_color = color
     const query = new URLSearchParams(objQuery).toString()
     const resp = await fetch(`http://${window.location.hostname}:9012/move?${query}`)
+    gameStore.stopThinking()
     if (resp.status == 400) {
       gameStore.fetchIsAvailable.set(true)
       errorMessage.value = (await resp.json()).error || 'Invalid move.'
@@ -132,6 +134,7 @@ async function move(event: MouseEvent) {
   } catch (err) {
     console.warn((err as Error).message)
   }
+  gameStore.stopThinking()
   gameStore.fetchIsAvailable.set(true);
 }
 

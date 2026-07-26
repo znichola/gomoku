@@ -132,4 +132,26 @@ void registerRoutes(Server& server, GameState& gs) {
             return Response{400, "{ \"error\": \"invalid action\" }"};
         return Response{200, gs.serialize()};
     });
+
+    // Same query parameters as /debug-action?action=load-game-state (board_grid, board_width,
+    // board_blackCaptured, board_whiteCaptured, board_isBlackToPlay, moveHistory, plus optional
+    // isAIGame/searchDepth/searchFunction/moveFunction to trigger a move), but loaded into a
+    // throwaway GameState instead of the live one - lets a position be analyzed (what would the
+    // AI play here, and why) without touching whatever game is actually in progress.
+    server.get("/analyze", [](const Request& req) -> Response {
+        GameState scratch;
+        // MessageQueue is a global, shared with whatever live game is in progress - start clean
+        // so this analysis doesn't pick up stray leftover messages, and drain again afterwards
+        // so this analysis's own messages don't leak into the live game's next /gameState poll.
+        MessageQueue::drain();
+        Response res;
+        try {
+            handleLoadGameState(req.query, scratch);
+            res = Response{200, scratch.serialize()};
+        } catch (const std::exception& e) {
+            res = Response{400, std::string("{\"error\":\"") + e.what() + "\"}"};
+        }
+        MessageQueue::drain();
+        return res;
+    });
 }
