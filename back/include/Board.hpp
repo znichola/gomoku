@@ -29,7 +29,7 @@ public:
     Board(const Board &board, unsigned forceMoveId);
 
     bool playMove(unsigned id);
-    void doCaptures(unsigned id);
+    std::vector<unsigned> doCaptures(unsigned id);
     bool isValidMove(unsigned id) const;
     Cell isVictory() const;
     Cell isVictoryNear(unsigned id) const;

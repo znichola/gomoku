@@ -228,6 +228,32 @@ Cell Grid::getWinningLineColorNear(unsigned id) const {
     return Cell::EMPTY;
 }
 
+/**
+ * getWinningLineColorNear(id) only re-examines lines through the stone just placed - but a
+ * capture can ALSO revive a line elsewhere: a stone that was "dead" (see isCellDead) purely
+ * because one enemy stone was flanking it becomes alive again the instant that flanking
+ * stone is captured, with no new stone ever touching the revived line itself. Call this
+ * with the cells a capture just emptied - it checks each removed cell's neighbors (the
+ * stones that could have been kept dead by the now-gone flanking piece) for a newly-live
+ * five. Found via a real game: a diagonal five completed several moves before the game
+ * actually ended, sitting silently "alive" the whole time because the capture that freed it
+ * happened nowhere near the line itself, so getWinningLineColorNear(lastMove) never looked.
+ */
+Cell Grid::getWinningLineColorNearCaptureRevival(const std::vector<unsigned> &removedCells) const {
+    for (unsigned removed : removedCells) {
+        const Vector2D p = idToVec(removed);
+        for (const Vector2D &dir : EXTREMITIES) {
+            const Vector2D neighbor = p + dir;
+            if (!isInside(neighbor)) continue;
+            const unsigned nid = vecToId(neighbor);
+            if (grid[nid] != Cell::BLACK && grid[nid] != Cell::WHITE) continue;
+            Cell winner = getWinningLineColorNear(nid);
+            if (winner != Cell::EMPTY) return winner;
+        }
+    }
+    return Cell::EMPTY;
+}
+
 long Grid::detectCaptures(unsigned const id, const Cell myColor) const {
     const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
 
@@ -249,9 +275,12 @@ long Grid::detectCaptures(unsigned const id, const Cell myColor) const {
 
 /**
  * @param apply If false just read, without modify member variable
+ * @param removedCells If non-null, the id of every stone actually removed gets appended
+ *        here - needed by the caller to check whether removing them revives some OTHER,
+ *        previously-blocked line elsewhere on the board (see Board::playMove).
  * @return number of pairs captured (1 for two stones captured)
  */
-long Grid::handleCaptures(unsigned const id, bool const apply) {
+long Grid::handleCaptures(unsigned const id, bool const apply, std::vector<unsigned> *removedCells) {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return 0;
     const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
@@ -270,6 +299,10 @@ long Grid::handleCaptures(unsigned const id, bool const apply) {
         if (apply) {
             setEmpty(static_cast<unsigned>(nid1));
             setEmpty(static_cast<unsigned>(nid2));
+        }
+        if (removedCells) {
+            removedCells->push_back(static_cast<unsigned>(nid1));
+            removedCells->push_back(static_cast<unsigned>(nid2));
         }
         ++c;
     }

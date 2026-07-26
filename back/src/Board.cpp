@@ -23,7 +23,7 @@ bool Board::playMove(unsigned id, bool forceMove) {
 
     grid.set(id, isBlackToPlay ? Cell::BLACK : Cell::WHITE);
 
-    doCaptures(id);
+    std::vector<unsigned> removedCells = doCaptures(id);
 
     Cell victory = isVictoryNear(id);
     if (victory == Cell::OUTSIDE) {
@@ -60,13 +60,15 @@ bool Board::isValidMove(unsigned id) const {
     return true;
 }
 
-void Board::doCaptures(unsigned id) {
+std::vector<unsigned> Board::doCaptures(unsigned id) {
     const Cell myColor = grid[id];
-    if (myColor == Cell::EMPTY) return;
+    if (myColor == Cell::EMPTY) return {};
 
-    long c = grid.handleCaptures(id, true);
+    std::vector<unsigned> removedCells;
+    long c = grid.handleCaptures(id, true, &removedCells);
     for (long i = 0; i < c; ++i)
         addCapture(myColor);
+    return removedCells;
 }
 
 void Board::addCapture(Cell color) {
