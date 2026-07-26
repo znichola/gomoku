@@ -664,6 +664,22 @@ static float localTacticalScore(const Board &board, unsigned id, Cell color) {
     }
 
     if (grid.detectCaptures(id, color) > 0) score += 250;
+
+    for (const Vector2D &dir : EXTREMITIES) {
+        const Vector2D neighbor = origin + dir;
+        if (!grid.isInside(neighbor) || grid[grid.vecToId(neighbor)] != color) continue;
+
+        const Vector2D back = origin - dir;
+        const Vector2D front = neighbor + dir;
+        const Cell backC = grid.isInside(back) ? grid[grid.vecToId(back)] : Cell::OUTSIDE;
+        const Cell frontC = grid.isInside(front) ? grid[grid.vecToId(front)] : Cell::OUTSIDE;
+        if (backC == color || frontC == color) continue; // part of a longer run, never capturable
+
+        const bool backEnemy = backC == opponent, backEmpty = backC == Cell::EMPTY;
+        const bool frontEnemy = frontC == opponent, frontEmpty = frontC == Cell::EMPTY;
+        if ((backEnemy && frontEmpty) || (backEmpty && frontEnemy)) score -= 100;
+    }
+
     return score;
 }
 

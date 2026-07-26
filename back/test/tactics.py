@@ -130,6 +130,29 @@ def check_tt_pollution_regression(host, port, depth):
     return ok
 
 
+def check_self_capture_regression(host, port, depth):
+    """
+    Regression test for a real lost game: white repeatedly replayed stones into the same
+    neighborhood, each time forming a fresh pair next to one of its own existing stones
+    with the opponent's flank already in place - handing black 5 free pairs across one
+    game (10 captured stones = an outright win by the capture rule). localTacticalScore's
+    move ordering rewarded captures the mover makes but had no term at all for captures the
+    mover was about to hand the opponent, so the AI kept walking back into the same trap.
+
+    Minimal repro: black at 104, white at 84. Playing 64 would form a white pair (84,64)
+    flanked by black at 104 (far side) and empty at 44 (near side) - one legal move away
+    from black capturing it (the exact pattern from the real game, move #17).
+    """
+    grid = {104: BLACK, 84: WHITE}
+    data = analyze(host, port, grid, black_to_play=False, ai_color=WHITE, depth=depth)
+    move = data["moveHistory"][-1] if data["moveHistory"] else None
+
+    ok = move != 64
+    print(f"[{'PASS' if ok else 'FAIL'}] self-capture regression (don't hand the opponent a free pair) "
+          f"-> played {move}, must not be 64")
+    return ok
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--host", default="localhost")
@@ -138,7 +161,7 @@ def main():
     args = parser.parse_args()
 
     passed = 0
-    total = len(TESTS) + 1
+    total = len(TESTS) + 2
     for t in TESTS:
         try:
             data = analyze(args.host, args.port, t["grid"], t["black_to_play"], t["ai_color"], args.depth)
@@ -155,6 +178,11 @@ def main():
         passed += check_tt_pollution_regression(args.host, args.port, args.depth)
     except Exception as e:
         print(f"[ERROR] TT staleness regression: {e}")
+
+    try:
+        passed += check_self_capture_regression(args.host, args.port, args.depth)
+    except Exception as e:
+        print(f"[ERROR] self-capture regression: {e}")
 
     print(f"\n{passed}/{total} passed")
     sys.exit(0 if passed == total else 1)
