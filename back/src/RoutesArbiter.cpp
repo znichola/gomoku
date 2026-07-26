@@ -139,7 +139,7 @@ void registerRoutes_Arbiter(Server& server, GameState& gs) {
 		(void)req;
 		(void)gs;
 
-		inGame = true;
+		inGame = false;
 		sessionid = "";
 
 		std::ostringstream out;
