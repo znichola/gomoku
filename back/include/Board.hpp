@@ -26,7 +26,7 @@ public:
     /**
      * @param forceMoveId is NOT verified with isValidMove
      */
-    Board(const Grid &grid, unsigned forceMoveId);
+    Board(const Board &board, unsigned forceMoveId);
 
     bool playMove(unsigned id);
     void doCaptures(unsigned id);

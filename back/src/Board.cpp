@@ -13,7 +13,7 @@ Board::Board(const Grid &grid) : grid(grid) {
 
 }
 
-Board::Board(const Grid &grid, unsigned forceMoveId) : grid(grid) {
+Board::Board(const Board &board, unsigned forceMoveId) : Board(board) {
     playMove(forceMoveId, true);
 }
 

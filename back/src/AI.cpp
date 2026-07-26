@@ -205,7 +205,7 @@ float AI::minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::sto
 	
 	for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, isBlackToPlay ? -1 : 1, depth)) {
 		if (!board.isValidMove(move)) continue; // skip illegal moves
-		float score = minMax(Board(board.grid, move), depth-1, !isBlackToPlay, st);
+		float score = minMax(Board(board, move), depth-1, !isBlackToPlay, st);
 		best = (isBlackToPlay) ? std::max(score, best) : std::min(score, best);
 	}
 	return best;
