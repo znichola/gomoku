@@ -32,6 +32,7 @@ public:
     void doCaptures(unsigned id);
     bool isValidMove(unsigned id) const;
     Cell isVictory() const;
+    Cell isVictoryNear(unsigned id) const;
     bool isGameOver() const;
     void addCapture(Cell color);
 

@@ -25,7 +25,7 @@ bool Board::playMove(unsigned id, bool forceMove) {
 
     doCaptures(id);
 
-    Cell victory = isVictory();
+    Cell victory = isVictoryNear(id);
     if (victory == Cell::OUTSIDE) {
         COUT << "It's a draw" << std::endl;
         MQ << "It's a draw" << "\n";
@@ -81,6 +81,20 @@ Cell Board::isVictory() const {
     if ((isBlackToPlay && blackCaptured >= 10)) return Cell::BLACK;
     else if ((!isBlackToPlay && whiteCaptured >= 10)) return Cell::WHITE;
     return grid.getWinningLineColor();
+}
+
+/**
+ * Same result as isVictory(), but uses getWinningLineColorNear(id) instead of a full-board
+ * scan - only valid when `id` is known to be the stone whose placement might have just
+ * created the win (i.e. called from playMove with the move just played, or with
+ * board.lastMove on a board that only ever went through playMove - never on a board loaded
+ * from an arbitrary raw grid, where there's no reliable "last move" to check around).
+ */
+Cell Board::isVictoryNear(unsigned id) const {
+    if ((isBlackToPlay && blackCaptured >= 10)) return Cell::BLACK;
+    else if ((!isBlackToPlay && whiteCaptured >= 10)) return Cell::WHITE;
+    if (id == FIRSTMOVE || id >= grid.size) return Cell::EMPTY;
+    return grid.getWinningLineColorNear(id);
 }
 
 bool Board::isGameOver() const {

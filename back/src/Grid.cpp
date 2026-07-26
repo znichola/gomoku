@@ -1,6 +1,7 @@
 #include <sstream>
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 #include "Grid.hpp"
 #include "MessageQueue.hpp"
@@ -147,6 +148,82 @@ Cell Grid::getWinningLineColor() const {
         if (cellRow.score >= 5 && cellRow.type != Cell::EMPTY) {
             return cellRow.type;
         }
+    }
+    return Cell::EMPTY;
+}
+
+/**
+ * Whether `id` is part of an exact same-color pair (bounded by non-same-color on both
+ * sides, along some axis - i.e. not part of a longer run of 3+, which can never be
+ * captured per the rules) that's flanked by one enemy stone and one empty cell. That's
+ * "one legal move away from being captured" - the same condition GridTraversal's NodeLOD
+ * state machine marks as `dead` for scoring purposes (see getWinningLineColor's use of
+ * AdjacentNode::dead / NodeCellRow::incrementSize), just computed directly around `id`
+ * instead of via a full-board traversal.
+ */
+bool Grid::isCellDead(unsigned id) const {
+    const Cell color = grid[id];
+    if (color != Cell::BLACK && color != Cell::WHITE) return false;
+    const Cell enemy = (color == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
+    const Vector2D p = idToVec(id);
+
+    for (const Vector2D &dir : EXTREMITIES) {
+        const Vector2D neighbor = p + dir;
+        if (!isInside(neighbor) || grid[vecToId(neighbor)] != color) continue;
+
+        const Vector2D backP = p - dir;
+        const Vector2D frontP = neighbor + dir;
+        const Cell backC = isInside(backP) ? grid[vecToId(backP)] : Cell::OUTSIDE;
+        const Cell frontC = isInside(frontP) ? grid[vecToId(frontP)] : Cell::OUTSIDE;
+
+        if (backC == color || frontC == color) continue; // part of a longer run, never capturable
+
+        const bool backEnemy = backC == enemy, backEmpty = backC == Cell::EMPTY;
+        const bool frontEnemy = frontC == enemy, frontEmpty = frontC == Cell::EMPTY;
+        if ((backEnemy && frontEmpty) || (backEmpty && frontEnemy)) return true;
+    }
+    return false;
+}
+
+/**
+ * Equivalent to getWinningLineColor(), but only checks the lines that could possibly have
+ * just been completed by placing a stone at `id` - a win can only ever newly appear through
+ * the stone that was just played (any pre-existing five would already have ended the game),
+ * so this only needs to walk the (at most 4x9) cells around `id`, instead of rebuilding a
+ * full-board GridTraversal (the dominant cost of isVictory() when called at every node of
+ * the search tree, not just once per real move). Same life/death (capture-vulnerability)
+ * semantics as getWinningLineColor, via isCellDead.
+ */
+Cell Grid::getWinningLineColorNear(unsigned id) const {
+    const Cell color = grid[id];
+    if (color != Cell::BLACK && color != Cell::WHITE) return Cell::EMPTY;
+
+    for (int axis = 0; axis < 4; ++axis) {
+        const Vector2D &dirPos = EXTREMITIES[axis];
+        const Vector2D &dirNeg = EXTREMITIES[axis + 4];
+
+        std::vector<unsigned> run;
+        Vector2D p = idToVec(id) + dirNeg;
+        while (isInside(p) && grid[vecToId(p)] == color) {
+            run.push_back(vecToId(p));
+            p = p + dirNeg;
+        }
+        std::reverse(run.begin(), run.end());
+        run.push_back(id);
+        p = idToVec(id) + dirPos;
+        while (isInside(p) && grid[vecToId(p)] == color) {
+            run.push_back(vecToId(p));
+            p = p + dirPos;
+        }
+
+        if (run.size() < 5) continue;
+
+        int streak = 0, best = 0;
+        for (unsigned cid : run) {
+            if (isCellDead(cid)) streak = 0;
+            else best = std::max(best, ++streak);
+        }
+        if (best >= 5) return color;
     }
     return Cell::EMPTY;
 }

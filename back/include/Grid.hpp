@@ -52,6 +52,8 @@ public:
     std::string serialize() const;
 
     Cell getWinningLineColor() const;
+    Cell getWinningLineColorNear(unsigned id) const;
+    bool isCellDead(unsigned id) const;
     long detectCaptures(unsigned const id, const Cell myColor) const;
     long handleCaptures(unsigned const id, bool const apply);
     long calcAlignedCells(unsigned const id, long const ext, Cell &bc,

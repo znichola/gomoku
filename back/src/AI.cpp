@@ -92,7 +92,7 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
     if (tryApplyTTBounds(hash, depth, a, b, ttScore, bestMove))
         return ttScore;
 
-    Cell victory = board.isVictory();
+    Cell victory = board.winner;
     if (depth == 0 || victory != Cell::EMPTY) {
         return color * evaluate(board, depth, victory);
     }
@@ -131,7 +131,7 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     }
     nodeVisitCounter[depth] += 1;
 
-    Cell victory = board.isVictory();
+    Cell victory = board.winner;
     if (depth == 0 || victory != Cell::EMPTY) {
         return color * evaluate(board, depth, victory);
     }
@@ -166,7 +166,7 @@ float AI::negaMax(const Board &board, int16_t depth, float color, std::stop_toke
         return 0;
     }
     nodeVisitCounter[depth] += 1;
-    Cell victory = board.isVictory();
+    Cell victory = board.winner;
     if (depth == 0 || victory != Cell::EMPTY) {
         return color * evaluate(board, depth, victory);
     }
@@ -242,7 +242,7 @@ unsigned AI::findForcedMove(const Board &board, Cell myColor) {
         if (!board.isValidMove(move)) continue; // has to be legal for me to actually play here
         Board oppTry(board);
         oppTry.grid.set(move, opponent);
-        if (oppTry.grid.getWinningLineColor() == opponent) return move;
+        if (oppTry.grid.getWinningLineColorNear(move) == opponent) return move;
     }
 
     return Board::FIRSTMOVE;
