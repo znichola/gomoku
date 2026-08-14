@@ -15,6 +15,7 @@ std::atomic<bool> g_interrupted{false};
 void handleSigint(int) {
     std::cout << "\nShutting down..." << std::endl;
     g_interrupted.store(true, std::memory_order_relaxed);
+    std::exit(0);
 }
 
 Server::~Server() {

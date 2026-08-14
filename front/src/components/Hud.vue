@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useGameStore } from '@/stores/game'
 import bowlofstonesIcon from './icons/BowlOfStonesIcon.vue'
+import AiTimer from './AiTimer.vue'
 
 const gameStore = useGameStore()
 const board = computed(() => gameStore.gameState.board)
@@ -33,6 +34,8 @@ const humanGame = computed(() => gameStore.watcherState.human)
         <span class="capture-count">{{ whiteCaptured }}</span>
       </div>
     </div>
+
+    <ai-timer />
   </div>
 </template>
 

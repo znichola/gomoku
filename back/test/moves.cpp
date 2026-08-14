@@ -28,8 +28,6 @@ void isValidMove() {
     unsigned before_test_count = test_count;
     unsigned before_passed_tests = num_passed_tests;
 
-    using C = Cell;
-
     struct TestCase {
         bool expected;
         unsigned moveToPlay;
@@ -39,8 +37,8 @@ void isValidMove() {
 
     std::vector<TestCase> testCases = {
         {false, 16, Board{Grid(4)}, "Out of bounds move"},
-        {true, 1, Board{{C::BLACK, C::EMPTY, C::EMPTY, C::EMPTY}}, "Valid move"},
-        {false, 0, Board{{C::WHITE, C::EMPTY, C::EMPTY, C::EMPTY}}, "Move onto occupied cell"},
+        {true, 1, Board{Grid(2).setBlack(0)}, "Valid move"},
+        {false, 0, Board{Grid(2).setWhite(0)}, "Move onto occupied cell"},
     };
 
     for (auto& [expected, moveToPlay, board, description] : testCases) {
@@ -98,14 +96,18 @@ void isDoubleThree() {
         ,{0, 1, Grid(7).setWhite({1, 2, 3, 4}), "White plays to form a disconnected 3, but black is blocking in between"}
         ,{0, 3, Grid(7).setWhite({2, 3, 4}).setBlack({0, 6}), "White makes a connected 3 but is flanked by black one tile out. There is way to have 4 without one touching an edge, so it's not a free three"} // TODO : check
         ,{0, 4, Grid(7).setWhite({2, 4, 5}).setBlack(1), "White makes disconneced 3, but black flanks and so block a freeThree"}
-        // Three free formed
-        ,{1, 3, Grid(7).setWhite({2, 3, 4}), "White plays in the middle of adjacent white pieces, it's part of a freeThree"}
-        ,{1, 3, Grid(7).setWhite({1, 2, 3}).setBlack(5), "White plays a three, back piece is too far to block"} // TODO : is this true?
-        ,{1, 3, Grid(7).setWhite({2, 3, 5}), "White plays a disconnected three, 1 0 1 1, and is sufficiently far from the edges"}
+        // A single free-three forms here, but isDoubleThree only flags the DOUBLE (two
+        // simultaneous free-threes) - a lone free-three is legal per the subject ("It is
+        // forbidden to play a move that introduces two free-three alignments"), so all
+        // three of these correctly return false despite a free-three being formed.
+        ,{0, 3, Grid(7).setWhite({2, 3, 4}), "White plays in the middle of adjacent white pieces, forms a (single, legal) freeThree"}
+        ,{0, 3, Grid(7).setWhite({1, 2, 3}).setBlack(5), "White plays a three, back piece is too far to block - still just one freeThree"}
+        ,{0, 3, Grid(7).setWhite({2, 3, 5}), "White plays a disconnected three, 1 0 1 1, sufficiently far from the edges - still just one freeThree"}
     };
 
     for (const auto& [expected, moveToPlay, grid, description] : testCases) {
-        unsigned result = grid.isDoubleThree(moveToPlay);
+        // All test cases in this table are "white to play" (see the comment above).
+        bool result = grid.isDoubleThree(moveToPlay, Cell::WHITE);
         if (result == expected) {
             std::cout << std::setw(2) << test_count - before_test_count << " [OK]\n";
             ++num_passed_tests;

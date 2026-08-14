@@ -42,6 +42,7 @@ namespace AI {
     inline std::vector<int> nodeVisitCounter;
     inline std::vector<int> nodeEvalCounter;
     inline TranspositionTable tt;
+    inline int64_t lastMoveMicros = -1; // duration of the last AI::play() call, for the UI timer
 
     // MinMax and varians
 
@@ -52,6 +53,7 @@ namespace AI {
 
     unsigned play(const Board &board, bool isWhite);
     unsigned findBestMove(const Board &board, bool isWhite, std::stop_token st);
+    unsigned findForcedMove(const Board &board, Cell myColor);
     float evaluate(const Board &board, int16_t depth, Cell winningPlayer);
 
     float mainSearch(const Board &board, float color, std::stop_token st);
@@ -61,8 +63,14 @@ namespace AI {
     std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color);
     std::vector<unsigned>getOrderedCandidateMoves2(const Board &board, unsigned bestMove, float, int depth);
     Eval countGroupsOf(const Board &board, int size);
-    Eval countCaptures(const Board &board);
-    EvalGroups countOpenGroupsOf(const Board &board, int size);
+
+    // twos/threes/fours/captures computed in a single pass over the board's line segments,
+    // instead of one full board scan per statistic.
+    struct BoardStats {
+        EvalGroups twos, threes, fours;
+        Eval captures;
+    };
+    BoardStats gatherBoardStats(const Board &board);
 
     bool tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, float &score, unsigned &bestMove);
 };

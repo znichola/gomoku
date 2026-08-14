@@ -36,8 +36,19 @@ export const useGameStore = defineStore('game', () => {
     searchDepth: 0,
     moveHistory: [],
     board: null,
-    messages: []
+    messages: [],
+    aiMoveMicros: -1
   })
+  const thinking = reactive({ active: false, startedAt: 0 })
+
+  function startThinking() {
+    thinking.active = true
+    thinking.startedAt = performance.now()
+  }
+
+  function stopThinking() {
+    thinking.active = false
+  }
   const watcherState = reactive({
     enabled: false,
     preview_state: [] as Cell[],
@@ -125,6 +136,7 @@ export const useGameStore = defineStore('game', () => {
     gameState.moveSuggestion = newgameState.moveSuggestion
     gameState.searchFunction = newgameState.searchFunction
     gameState.moveFunction = newgameState.moveFunction
+    gameState.aiMoveMicros = newgameState.aiMoveMicros
   }
 
   /* >> DEBUG BACK WATCHER */
@@ -273,6 +285,7 @@ export const useGameStore = defineStore('game', () => {
 
   return {
     gameState, updateGameState, backWatcher, watcherState,
+    thinking, startThinking, stopThinking,
     overlay: {
       disabled: overlayDisabled,
       messages: overlayMessages,

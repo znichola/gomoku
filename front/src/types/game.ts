@@ -36,6 +36,8 @@ export interface GameState {
   moveHistory: number[]
   board: Board | null
   messages: string[]
+  /** Duration of the last AI move search, in microseconds. -1 if no AI move has been played yet. */
+  aiMoveMicros: number
 }
 
 export interface OverlayLayer {

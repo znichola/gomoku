@@ -17,6 +17,7 @@ const emit = defineEmits<{
 async function toggleAI(color: 1 | 2) {
   try {
     const v = gameStore.gameState.isAIGame == color ? 0 : color
+    gameStore.startThinking()
     const resp = await fetch(`http://${window.location.hostname}:9012/set-config?isAIGame=${v}`, {
       method: 'GET',
     })
@@ -25,6 +26,7 @@ async function toggleAI(color: 1 | 2) {
     } catch (err) {
     console.warn(err)
   }
+  gameStore.stopThinking()
 }
 
 const gameStore = useGameStore()

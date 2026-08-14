@@ -1,6 +1,7 @@
 #include <sstream>
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 #include "Grid.hpp"
 #include "MessageQueue.hpp"
@@ -82,7 +83,7 @@ Grid &Grid::setEmpty(unsigned id) {
 
 void Grid::generateHash() {
     uint64_t h = 0;
-    for (unsigned id = 0; id < 361; ++id) {
+    for (unsigned id = 0; id < grid.size(); ++id) {
         if (grid[id] != Cell::EMPTY)
             h ^= zob[id][static_cast<int>(grid[id])];
     }
@@ -151,6 +152,108 @@ Cell Grid::getWinningLineColor() const {
     return Cell::EMPTY;
 }
 
+/**
+ * Whether `id` is part of an exact same-color pair (bounded by non-same-color on both
+ * sides, along some axis - i.e. not part of a longer run of 3+, which can never be
+ * captured per the rules) that's flanked by one enemy stone and one empty cell. That's
+ * "one legal move away from being captured" - the same condition GridTraversal's NodeLOD
+ * state machine marks as `dead` for scoring purposes (see getWinningLineColor's use of
+ * AdjacentNode::dead / NodeCellRow::incrementSize), just computed directly around `id`
+ * instead of via a full-board traversal.
+ */
+bool Grid::isCellDead(unsigned id) const {
+    const Cell color = grid[id];
+    if (color != Cell::BLACK && color != Cell::WHITE) return false;
+    const Cell enemy = (color == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
+    const Vector2D p = idToVec(id);
+
+    for (const Vector2D &dir : EXTREMITIES) {
+        const Vector2D neighbor = p + dir;
+        if (!isInside(neighbor) || grid[vecToId(neighbor)] != color) continue;
+
+        const Vector2D backP = p - dir;
+        const Vector2D frontP = neighbor + dir;
+        const Cell backC = isInside(backP) ? grid[vecToId(backP)] : Cell::OUTSIDE;
+        const Cell frontC = isInside(frontP) ? grid[vecToId(frontP)] : Cell::OUTSIDE;
+
+        if (backC == color || frontC == color) continue; // part of a longer run, never capturable
+
+        const bool backEnemy = backC == enemy, backEmpty = backC == Cell::EMPTY;
+        const bool frontEnemy = frontC == enemy, frontEmpty = frontC == Cell::EMPTY;
+        if ((backEnemy && frontEmpty) || (backEmpty && frontEnemy)) return true;
+    }
+    return false;
+}
+
+/**
+ * Equivalent to getWinningLineColor(), but only checks the lines that could possibly have
+ * just been completed by placing a stone at `id` - a win can only ever newly appear through
+ * the stone that was just played (any pre-existing five would already have ended the game),
+ * so this only needs to walk the (at most 4x9) cells around `id`, instead of rebuilding a
+ * full-board GridTraversal (the dominant cost of isVictory() when called at every node of
+ * the search tree, not just once per real move). Same life/death (capture-vulnerability)
+ * semantics as getWinningLineColor, via isCellDead.
+ */
+Cell Grid::getWinningLineColorNear(unsigned id) const {
+    const Cell color = grid[id];
+    if (color != Cell::BLACK && color != Cell::WHITE) return Cell::EMPTY;
+
+    for (int axis = 0; axis < 4; ++axis) {
+        const Vector2D &dirPos = EXTREMITIES[axis];
+        const Vector2D &dirNeg = EXTREMITIES[axis + 4];
+
+        std::vector<unsigned> run;
+        Vector2D p = idToVec(id) + dirNeg;
+        while (isInside(p) && grid[vecToId(p)] == color) {
+            run.push_back(vecToId(p));
+            p = p + dirNeg;
+        }
+        std::reverse(run.begin(), run.end());
+        run.push_back(id);
+        p = idToVec(id) + dirPos;
+        while (isInside(p) && grid[vecToId(p)] == color) {
+            run.push_back(vecToId(p));
+            p = p + dirPos;
+        }
+
+        if (run.size() < 5) continue;
+
+        int streak = 0, best = 0;
+        for (unsigned cid : run) {
+            if (isCellDead(cid)) streak = 0;
+            else best = std::max(best, ++streak);
+        }
+        if (best >= 5) return color;
+    }
+    return Cell::EMPTY;
+}
+
+/**
+ * getWinningLineColorNear(id) only re-examines lines through the stone just placed - but a
+ * capture can ALSO revive a line elsewhere: a stone that was "dead" (see isCellDead) purely
+ * because one enemy stone was flanking it becomes alive again the instant that flanking
+ * stone is captured, with no new stone ever touching the revived line itself. Call this
+ * with the cells a capture just emptied - it checks each removed cell's neighbors (the
+ * stones that could have been kept dead by the now-gone flanking piece) for a newly-live
+ * five. Found via a real game: a diagonal five completed several moves before the game
+ * actually ended, sitting silently "alive" the whole time because the capture that freed it
+ * happened nowhere near the line itself, so getWinningLineColorNear(lastMove) never looked.
+ */
+Cell Grid::getWinningLineColorNearCaptureRevival(const std::vector<unsigned> &removedCells) const {
+    for (unsigned removed : removedCells) {
+        const Vector2D p = idToVec(removed);
+        for (const Vector2D &dir : EXTREMITIES) {
+            const Vector2D neighbor = p + dir;
+            if (!isInside(neighbor)) continue;
+            const unsigned nid = vecToId(neighbor);
+            if (grid[nid] != Cell::BLACK && grid[nid] != Cell::WHITE) continue;
+            Cell winner = getWinningLineColorNear(nid);
+            if (winner != Cell::EMPTY) return winner;
+        }
+    }
+    return Cell::EMPTY;
+}
+
 long Grid::detectCaptures(unsigned const id, const Cell myColor) const {
     const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
 
@@ -172,9 +275,12 @@ long Grid::detectCaptures(unsigned const id, const Cell myColor) const {
 
 /**
  * @param apply If false just read, without modify member variable
+ * @param removedCells If non-null, the id of every stone actually removed gets appended
+ *        here - needed by the caller to check whether removing them revives some OTHER,
+ *        previously-blocked line elsewhere on the board (see Board::playMove).
  * @return number of pairs captured (1 for two stones captured)
  */
-long Grid::handleCaptures(unsigned const id, bool const apply) {
+long Grid::handleCaptures(unsigned const id, bool const apply, std::vector<unsigned> *removedCells) {
     const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return 0;
     const Cell enemyColor = (myColor == Cell::BLACK ? Cell::WHITE : Cell::BLACK);
@@ -194,14 +300,17 @@ long Grid::handleCaptures(unsigned const id, bool const apply) {
             setEmpty(static_cast<unsigned>(nid1));
             setEmpty(static_cast<unsigned>(nid2));
         }
+        if (removedCells) {
+            removedCells->push_back(static_cast<unsigned>(nid1));
+            removedCells->push_back(static_cast<unsigned>(nid2));
+        }
         ++c;
     }
     return c;
 }
 
-long Grid::calcAlignedCells(unsigned const id, long const ext, Cell &bc,
+long Grid::calcAlignedCells(unsigned const id, long const ext, Cell &bc, const Cell myColor,
                         std::set<long> *alignedCells, long const offset, long count) const {
-    const Cell myColor = grid[id];
     if (myColor == Cell::EMPTY) return false;
 
     const Vector2D cellPoint = Vector2D::createFromIndex(id, width);
@@ -228,18 +337,18 @@ bool Grid::isDoubleThree(unsigned const id, const Cell myColor) const {
         // std::set<long> alignedCells = { id };
 
         Cell lc = Cell::OUTSIDE;
-        long l = calcAlignedCells(id, ext, lc, NULL); //&alignedCells);
+        long l = calcAlignedCells(id, ext, lc, myColor, NULL); //&alignedCells);
 
         Cell rc = Cell::OUTSIDE;
-        long r = calcAlignedCells(id, ext, rc, NULL, 4); //&alignedCells, 4);
+        long r = calcAlignedCells(id, ext, rc, myColor, NULL, 4); //&alignedCells, 4);
 
         bool specialThree = false;
         if (l + r <= 1 && lc == Cell::EMPTY && rc == Cell::EMPTY) {
             long needed = (l + r == 0) ? 2 : 1;
             Cell lc2 = Cell::OUTSIDE;
-            long l2 = calcAlignedCells(id, ext, lc2, NULL, 0, l + 1) - l - 1;
+            long l2 = calcAlignedCells(id, ext, lc2, myColor, NULL, 0, l + 1) - l - 1;
             Cell rc2 = Cell::OUTSIDE;
-            long r2 = calcAlignedCells(id, ext, rc2, NULL, 4, r + 1) - r - 1;
+            long r2 = calcAlignedCells(id, ext, rc2, myColor, NULL, 4, r + 1) - r - 1;
             if ((needed == l2 && lc2 == Cell::EMPTY) || (needed == r2 && rc2 == Cell::EMPTY)) {
                 specialThree = true;
             }

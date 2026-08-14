@@ -13,7 +13,7 @@ Board::Board(const Grid &grid) : grid(grid) {
 
 }
 
-Board::Board(const Grid &grid, unsigned forceMoveId) : grid(grid) {
+Board::Board(const Board &board, unsigned forceMoveId) : Board(board) {
     playMove(forceMoveId, true);
 }
 
@@ -23,9 +23,9 @@ bool Board::playMove(unsigned id, bool forceMove) {
 
     grid.set(id, isBlackToPlay ? Cell::BLACK : Cell::WHITE);
 
-    doCaptures(id);
+    std::vector<unsigned> removedCells = doCaptures(id);
 
-    Cell victory = isVictory();
+    Cell victory = isVictoryNear(id);
     if (victory == Cell::OUTSIDE) {
         COUT << "It's a draw" << std::endl;
         MQ << "It's a draw" << "\n";
@@ -60,13 +60,15 @@ bool Board::isValidMove(unsigned id) const {
     return true;
 }
 
-void Board::doCaptures(unsigned id) {
+std::vector<unsigned> Board::doCaptures(unsigned id) {
     const Cell myColor = grid[id];
-    if (myColor == Cell::EMPTY) return;
+    if (myColor == Cell::EMPTY) return {};
 
-    long c = grid.handleCaptures(id, true);
+    std::vector<unsigned> removedCells;
+    long c = grid.handleCaptures(id, true, &removedCells);
     for (long i = 0; i < c; ++i)
         addCapture(myColor);
+    return removedCells;
 }
 
 void Board::addCapture(Cell color) {
@@ -81,6 +83,20 @@ Cell Board::isVictory() const {
     if ((isBlackToPlay && blackCaptured >= 10)) return Cell::BLACK;
     else if ((!isBlackToPlay && whiteCaptured >= 10)) return Cell::WHITE;
     return grid.getWinningLineColor();
+}
+
+/**
+ * Same result as isVictory(), but uses getWinningLineColorNear(id) instead of a full-board
+ * scan - only valid when `id` is known to be the stone whose placement might have just
+ * created the win (i.e. called from playMove with the move just played, or with
+ * board.lastMove on a board that only ever went through playMove - never on a board loaded
+ * from an arbitrary raw grid, where there's no reliable "last move" to check around).
+ */
+Cell Board::isVictoryNear(unsigned id) const {
+    if ((isBlackToPlay && blackCaptured >= 10)) return Cell::BLACK;
+    else if ((!isBlackToPlay && whiteCaptured >= 10)) return Cell::WHITE;
+    if (id == FIRSTMOVE || id >= grid.size) return Cell::EMPTY;
+    return grid.getWinningLineColorNear(id);
 }
 
 bool Board::isGameOver() const {
