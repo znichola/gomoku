@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RefStringOrNull } from '@/types/vue'
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { Cell, type GameState, type OverlayMessage } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
 import { useGameStore } from '@/stores/game'
@@ -75,7 +75,6 @@ async function load(error: boolean = false) {
   }
 }
 
-let _timeout_delay_ai = 0
 async function move(event: MouseEvent) {
   const target = event.target as HTMLElement
   const cellId = target.hasAttribute('id') ? target.id : (target.parentElement as HTMLElement).id
@@ -98,7 +97,6 @@ async function move(event: MouseEvent) {
       return false;
     gameStore.fetchIsAvailable.set(false);
     gameStore.startThinking()
-    clearTimeout(_timeout_delay_ai)
     const objQuery: { id: string, force_color?: string } = {
       id: cellId.toString()
     }
@@ -114,31 +112,62 @@ async function move(event: MouseEvent) {
     } else if (resp.status != 200)
       throw Error('STATUS NOT 200')
     const data = await resp.json()
-    const updateGS = (data: GameState) => {
-      if (gameStore.backWatcher().checkResponse(data, resp))
-        gameStore.updateGameState(data)
-    }
-    if (data.multiple_action) {
-      updateGS(data.human)
-      if (gameStore.watcherState.speed < 1) {
-        updateGS(data.ai)
-      } else {
-        gameStore.watcherState.human = (gameStore.gameState.isAIGame === 1) ? 2 : 1
-        if (!gameStore.watcherState.enabled) {
-          clearTimeout(_timeout_delay_ai)
-          _timeout_delay_ai = setTimeout(updateGS, gameStore.watcherState.speed * 1000, data.ai)
-        }
-      }
-    } else {
-      if (gameStore.backWatcher().checkResponse(data, resp))
-        gameStore.updateGameState(data)
-    }
+    if (gameStore.backWatcher().checkResponse(data, resp))
+      gameStore.updateGameState(data)
   } catch (err) {
     console.warn((err as Error).message)
   }
   gameStore.stopThinking()
   gameStore.fetchIsAvailable.set(true);
 }
+
+const isAiTurn = computed(() => {
+  const board = gameStore.gameState.board
+  if (!board || gameStore.watcherState.enabled)
+    return false
+  const aiColor = gameStore.gameState.isAIGame
+  if (aiColor === Cell.EMPTY || board.winner !== Cell.EMPTY)
+    return false
+  const player = board.isBlackToPlay ? Cell.BLACK : Cell.WHITE
+  return aiColor === player
+})
+
+async function requestAiMove() {
+  if (!gameStore.fetchIsAvailable.get())
+    return
+  errorMessage.value = ''
+  try {
+    gameStore.fetchIsAvailable.set(false)
+    gameStore.startThinking()
+    const resp = await fetch(`http://${window.location.hostname}:9012/ai-move`)
+    gameStore.stopThinking()
+    if (resp.status == 400) {
+      gameStore.fetchIsAvailable.set(true)
+      errorMessage.value = (await resp.json()).error || 'Not the AI\'s move.'
+      return
+    } else if (resp.status != 200) {
+      throw Error('STATUS NOT 200')
+    }
+    const data = await resp.json()
+    if (gameStore.backWatcher().checkResponse(data, resp))
+      gameStore.updateGameState(data)
+  } catch (err) {
+    console.warn((err as Error).message)
+  }
+  gameStore.stopThinking()
+  gameStore.fetchIsAvailable.set(true)
+}
+
+let _timeout_delay_ai = 0
+watch(isAiTurn, (aiTurn) => {
+  clearTimeout(_timeout_delay_ai)
+  if (!aiTurn)
+    return
+  if (gameStore.watcherState.speed > 0)
+    _timeout_delay_ai = setTimeout(requestAiMove, gameStore.watcherState.speed * 1000)
+  else
+    requestAiMove()
+}, { immediate: true })
 
 const keyDown = reactive({
   shiftKey: false,
