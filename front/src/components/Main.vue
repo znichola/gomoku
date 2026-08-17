@@ -66,10 +66,10 @@ const searchDepth = computed(() => gameStore.gameState.searchDepth)
 
     <controles />
     <hud />
-    <messages />
   </div>
   <game class="game" />
   <turnlog class="turnlog" />
+  <messages class="messages" />
 </div>
 <RulesModal :open="rulesOpen" @close="closeRules" />
 <ConfigModal :open="configOpen" @close="configOpen = false" />
