@@ -105,10 +105,11 @@ h1 {
     width: 100vw;
     max-width: 100vw !important;
     display: grid;
-    grid-template:
-      "header header turnlog" min-content
-      "game   game   turnlog"
-      "game   game   turnlog";
+    grid-template-columns: minmax(13rem, 16rem) 1fr minmax(13rem, 16rem);
+    grid-template-rows: min-content 1fr;
+    grid-template-areas:
+      "header  header  header"
+      "turnlog game    messages";
   }
   .header {
     grid-area: header;
@@ -118,18 +119,28 @@ h1 {
   }
   .turnlog {
     grid-area: turnlog;
+    justify-self: end;
     margin: 0 !important;
-    height: 100vh;
-    h2 {
-      display: none;
-    }
-    ul {
-      border: 1px solid var(--primary-color);
-      display: block !important;
-    }
-    ul li {
-      border: none !important;
-    }
+    padding-right: 1rem;
+  }
+  .messages {
+    grid-area: messages;
+    justify-self: start;
+    margin: 0 !important;
+    padding-left: 1rem;
+  }
+}
+
+// Narrow-screen fallback (the inverse of the sidebar media query above):
+// header/game/turnlog/messages stack vertically, so the page itself needs
+// to scroll instead of being clipped at 100vh.
+@media all and (max-width: 899.98px) and (min-height: 600.02px) {
+  main {
+    overflow-y: auto;
+  }
+  .layout {
+    height: auto;
+    min-height: 100vh;
   }
 }
 
