@@ -98,6 +98,25 @@ Cell GameState::askAI2Play() {
     }
 }
 
+static constexpr const char* SUGGESTION_LAYER = "AI suggestion,--highlight-color";
+
+void GameState::pushMoveSuggestion() {
+    MessageQueue::clearMessagesWithLayerPrefix(SUGGESTION_LAYER);
+
+    if (board.winner != Cell::EMPTY || moveSuggestion == Cell::EMPTY)
+        return;
+
+    const Cell mover = board.isBlackToPlay ? Cell::BLACK : Cell::WHITE;
+    if (isAIGame == mover) // the AI plays its own move, no hint needed
+        return;
+
+    const bool wantsHint = moveSuggestion == Cell::OUTSIDE || moveSuggestion == mover;
+    if (!wantsHint) return;
+
+    unsigned cid = AI::play(board, mover == Cell::WHITE);
+    MBL(SUGGESTION_LAYER, cid, "");
+}
+
 static Grid* rGrid = nullptr;
 
 void GameState::reset() {

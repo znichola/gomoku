@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 
 #define MQ MessageQueue::out()
 #define MBQ(id, msg) MessageQueue::boardMessage((id), (msg))
@@ -30,6 +31,15 @@ namespace MessageQueue
         auto out = std::move(messages);
         messages.clear();
         return out;
+    }
+
+    // Removes any already-queued board message whose layer starts with layerPrefix, without
+    inline void clearMessagesWithLayerPrefix(const std::string &layerPrefix) {
+        const std::string needle = json_escape("\"layer\":\"" + layerPrefix);
+        messages.erase(
+            std::remove_if(messages.begin(), messages.end(),
+                [&](const std::string &m) { return m.find(needle) != std::string::npos; }),
+            messages.end());
     }
 
     class ConsoleSink {
