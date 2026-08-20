@@ -140,7 +140,7 @@ void registerRoutes(Server& server, GameState& gs) {
 
     // Same query parameters as /debug-action?action=load-game-state (board_grid, board_width,
     // board_blackCaptured, board_whiteCaptured, board_isBlackToPlay, moveHistory, plus optional
-    // isAIGame/searchDepth/searchFunction/moveFunction to trigger a move), but loaded into a
+    // isAIGame/searchDepth/aiTimeBudgetMs/searchFunction/moveFunction to trigger a move), but loaded into a
     // throwaway GameState instead of the live one - lets a position be analyzed (what would the
     // AI play here, and why) without touching whatever game is actually in progress.
     server.get("/analyze", [](const Request& req) -> Response {

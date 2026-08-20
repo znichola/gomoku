@@ -15,6 +15,7 @@ std::string GameState::serialize() const {
 
     out << "{\n";
     out << "\"searchDepth\": " << AI::maxDepth << ",\n";
+    out << "\"aiTimeBudgetMs\": " << AI::maxThinkMillis << ",\n";
     out << "\"aiMoveMicros\": " << AI::lastMoveMicros << ",\n";
     out << "\"isAIGame\": " << static_cast<unsigned>(isAIGame) << ",\n";
     out << "\"searchFunction\": " << serializeEnum<AI::SearchFunction>(AI::searchFunction, {

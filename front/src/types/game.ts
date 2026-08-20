@@ -38,6 +38,8 @@ export interface GameState {
   messages: string[]
   /** Duration of the last AI move search, in microseconds. -1 if no AI move has been played yet. */
   aiMoveMicros: number
+  /** Wall-clock cutoff given to the backend's AI search, in milliseconds. */
+  aiTimeBudgetMs: number
 }
 
 export interface OverlayLayer {

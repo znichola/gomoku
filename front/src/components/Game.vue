@@ -156,14 +156,8 @@ async function requestAiMove() {
   gameStore.fetchIsAvailable.set(true)
 }
 
-let _timeout_delay_ai = 0
 watch(isAiTurn, (aiTurn) => {
-  clearTimeout(_timeout_delay_ai)
-  if (!aiTurn)
-    return
-  if (gameStore.watcherState.speed > 0)
-    _timeout_delay_ai = setTimeout(requestAiMove, gameStore.watcherState.speed * 1000)
-  else
+  if (aiTurn)
     requestAiMove()
 }, { immediate: true })
 

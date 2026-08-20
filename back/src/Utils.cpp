@@ -129,6 +129,11 @@ bool handleLoadAIState(const Server::QueryMap& query, GameState& gs) {
         AI::maxDepth = std::stoi(get("searchDepth"));
     }
 
+    if (has("aiTimeBudgetMs")) {
+        changed = true;
+        AI::maxThinkMillis = std::stoll(get("aiTimeBudgetMs"));
+    }
+
     if (has("isAIGame")) {
         changed = true;
         gs.isAIGame = parseCell(get("isAIGame"));

@@ -32,13 +32,18 @@ unsigned AI::play(const Board &board, bool isWhite) {
     });
     std::cout << "[";
 
+    const auto budget = std::chrono::milliseconds(AI::maxThinkMillis);
+    const auto pollStart = std::chrono::steady_clock::now();
     std::future_status status;
-    int i = 0;
+    bool stopRequested = false;
     do {
         status = fMove.wait_for(50ms);
-        if (i++ > 8 || g_interrupted.load(std::memory_order_relaxed)) {
+        if (stopRequested) continue;
+        bool outOfTime = std::chrono::steady_clock::now() - pollStart >= budget;
+        if (outOfTime || g_interrupted.load(std::memory_order_relaxed)) {
             std::cout << "k" << std::flush;
             tMove.request_stop();
+            stopRequested = true;
         } else {
             std::cout << "." << std::flush;
         }
