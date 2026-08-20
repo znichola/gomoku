@@ -36,7 +36,7 @@ unsigned AI::play(const Board &board, bool isWhite) {
     int i = 0;
     do {
         status = fMove.wait_for(50ms);
-        if (i++ > 60 || g_interrupted.load(std::memory_order_relaxed)) { // 20 fps = ~1sec
+        if (i++ > 8 || g_interrupted.load(std::memory_order_relaxed)) {
             std::cout << "k" << std::flush;
             tMove.request_stop();
         } else {
@@ -156,7 +156,7 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     https://en.wikipedia.org/wiki/Negamax
 
     RETURN VALUE: Perspective-relative
-s
+
     The color is used to invert the evaluation value.
     Evaluation always returns + for white and - for black.
     If black to play, call with color=-1
@@ -304,8 +304,6 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
     for (int16_t d = 1; d <= targetDepth; ++d) {
         if (st.stop_requested())
             break;
-
-        tableGridTraversal.clear();
 
         AI::maxDepth = d; // drives evaluate()'s mate-distance scoring and mainSearch's depth for this iteration
         AI::nodeVisitCounter.assign(d + 1, 0);
