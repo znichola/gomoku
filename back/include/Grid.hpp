@@ -53,7 +53,7 @@ public:
 
     Cell getWinningLineColor() const;
     Cell getWinningLineColorNear(unsigned id) const;
-    Cell getWinningLineColorNearCaptureRevival(const std::vector<unsigned> &removedCells) const;
+    Cell getWinningLineColorNearAround(unsigned id) const;
     bool isCellDead(unsigned id) const;
     long detectCaptures(unsigned const id, const Cell myColor) const;
     long handleCaptures(unsigned const id, bool const apply, std::vector<unsigned> *removedCells = nullptr);

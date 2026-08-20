@@ -229,26 +229,34 @@ Cell Grid::getWinningLineColorNear(unsigned id) const {
 }
 
 /**
- * getWinningLineColorNear(id) only re-examines lines through the stone just placed - but a
- * capture can ALSO revive a line elsewhere: a stone that was "dead" (see isCellDead) purely
- * because one enemy stone was flanking it becomes alive again the instant that flanking
- * stone is captured, with no new stone ever touching the revived line itself. Call this
- * with the cells a capture just emptied - it checks each removed cell's neighbors (the
- * stones that could have been kept dead by the now-gone flanking piece) for a newly-live
- * five. Found via a real game: a diagonal five completed several moves before the game
- * actually ended, sitting silently "alive" the whole time because the capture that freed it
- * happened nowhere near the line itself, so getWinningLineColorNear(lastMove) never looked.
+ * getWinningLineColorNear(id) only re-examines lines through `id` itself - but isCellDead(x)
+ * for some OTHER stone x can flip the instant a cell up to 2 steps away from x, along one of
+ * x's 4 axes, changes value: that's the back/front cell isCellDead reads when deciding
+ * whether x's pair is flanked by enemy-then-empty. So a stone that was "dead" purely because
+ * its back or front cell was empty (leaving it one capture away from breaking an
+ * already-complete five) becomes permanently alive the instant ANY stone lands there - even
+ * a stone that isn't part of the five and doesn't capture anything - with no new stone ever
+ * touching the revived line itself. Call this with `id` = the cell that just changed value
+ * (a stone just placed, or a cell a capture just emptied) - it checks every occupied cell up
+ * to 2 steps away along each axis (the only ones whose isCellDead reading of `id` could have
+ * changed) for a newly-live five.
+ *
+ * Found via a real game: a diagonal five sat one capture away from breaking (one flank
+ * empty) for several moves, then a routine placement 2 cells past that flank - part of an
+ * unrelated vertical pair, not a capture, not touching the diagonal - filled the gap and
+ * silently completed the win, several moves before the game actually ended.
  */
-Cell Grid::getWinningLineColorNearCaptureRevival(const std::vector<unsigned> &removedCells) const {
-    for (unsigned removed : removedCells) {
-        const Vector2D p = idToVec(removed);
-        for (const Vector2D &dir : EXTREMITIES) {
-            const Vector2D neighbor = p + dir;
-            if (!isInside(neighbor)) continue;
-            const unsigned nid = vecToId(neighbor);
-            if (grid[nid] != Cell::BLACK && grid[nid] != Cell::WHITE) continue;
-            Cell winner = getWinningLineColorNear(nid);
-            if (winner != Cell::EMPTY) return winner;
+Cell Grid::getWinningLineColorNearAround(unsigned id) const {
+    const Vector2D p = idToVec(id);
+    for (const Vector2D &dir : EXTREMITIES) {
+        Vector2D q = p + dir;
+        for (int step = 0; step < 2 && isInside(q); ++step) {
+            const unsigned qid = vecToId(q);
+            if (grid[qid] == Cell::BLACK || grid[qid] == Cell::WHITE) {
+                Cell winner = getWinningLineColorNear(qid);
+                if (winner != Cell::EMPTY) return winner;
+            }
+            q = q + dir;
         }
     }
     return Cell::EMPTY;

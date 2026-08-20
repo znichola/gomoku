@@ -25,7 +25,7 @@ bool Board::playMove(unsigned id, bool forceMove) {
 
     std::vector<unsigned> removedCells = doCaptures(id);
 
-    Cell victory = isVictoryNear(id);
+    Cell victory = isVictoryNear(id, removedCells);
     if (victory == Cell::OUTSIDE) {
         COUT << "It's a draw" << std::endl;
         MQ << "It's a draw" << "\n";
@@ -86,17 +86,28 @@ Cell Board::isVictory() const {
 }
 
 /**
- * Same result as isVictory(), but uses getWinningLineColorNear(id) instead of a full-board
- * scan - only valid when `id` is known to be the stone whose placement might have just
- * created the win (i.e. called from playMove with the move just played, or with
+ * Same result as isVictory(), but uses getWinningLineColorNearAround(id) instead of a
+ * full-board scan - only valid when `id` is known to be the stone whose placement might have
+ * just created the win (i.e. called from playMove with the move just played, or with
  * board.lastMove on a board that only ever went through playMove - never on a board loaded
  * from an arbitrary raw grid, where there's no reliable "last move" to check around).
+ *
+ * `removedCells` should be whatever doCaptures(id) returned for that same move: a capture
+ * can revive a five-in-a-row elsewhere on the board just like the placement itself can (see
+ * getWinningLineColorNearAround) - without checking around every removed cell too, that
+ * revival goes undetected.
  */
-Cell Board::isVictoryNear(unsigned id) const {
+Cell Board::isVictoryNear(unsigned id, const std::vector<unsigned> &removedCells) const {
     if ((isBlackToPlay && blackCaptured >= 10)) return Cell::BLACK;
     else if ((!isBlackToPlay && whiteCaptured >= 10)) return Cell::WHITE;
     if (id == FIRSTMOVE || id >= grid.size) return Cell::EMPTY;
-    return grid.getWinningLineColorNear(id);
+    Cell winner = grid.getWinningLineColorNearAround(id);
+    if (winner != Cell::EMPTY) return winner;
+    for (unsigned removed : removedCells) {
+        winner = grid.getWinningLineColorNearAround(removed);
+        if (winner != Cell::EMPTY) return winner;
+    }
+    return Cell::EMPTY;
 }
 
 bool Board::isGameOver() const {

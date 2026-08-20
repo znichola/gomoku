@@ -32,7 +32,7 @@ public:
     std::vector<unsigned> doCaptures(unsigned id);
     bool isValidMove(unsigned id) const;
     Cell isVictory() const;
-    Cell isVictoryNear(unsigned id) const;
+    Cell isVictoryNear(unsigned id, const std::vector<unsigned> &removedCells = {}) const;
     bool isGameOver() const;
     void addCapture(Cell color);
 
