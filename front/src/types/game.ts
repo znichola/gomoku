@@ -3,7 +3,6 @@ export enum Cell { EMPTY=0, BLACK=1, WHITE=2, OUTSIDE=3 }
 export type SearchFunction =
   | 'MINMAX'
   | 'NEGAMAX'
-  | 'MINMAX_JETESTE'
   | 'ALPHABETA_NEGAMAX'
   | 'ALPHABETA_NEGAMAX_TT'
 
@@ -16,7 +15,6 @@ export type MoveSuggestion =
 export type MoveFunction =
   | 'CANDIDATE_MOVES'
   | 'CANDIDATE_MOVES_2'
-  | 'JETEST'
 
 export interface Board {
   grid: Cell[]

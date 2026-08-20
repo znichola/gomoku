@@ -23,15 +23,13 @@
 namespace AI {
     enum class SearchFunction {
         MINMAX,
-        MINMAX_JETESTE,
         NEGAMAX,
         ALPHABETA_NEGAMAX, ALPHABETA_NEGAMAX_TT
     };
 
     enum class MoveFunction {
         CANDIDATE_MOVES,
-        CANDIDATE_MOVES_2,
-        JETEST
+        CANDIDATE_MOVES_2
     };
 
     inline int16_t maxDepth = 3;

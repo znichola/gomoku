@@ -509,8 +509,6 @@ std::vector<unsigned> AI::mainCandidateMoves(
         return getOrderedCandidateMoves(board.grid, bestMove, cColor);
     case MoveFunction::CANDIDATE_MOVES_2:
         return getOrderedCandidateMoves2(board, bestMove, color, depth);
-    case MoveFunction::JETEST:
-        return getOrderedCandidateMoves2(board, bestMove, color, depth);
     }
     std::runtime_error("Must select valid Move function");
 }
@@ -525,8 +523,6 @@ float AI::mainSearch(const Board &board, float color, std::stop_token st) {
     bool isWhite = color == 1;
     switch (searchFunction) {
         case SearchFunction::MINMAX:
-            return color * minMax(board, AI::maxDepth, !isWhite, st);
-        case SearchFunction::MINMAX_JETESTE:
             return color * minMax(board, AI::maxDepth, !isWhite, st);
         case SearchFunction::NEGAMAX:
             return negaMax(board, AI::maxDepth, color, st);
