@@ -52,6 +52,7 @@ public:
     std::string serialize() const;
 
     Cell getWinningLineColor() const;
+    std::vector<unsigned> getWinningLineCells() const;
     Cell getWinningLineColorNear(unsigned id) const;
     Cell getWinningLineColorNearAround(unsigned id) const;
     bool isCellDead(unsigned id) const;

@@ -22,6 +22,9 @@ export interface Board {
   whiteCaptured: number
   isBlackToPlay: boolean
   winner: Cell
+  winByCaptures: boolean
+  winByAlignment: boolean
+  winningCells: number[]
 }
 
 export interface GameState {

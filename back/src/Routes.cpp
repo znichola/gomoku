@@ -112,7 +112,11 @@ void registerRoutes(Server& server, GameState& gs) {
                 return Response{400, "missing 'id' query parameter"};
             unsigned id = static_cast<unsigned>(std::stoul(it->second));
             gs.board.grid.setEmpty(id);
-            gs.board.winner = gs.board.isVictory();
+            VictoryInfo info = gs.board.checkVictory();
+            gs.board.winner = info.winner;
+            gs.board.winByCaptures = info.byCaptures;
+            gs.board.winByAlignment = info.byAlignment;
+            gs.board.winningCells = info.winningCells;
         } else if (it->second == "minus") {
             Server::QueryMap::const_iterator it = req.query.find("id");
             if (it == req.query.end())

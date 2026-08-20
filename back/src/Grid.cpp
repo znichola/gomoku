@@ -143,13 +143,31 @@ bool Grid::isInside(const Vector2D& vec) const {
 }
 
 Cell Grid::getWinningLineColor() const {
+    std::vector<unsigned> cells = getWinningLineCells();
+    return cells.empty() ? Cell::EMPTY : grid[cells.front()];
+}
+
+std::vector<unsigned> Grid::getWinningLineCells() const {
     const GridTraversal& gridTraversal = this->nodes();
     for (const NodeCellRow& cellRow : gridTraversal.getCellRowsGarbage()) {
-        if (cellRow.score >= 5 && cellRow.type != Cell::EMPTY) {
-            return cellRow.type;
+        if (cellRow.score < 5 || cellRow.type == Cell::EMPTY) continue;
+
+        const Vector2D &dir = EXTREMITIES[cellRow.ext];
+        Vector2D p = idToVec(cellRow.originId);
+        std::vector<unsigned> streak, best;
+        for (long i = 0; i < cellRow.size; ++i) {
+            unsigned cid = vecToId(p);
+            if (isCellDead(cid)) {
+                streak.clear();
+            } else {
+                streak.push_back(cid);
+                if (streak.size() > best.size()) best = streak;
+            }
+            p = p + dir;
         }
+        if (best.size() >= 5) return best;
     }
-    return Cell::EMPTY;
+    return {};
 }
 
 /**

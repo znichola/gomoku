@@ -41,6 +41,8 @@ const highlightId = computed(() => {
   return hid;
 })
 
+const winningCellsSet = computed(() => new Set(gameStore.gameState.board?.winningCells ?? []))
+
 
 const previewGrid = computed(() => gameStore.watcherState.preview_state)
 const iso3D = ref(false)
@@ -197,7 +199,8 @@ function keyMode(event: KeyboardEvent) {
             <div class="circle"
             :class="{
               highlight: highlightId === cid,
-              overlay: overlay && overlayMap.has(cid)
+              overlay: overlay && overlayMap.has(cid),
+              'win-cell': winningCellsSet.has(cid)
             }"
             :style="(overlayMap.get(cid)?.group) ? '--layer-color: ' + overlayMap.get(cid)?.group?.color : ''"
             :data-type="getCellClass(gameStore.gameState.board?.grid[cid] as Cell)"
@@ -316,6 +319,20 @@ div.board {
         }
         to {
           transform: scale(1);
+        }
+      }
+
+      &.win-cell {
+        z-index: 22;
+        animation: win-ring 1.2s ease-in-out infinite;
+      }
+
+      @keyframes win-ring {
+        from, to {
+          box-shadow: 0 0 0 0.1rem gold, 0 0 0.4rem 0.1rem rgba(255, 215, 0, 0.6);
+        }
+        50% {
+          box-shadow: 0 0 0 0.22rem gold, 0 0 1rem 0.35rem rgba(255, 215, 0, 0.95);
         }
       }
 

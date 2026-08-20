@@ -26,17 +26,23 @@ bool Board::playMove(unsigned id, bool forceMove, bool verifyComplete) {
     std::vector<unsigned> removedCells = doCaptures(id);
 
     Cell victory = isVictoryNear(id, removedCells);
+    winByCaptures = false;
+    winByAlignment = false;
+    winningCells.clear();
     if (verifyComplete) {
-        Cell fullVictory = isVictory();
-        if (fullVictory != victory) {
+        VictoryInfo info = checkVictory();
+        if (info.winner != victory) {
             COUT << "[GridTraversal] DIVERGENCE on move " << id
                  << ": isVictoryNear()=" << static_cast<int>(victory)
-                 << " but full isVictory()=" << static_cast<int>(fullVictory) << std::endl;
+                 << " but full isVictory()=" << static_cast<int>(info.winner) << std::endl;
             MQ << "[GridTraversal] DIVERGENCE on move " << id
                << ": near=" << static_cast<int>(victory)
-               << " full=" << static_cast<int>(fullVictory) << "\n";
+               << " full=" << static_cast<int>(info.winner) << "\n";
         }
-        victory = fullVictory;
+        victory = info.winner;
+        winByCaptures = info.byCaptures;
+        winByAlignment = info.byAlignment;
+        winningCells = std::move(info.winningCells);
     }
     if (victory == Cell::OUTSIDE) {
         COUT << "It's a draw" << std::endl;
@@ -92,9 +98,26 @@ void Board::addCapture(Cell color) {
 }
 
 Cell Board::isVictory() const {
-    if ((isBlackToPlay && blackCaptured >= 10)) return Cell::BLACK;
-    else if ((!isBlackToPlay && whiteCaptured >= 10)) return Cell::WHITE;
-    return grid.getWinningLineColor();
+    return checkVictory().winner;
+}
+
+VictoryInfo Board::checkVictory() const {
+    VictoryInfo info;
+    if (isBlackToPlay && blackCaptured >= 10) {
+        info.winner = Cell::BLACK;
+        info.byCaptures = true;
+    } else if (!isBlackToPlay && whiteCaptured >= 10) {
+        info.winner = Cell::WHITE;
+        info.byCaptures = true;
+    }
+
+    std::vector<unsigned> winningCells = grid.getWinningLineCells();
+    if (!winningCells.empty()) {
+        info.byAlignment = true;
+        if (info.winner == Cell::EMPTY) info.winner = grid[winningCells.front()];
+        info.winningCells = std::move(winningCells);
+    }
+    return info;
 }
 
 /**
@@ -135,6 +158,14 @@ std::string Board::serialize() const {
     out << "\"whiteCaptured\": " << whiteCaptured << ",\n";
     out << "\"isBlackToPlay\": " << (isBlackToPlay ? "true" : "false") << ",\n";
     out << "\"winner\": " << static_cast<int>(winner) << ",\n";
+    out << "\"winByCaptures\": " << (winByCaptures ? "true" : "false") << ",\n";
+    out << "\"winByAlignment\": " << (winByAlignment ? "true" : "false") << ",\n";
+    out << "\"winningCells\": [";
+    for (size_t i = 0; i < winningCells.size(); ++i) {
+        out << winningCells[i];
+        if (i + 1 < winningCells.size()) out << ",";
+    }
+    out << "],\n";
     out << "\"grid\": " << grid.serialize() << "\n";
     out << "}";
 

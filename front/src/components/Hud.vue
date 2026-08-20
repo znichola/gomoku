@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Cell } from '@/types/game'
 import { useGameStore } from '@/stores/game'
 import bowlofstonesIcon from './icons/BowlOfStonesIcon.vue'
 import AiTimer from './AiTimer.vue'
@@ -11,13 +12,17 @@ const whiteCaptured = computed(() => board.value?.whiteCaptured ?? 0)
 
 const aiGame = computed(() => gameStore.gameState.isAIGame)
 const humanGame = computed(() => gameStore.watcherState.human)
+
+const winner = computed(() => board.value?.winner ?? Cell.EMPTY)
+const winByCaptures = computed(() => board.value?.winByCaptures ?? false)
 </script>
 
 <template>
   <div class="hud">
     <div class="capture-card black" :class="{
         ai: aiGame === 1, human: humanGame === 1,
-        highlight: gameStore.gameState.board?.isBlackToPlay
+        highlight: winner === Cell.EMPTY && gameStore.gameState.board?.isBlackToPlay,
+        'win-captures': winner === Cell.BLACK && winByCaptures
       }" title="CTRL + Click to lock your side">
       <div class="capture-bowl">
         <bowlofstonesIcon />
@@ -27,7 +32,8 @@ const humanGame = computed(() => gameStore.watcherState.human)
 
     <div class="capture-card white" :class="{
         ai: aiGame === 2, human: humanGame === 2,
-        highlight: !gameStore.gameState.board?.isBlackToPlay
+        highlight: winner === Cell.EMPTY && !gameStore.gameState.board?.isBlackToPlay,
+        'win-captures': winner === Cell.WHITE && winByCaptures
       }" title="CTRL + Click to lock your side">
       <div class="capture-bowl">
         <bowlofstonesIcon />
@@ -99,6 +105,20 @@ const humanGame = computed(() => gameStore.watcherState.human)
     }
     to {
       transform: scale(1);
+    }
+  }
+
+  &.win-captures {
+    animation: bucket-grow 1.1s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  @keyframes bucket-grow {
+    from, to {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.45);
     }
   }
 }
