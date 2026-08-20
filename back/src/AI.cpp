@@ -503,8 +503,8 @@ std::vector<unsigned> AI::mainCandidateMoves(
     const Board &board, unsigned bestMove, float color, int depth
 ) {
     switch (moveFunction) {
-    case MoveFunction::CANDIDATE_MOVES_2:
-        return getOrderedCandidateMoves2(board, bestMove, color, depth);
+    case MoveFunction::CANDIDATE_MOVES:
+        return getOrderedCandidateMoves(board, bestMove, color, depth);
     }
     std::runtime_error("Must select valid Move function");
 }
@@ -680,7 +680,7 @@ static float localTacticalScore(const Board &board, unsigned id, Cell color) {
     return score;
 }
 
-std::vector<unsigned> AI::getOrderedCandidateMoves2(const Board &board, unsigned bestMove, float color, int depth) {
+std::vector<unsigned> AI::getOrderedCandidateMoves(const Board &board, unsigned bestMove, float color, int depth) {
     std::set<unsigned> moves = getCandidateMoves(board.grid);
     const Cell cColor = color == -1 ? Cell::BLACK : Cell::WHITE;
 
@@ -713,7 +713,7 @@ std::vector<unsigned> AI::getOrderedCandidateMoves2(const Board &board, unsigned
     scoredMoves.resize(width);
     for (auto [move, score] : scoredMoves) {
         if (depth == -1) {
-            ENABLE_LOG MBL("getOrderedCandidateMoves2", move, score); DISABLE_LOG
+            ENABLE_LOG MBL("getOrderedCandidateMoves", move, score); DISABLE_LOG
         }
         orderedMoves.push_back(move);
     }

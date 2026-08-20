@@ -21,7 +21,7 @@ const searchOptions: { value: SearchFunction; label: string; desc: string }[] = 
 ]
 
 const moveOptions: { value: MoveFunction; label: string; desc: string }[] = [
-  { value: 'CANDIDATE_MOVES_2',    label: 'Candidate moves 2', desc: 'Ordering based on evaluation delta after move, and aggressive move pruning' },
+  { value: 'CANDIDATE_MOVES',    label: 'Candidate moves', desc: 'Ordering based on evaluation delta after move, and aggressive move pruning' },
 ]
 
 export { getCellClass, searchOptions, moveOptions };

@@ -24,7 +24,7 @@ std::string GameState::serialize() const {
         {AI::SearchFunction::ALPHABETA_NEGAMAX_TT, "ALPHABETA_NEGAMAX_TT"}
     }) << ",\n";
     out << "\"moveFunction\": " << serializeEnum<AI::MoveFunction>(AI::moveFunction, {
-        {AI::MoveFunction::CANDIDATE_MOVES_2, "CANDIDATE_MOVES_2"},
+        {AI::MoveFunction::CANDIDATE_MOVES, "CANDIDATE_MOVES"},
     }) << ",\n";
     out << "\"moveSuggestion\": " << serializeEnum<Cell>(moveSuggestion, {
         {Cell::EMPTY, "off"},

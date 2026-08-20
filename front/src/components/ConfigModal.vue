@@ -33,7 +33,7 @@ const gameStore = useGameStore()
 
 const aiGame = computed(() => gameStore.gameState.isAIGame)
 const localSearch = ref<SearchFunction>('ALPHABETA_NEGAMAX_TT')
-const localMove = ref<MoveFunction>('CANDIDATE_MOVES_2')
+const localMove = ref<MoveFunction>('CANDIDATE_MOVES')
 const localDepth = ref<number>(1)
 const localSuggest = ref('off')
 

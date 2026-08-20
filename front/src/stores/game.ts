@@ -31,7 +31,7 @@ export const useGameStore = defineStore('game', () => {
   const gameState = reactive<GameState>({
     isAIGame: 0,
     searchFunction: 'ALPHABETA_NEGAMAX_TT',
-    moveFunction: 'CANDIDATE_MOVES_2',
+    moveFunction: 'CANDIDATE_MOVES',
     moveSuggestion: 'off',
     searchDepth: 0,
     moveHistory: [],

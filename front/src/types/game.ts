@@ -13,7 +13,7 @@ export type MoveSuggestion =
   | 'both'
 
 export type MoveFunction =
-  | 'CANDIDATE_MOVES_2'
+  | 'CANDIDATE_MOVES'
 
 export interface Board {
   grid: Cell[]

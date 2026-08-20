@@ -28,13 +28,13 @@ namespace AI {
     };
 
     enum class MoveFunction {
-        CANDIDATE_MOVES_2
+        CANDIDATE_MOVES
     };
 
     inline int16_t maxDepth = 3;
 
     inline SearchFunction searchFunction = SearchFunction::ALPHABETA_NEGAMAX_TT;
-    inline MoveFunction moveFunction = MoveFunction::CANDIDATE_MOVES_2;
+    inline MoveFunction moveFunction = MoveFunction::CANDIDATE_MOVES;
 
     inline std::vector<int> nodeVisitCounter;
     inline std::vector<int> nodeEvalCounter;
@@ -57,7 +57,7 @@ namespace AI {
     std::vector<unsigned>mainCandidateMoves(const Board &board, unsigned bestMove, float color, int depth);
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
-    std::vector<unsigned>getOrderedCandidateMoves2(const Board &board, unsigned bestMove, float, int depth);
+    std::vector<unsigned>getOrderedCandidateMoves(const Board &board, unsigned bestMove, float, int depth);
     Eval countGroupsOf(const Board &board, int size);
 
     // twos/threes/fours/captures computed in a single pass over the board's line segments,
