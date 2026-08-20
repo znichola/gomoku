@@ -37,7 +37,8 @@ export const useGameStore = defineStore('game', () => {
     moveHistory: [],
     board: null,
     messages: [],
-    aiMoveMicros: -1
+    aiMoveMicros: -1,
+    aiTimeBudgetMs: 500
   })
   const thinking = reactive({ active: false, startedAt: 0 })
 
@@ -55,7 +56,6 @@ export const useGameStore = defineStore('game', () => {
     preview: false,
     edition: false,
     keymode: false,
-    speed: 1,
     human: Cell.EMPTY
   })
 
@@ -137,6 +137,7 @@ export const useGameStore = defineStore('game', () => {
     gameState.searchFunction = newgameState.searchFunction
     gameState.moveFunction = newgameState.moveFunction
     gameState.aiMoveMicros = newgameState.aiMoveMicros
+    gameState.aiTimeBudgetMs = newgameState.aiTimeBudgetMs
   }
 
   /* >> DEBUG BACK WATCHER */
@@ -155,6 +156,7 @@ export const useGameStore = defineStore('game', () => {
       searchFunction: gameState.searchFunction,
       moveFunction: gameState.moveFunction,
       searchDepth: gameState.searchDepth.toString(),
+      aiTimeBudgetMs: gameState.aiTimeBudgetMs.toString(),
       moveSuggestion: gameState.moveSuggestion.toString(),
       moveHistory: gameState.moveHistory.join(','),
       board_grid: gameState.board.grid.join(','),

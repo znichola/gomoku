@@ -32,6 +32,7 @@ namespace AI {
     };
 
     inline int16_t maxDepth = 3;
+    inline int64_t maxThinkMillis = 500;
 
     inline SearchFunction searchFunction = SearchFunction::ALPHABETA_NEGAMAX_TT;
     inline MoveFunction moveFunction = MoveFunction::CANDIDATE_MOVES;
