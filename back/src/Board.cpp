@@ -14,10 +14,10 @@ Board::Board(const Grid &grid) : grid(grid) {
 }
 
 Board::Board(const Board &board, unsigned forceMoveId) : Board(board) {
-    playMove(forceMoveId, true);
+    playMove(forceMoveId, true, false);
 }
 
-bool Board::playMove(unsigned id, bool forceMove) {
+bool Board::playMove(unsigned id, bool forceMove, bool verifyComplete) {
     if (!forceMove && !isValidMove(id))
         return false;
 
@@ -26,6 +26,18 @@ bool Board::playMove(unsigned id, bool forceMove) {
     std::vector<unsigned> removedCells = doCaptures(id);
 
     Cell victory = isVictoryNear(id, removedCells);
+    if (verifyComplete) {
+        Cell fullVictory = isVictory();
+        if (fullVictory != victory) {
+            COUT << "[GridTraversal] DIVERGENCE on move " << id
+                 << ": isVictoryNear()=" << static_cast<int>(victory)
+                 << " but full isVictory()=" << static_cast<int>(fullVictory) << std::endl;
+            MQ << "[GridTraversal] DIVERGENCE on move " << id
+               << ": near=" << static_cast<int>(victory)
+               << " full=" << static_cast<int>(fullVictory) << "\n";
+        }
+        victory = fullVictory;
+    }
     if (victory == Cell::OUTSIDE) {
         COUT << "It's a draw" << std::endl;
         MQ << "It's a draw" << "\n";
@@ -40,8 +52,8 @@ bool Board::playMove(unsigned id, bool forceMove) {
     return true;
 }
 
-bool Board::playMove(unsigned id) {
-    return playMove(id, false);
+bool Board::playMove(unsigned id, bool verifyComplete) {
+    return playMove(id, false, verifyComplete);
 }
 
 bool Board::isValidMove(unsigned id) const {

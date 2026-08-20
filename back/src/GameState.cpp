@@ -53,7 +53,7 @@ std::string GameState::serialize() const {
 bool GameState::playMove(unsigned id) {
     bool res = false;
     COUT << "Playing move: " << id << std::endl;
-    res = board.playMove(id);
+    res = board.playMove(id, true);
     if (res) moveHistory.push_back(id);
     return res;
 }

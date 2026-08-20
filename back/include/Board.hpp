@@ -9,7 +9,7 @@
 
 class Board {
 private:
-    bool playMove(unsigned id, bool forceMove);
+    bool playMove(unsigned id, bool forceMove, bool verifyComplete);
 
 public:
     static constexpr unsigned FIRSTMOVE = 0xFFFF;
@@ -28,7 +28,7 @@ public:
      */
     Board(const Board &board, unsigned forceMoveId);
 
-    bool playMove(unsigned id);
+    bool playMove(unsigned id, bool verifyComplete = false);
     std::vector<unsigned> doCaptures(unsigned id);
     bool isValidMove(unsigned id) const;
     Cell isVictory() const;
