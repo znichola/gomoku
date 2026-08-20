@@ -28,7 +28,6 @@ namespace AI {
     };
 
     enum class MoveFunction {
-        CANDIDATE_MOVES,
         CANDIDATE_MOVES_2
     };
 
@@ -58,7 +57,6 @@ namespace AI {
     std::vector<unsigned>mainCandidateMoves(const Board &board, unsigned bestMove, float color, int depth);
 
     std::set<unsigned>getCandidateMoves(const Grid &grid);
-    std::vector<unsigned>getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color);
     std::vector<unsigned>getOrderedCandidateMoves2(const Board &board, unsigned bestMove, float, int depth);
     Eval countGroupsOf(const Board &board, int size);
 

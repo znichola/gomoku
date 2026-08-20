@@ -502,11 +502,7 @@ AI::BoardStats AI::gatherBoardStats(const Board &board) {
 std::vector<unsigned> AI::mainCandidateMoves(
     const Board &board, unsigned bestMove, float color, int depth
 ) {
-    Cell cColor = color == -1 ? Cell::BLACK : Cell::WHITE;
-    std::set<unsigned> m;
     switch (moveFunction) {
-    case MoveFunction::CANDIDATE_MOVES:
-        return getOrderedCandidateMoves(board.grid, bestMove, cColor);
     case MoveFunction::CANDIDATE_MOVES_2:
         return getOrderedCandidateMoves2(board, bestMove, color, depth);
     }
@@ -549,52 +545,6 @@ std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
         }
     }
     return cm;
-}
-
-std::vector<unsigned> AI::getOrderedCandidateMoves(const Grid &grid, unsigned bestMove, const Cell color) {
-    const GridTraversal &gt = grid.nodes();
-    const std::vector<AdjacentNode> &gridCR = gt.getGridCellRow();
-
-    (void) bestMove;
-
-    std::set<unsigned> moves = getCandidateMoves(grid);
-
-    struct Compare {
-        bool operator()(const std::pair<unsigned, unsigned>& a,
-                        const std::pair<unsigned, unsigned>& b) const {
-            if (a.second != b.second)
-                return a.second > b.second; // score décroissant
-            return a.first < b.first;   // tie-break sur id
-        }
-    };
-    std::set<std::pair<unsigned, unsigned>, Compare> stones;
-
-    for (std::set<unsigned>::iterator id = moves.begin(); id != moves.end(); ++id) {
-        const AdjacentNode &adj = gridCR[*id];
-        unsigned score = 0;
-        for (unsigned ext = 0; ext < 4; ++ext) {
-            if (!adj[ext]) continue;
-            const NodeCellRow &cr = *adj[ext];
-            if (cr.prev && cr.prev->type == color && std::abs(cr.prev->originId - *id) <= 1 && cr.size + cr.prev->size > 5)
-                score += 5 + cr.size + cr.prev->size;
-            if (cr.next && cr.next->type == color && std::abs(cr.next->originId - *id) <= 1 && cr.size + cr.next->size > 5) {
-                score += 5 + cr.size + cr.next->size;
-            }
-        }
-        stones.insert({*id, score});
-    }
-
-    std::vector<unsigned> result;
-
-    for (const auto& [id, score] : stones) {
-        if (score > 1)
-            result.push_back(id);
-    }
-    if (result.empty()) {
-        result.insert(result.end(), moves.begin(), moves.end());
-    }
-
-    return result;
 }
 
 // TODO unused, but could be interesting

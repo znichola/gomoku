@@ -120,7 +120,6 @@ bool handleLoadAIState(const Server::QueryMap& query, GameState& gs) {
     if (has("moveFunction")) {
         changed = true;
         AI::moveFunction = parseEnum<AI::MoveFunction>(get("moveFunction"), {
-            {"CANDIDATE_MOVES", AI::MoveFunction::CANDIDATE_MOVES},
             {"CANDIDATE_MOVES_2", AI::MoveFunction::CANDIDATE_MOVES_2},
         });
     }

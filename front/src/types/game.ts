@@ -13,7 +13,6 @@ export type MoveSuggestion =
   | 'both'
 
 export type MoveFunction =
-  | 'CANDIDATE_MOVES'
   | 'CANDIDATE_MOVES_2'
 
 export interface Board {
