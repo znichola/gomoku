@@ -121,7 +121,7 @@ async function move(event: MouseEvent) {
 
 const isAiTurn = computed(() => {
   const board = gameStore.gameState.board
-  if (!board || gameStore.watcherState.enabled)
+  if (!board)
     return false
   const aiColor = gameStore.gameState.isAIGame
   if (aiColor === Cell.EMPTY || board.winner !== Cell.EMPTY)
