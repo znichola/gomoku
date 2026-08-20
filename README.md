@@ -2,6 +2,13 @@
 
 Gomoku is a strategy board game traditionally played on a Go board with stones of two different colors. We will be implementing a variation that's loosly based on the [Ninuki renju rules](https://en.wikipedia.org/wiki/Gomoku#Ninuki-renju) and the [Pent rules](https://en.wikipedia.org/wiki/Gomoku#Pente).
 
+## Quickstart
+
+```bash
+# front project root
+make dev # this launches tmux with both back and frontend running, 
+         # exit with ctrl+B then type :kill-session, or kill both temrinal
+
 ## Reaserh notes
 
 - [wikipedia article, with rule variations](https://en.wikipedia.org/wiki/Gomoku)

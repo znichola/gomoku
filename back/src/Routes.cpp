@@ -21,7 +21,7 @@ void registerRoutes(Server& server, GameState& gs) {
         if (it == req.query.end())
             return Response{400, "missing 'id' query parameter"};
         unsigned id = static_cast<unsigned>(std::stoul(it->second));
-        
+
         it = req.query.find("force_color");
         if (it != req.query.end()) // Debug
             gs.board.isBlackToPlay = (it->second == "black");
@@ -38,28 +38,29 @@ void registerRoutes(Server& server, GameState& gs) {
             // return Response{400, "{\"error\": \"invalid move\"}"};
 
         AI::evaluate(gs.board, 0, gs.board.winner);
-        const std::string output = gs.serialize();
 
-        if (!played)
-            return Response{200, output};
+        return Response{200, gs.serialize()};
+    });
 
-        MessageQueue::drain(); // Draing before doing next move and refilling messages TODO: should be an API endpoint
-        
+    server.get("/ai-move", [&gs](const Request& req) -> Response {
+        (void)req; // no query params expected
+
+        if (gs.board.winner != Cell::EMPTY)
+            return Response{400, "{\"error\": \"game has already ended\"}"};
+
+        const Cell toPlay = gs.board.isBlackToPlay ? Cell::BLACK : Cell::WHITE;
+        if (gs.isAIGame != toPlay)
+            return Response{400, "{\"error\": \"it is not the AI's move\"}"};
+
+        MessageQueue::drain(); // Draing before doing next move and refilling messages
+
         const Cell aiPlayed = gs.askAI2Play();
-        if (aiPlayed == Cell::OUTSIDE)
+        if (aiPlayed == Cell::OUTSIDE) {
             MQ << "INVALID MOVE FROM AI";
+            return Response{400, "{\"error\": \"AI failed to produce a move\"}"};
+        }
 
-        if (aiPlayed != Cell::BLACK && aiPlayed != Cell::WHITE)
-            return Response{200, output};
-
-		std::ostringstream out;
-
-		out << "{\n";
-		out << "\"multiple_action\": true,\n";
-		out << "\"human\": " << output << ",\n";
-		out << "\"ai\": " << gs.serialize() << "\n";
-		out << "}";
-		return Response{200, out.str()};
+        return Response{200, gs.serialize()};
     });
 
     server.get("/reset", [&gs](const Request& req) -> Response {
