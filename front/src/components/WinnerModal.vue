@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onUnmounted, computed, nextTick, onUpdated, onMounted } from 'vue'
+import { ref, watch, onUnmounted, computed, nextTick, onMounted } from 'vue'
 import { Cell } from '@/types/game'
 import { useGameStore } from '@/stores/game'
 

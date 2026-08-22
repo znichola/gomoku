@@ -295,9 +295,10 @@ unsigned AI::findForcedMove(const Board &board, Cell myColor) {
 */
 unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) {
     Cell myColor = isWhite ? Cell::WHITE : Cell::BLACK;
+    std::string AI = "[AI " + std::string(isWhite ? "W" : "B") + "] ";
     unsigned forced = findForcedMove(board, myColor);
     if (forced != Board::FIRSTMOVE) {
-        ENABLE_LOG MQ << "[AI] forced move (immediate win, or forced block): " << forced << "\n"; DISABLE_LOG
+        ENABLE_LOG MQ << AI << "forced move (immediate win, or forced block): " << forced << "\n"; DISABLE_LOG
         return forced;
     }
 
@@ -333,29 +334,29 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
         }
 
         if (interrupted || bestMoveThisDepth == Board::FIRSTMOVE) {
-            ENABLE_LOG MQ << "[AI] depth " << d << " interrupted, keeping depth " << lastDepthRun << "'s move\n"; DISABLE_LOG
+            ENABLE_LOG MQ << AI << "depth " << d << " interrupted, keeping depth " << lastDepthRun << "'s move\n"; DISABLE_LOG
             break;
         }
 
         bestMove = bestMoveThisDepth;
         lastDepthRun = d;
-        ENABLE_LOG MQ << "[AI] depth " << d << " complete: move " << bestMove << " (" << bestScoreThisDepth << ")\n"; DISABLE_LOG
+        ENABLE_LOG MQ << AI << "depth " << d << " complete: move " << bestMove << " (" << bestScoreThisDepth << ")\n"; DISABLE_LOG
     }
 
     AI::maxDepth = targetDepth; // restore the configured depth (used by evaluate()/UI outside of a search)
 
     ENABLE_LOG
     if (bestMove == Board::FIRSTMOVE) {
-        MQ << "[AI] No best move found";
+        MQ << AI << "No best move found";
         auto candidateMoves = mainCandidateMoves(board, Board::FIRSTMOVE, isWhite ? 1 : -1, 1);
         if (candidateMoves.empty()) {
-            MQ << " (no candidates)";
+            MQ << AI << " (no candidates)";
         }  else {
-            MQ << " (first candirate move played instead)";
+            MQ << AI << " (first candidate move played instead)";
             bestMove = *candidateMoves.begin();
         }
     }
-    MQ << "[AI] reached depth " << lastDepthRun << "/" << targetDepth << ", explored "
+    MQ << AI << " reached depth " << lastDepthRun << "/" << targetDepth << ", explored "
        << std::accumulate(nodeVisitCounter.begin(), nodeVisitCounter.end(), 0) << " nodes\n"
        << "and evaluated " << std::accumulate(nodeEvalCounter.begin(), nodeEvalCounter.end(), 0) << " positions\n"
        << [](){

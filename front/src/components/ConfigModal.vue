@@ -4,7 +4,8 @@ import { useGameStore } from '@/stores/game'
 import AppButton from '@/components/AppButton.vue'
 import { computed } from 'vue';
 import { searchOptions, moveOptions } from '@/helpers/helpers';
-import type { MoveFunction, SearchFunction } from '@/types/game';
+import { Cell } from '@/types/game';
+import type { MoveFunction, MoveSuggestion, SearchFunction } from '@/types/game';
 
 const props = defineProps<{
   open: boolean
@@ -18,7 +19,12 @@ async function toggleAI(color: 1 | 2) {
   try {
     const v = gameStore.gameState.isAIGame == color ? 0 : color
     gameStore.startThinking()
-    const resp = await fetch(`http://${window.location.hostname}:9012/set-config?isAIGame=${v}`, {
+    const params = new URLSearchParams({ isAIGame: String(v) })
+    if (isSuggestOptionDisabled(localSuggest.value, v)) {
+      localSuggest.value = 'off'
+      params.set('moveSuggestion', 'off')
+    }
+    const resp = await fetch(`http://${window.location.hostname}:9012/set-config?${params}`, {
       method: 'GET',
     })
     const data = await resp.json()
@@ -32,11 +38,17 @@ async function toggleAI(color: 1 | 2) {
 const gameStore = useGameStore()
 
 const aiGame = computed(() => gameStore.gameState.isAIGame)
+
+function isSuggestOptionDisabled(value: MoveSuggestion, aiColor: Cell = aiGame.value): boolean {
+  if (aiColor === Cell.EMPTY || value === 'off') return false
+  const humanColor: MoveSuggestion = aiColor === Cell.BLACK ? 'white' : 'black'
+  return value !== humanColor
+}
 const localSearch = ref<SearchFunction>('ALPHABETA_NEGAMAX_TT')
 const localMove = ref<MoveFunction>('CANDIDATE_MOVES')
 const localDepth = ref<number>(1)
 const localTimeBudgetMs = ref<number>(500)
-const localSuggest = ref('off')
+const localSuggest = ref<MoveSuggestion>('off')
 
 
 watch(
@@ -92,7 +104,7 @@ function onBackdropClick(e: MouseEvent) {
   if (e.target === e.currentTarget) emit('close')
 }
 
-const suggestOptions = [
+const suggestOptions: { value: MoveSuggestion, label: string }[] = [
   { value: 'off',   label: 'Off' },
   { value: 'black', label: 'Black' },
   { value: 'white', label: 'White' },
@@ -124,6 +136,20 @@ const suggestOptions = [
                 @click="toggleAI(2)"
               >White</AppButton>
             </div>
+          </section>
+
+          <section class="cm-section">
+            <h3>Move suggestions</h3>
+            <div class="cm-row">
+              <AppButton
+                v-for="opt in suggestOptions"
+                :key="opt.value"
+                :active="localSuggest === opt.value"
+                :disabled="isSuggestOptionDisabled(opt.value)"
+                @click="localSuggest = opt.value; applyConfig()"
+              >{{ opt.label }}</AppButton>
+            </div>
+            <p class="cm-hint"> Highlights the AI's suggested move in blue.</p>
           </section>
 
           <section class="cm-section">
@@ -197,19 +223,6 @@ const suggestOptions = [
             <p class="cm-hint">
               Cutoff given to the AI's search: it stops thinking and plays the best move found so far, however deep it got (capped by search depth above).
             </p>
-          </section>
-
-          <section class="cm-section">
-            <h3>Move suggestions</h3>
-            <em style="margin-bottom: 0.4rem; display: block;">TODO: Implement on back and front</em>
-            <div class="cm-row">
-              <AppButton
-                v-for="opt in suggestOptions"
-                :key="opt.value"
-                :active="localSuggest === opt.value"
-                @click="localSuggest = opt.value; applyConfig()"
-              >{{ opt.label }}</AppButton>
-            </div>
           </section>
         </div>
       </div>

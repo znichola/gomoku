@@ -72,13 +72,6 @@ Cell GameState::askAI2Play() {
     COUT << "[AI] ";
     bool aiPlayed = playMove(cid);
 
-    for (auto move : AI::mainCandidateMoves(board, Board::FIRSTMOVE, -1, 0)) {
-        MBL("Next BLACK,--black-bright-color", move, "B"); 
-    }
-    for (auto move : AI::mainCandidateMoves(board, Board::FIRSTMOVE, 1, 0)) {
-        MBL("Next WHITE,--white-bright-color", move, "W"); 
-    }
-
     float eval = AI::evaluate(board, 0, board.isVictory());
     COUT << "[AI] eval " << board.lastMove << ": " << eval << "\n";
     MQ << "[AI] eval " << board.lastMove << ": " << eval << "\n";
@@ -96,6 +89,25 @@ Cell GameState::askAI2Play() {
         COUT << "[AI] Invalid move, AI asked for " << cid << "\n";
         return Cell::OUTSIDE;
     }
+}
+
+static constexpr const char* SUGGESTION_LAYER = "AI suggestion,--highlight-color";
+
+void GameState::pushMoveSuggestion() {
+    MessageQueue::clearMessagesWithLayerPrefix(SUGGESTION_LAYER);
+
+    if (board.winner != Cell::EMPTY || moveSuggestion == Cell::EMPTY)
+        return;
+
+    const Cell mover = board.isBlackToPlay ? Cell::BLACK : Cell::WHITE;
+    if (isAIGame == mover) // the AI plays its own move, no hint needed
+        return;
+
+    const bool wantsHint = moveSuggestion == Cell::OUTSIDE || moveSuggestion == mover;
+    if (!wantsHint) return;
+
+    unsigned cid = AI::play(board, mover == Cell::WHITE);
+    MBL(SUGGESTION_LAYER, cid, "");
 }
 
 static Grid* rGrid = nullptr;

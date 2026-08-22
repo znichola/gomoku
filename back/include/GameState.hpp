@@ -15,6 +15,7 @@ struct GameState {
     bool playMove(unsigned id);
     Cell askAI2Play();
     void reset();
+    void pushMoveSuggestion();
 
     // debug
     void setReset();
