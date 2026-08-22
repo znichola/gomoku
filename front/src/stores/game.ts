@@ -122,13 +122,6 @@ export const useGameStore = defineStore('game', () => {
       else remaining.push(m)
     }
 
-    // Always surface the AI's move suggestion first in the layer toggle list
-    const suggestionIdx = overlayLayers.value.findIndex((l) => l.name === 'AI suggestion')
-    if (suggestionIdx > 0) {
-      const suggestion = overlayLayers.value.splice(suggestionIdx, 1)[0]
-      if (suggestion) overlayLayers.value.unshift(suggestion)
-    }
-
     return remaining
   }
 
@@ -256,7 +249,8 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  let _watch_interval = 0
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let _watch_interval: any
   function backWatcher(type: string = 'none') {
     if (type === 'mounted' && !watcherState.enabled) {
       const previewStr = localStorage.getItem('gomoku-watcher-preview')

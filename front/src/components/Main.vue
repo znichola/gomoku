@@ -12,7 +12,7 @@ import messages from './Messages.vue'
 import RulesModal from './RulesModal.vue'
 import ConfigModal from './ConfigModal.vue'
 import WinnerModal from './WinnerModal.vue'
-import ConfigIcon from "./icons/ConfigIcon.vue";
+import configIcon from "./icons/ConfigIcon.vue";
 import { searchOptions, moveOptions } from '@/helpers/helpers'
 
 const reload = () => window.location.reload()
@@ -51,7 +51,7 @@ const searchDepth = computed(() => gameStore.gameState.searchDepth)
   <div class="header">
     <div class="btns">
       <button class="helper-btn" type="button" @click="rulesOpen = true">?</button>
-      <button class="helper-btn" type="button" @click="configOpen = true"><ConfigIcon size="16"/></button>
+      <button class="helper-btn" type="button" @click="configOpen = true"><configIcon size="16"/></button>
       <router-link class="helper-btn" to="/pp">P</router-link>
     </div>
     <div id="logo">

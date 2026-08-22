@@ -72,13 +72,6 @@ Cell GameState::askAI2Play() {
     COUT << "[AI] ";
     bool aiPlayed = playMove(cid);
 
-    for (auto move : AI::mainCandidateMoves(board, Board::FIRSTMOVE, -1, 0)) {
-        MBL("Next BLACK,--black-bright-color", move, "B"); 
-    }
-    for (auto move : AI::mainCandidateMoves(board, Board::FIRSTMOVE, 1, 0)) {
-        MBL("Next WHITE,--white-bright-color", move, "W"); 
-    }
-
     float eval = AI::evaluate(board, 0, board.isVictory());
     COUT << "[AI] eval " << board.lastMove << ": " << eval << "\n";
     MQ << "[AI] eval " << board.lastMove << ": " << eval << "\n";
