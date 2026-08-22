@@ -35,6 +35,7 @@ const aiGame = computed(() => gameStore.gameState.isAIGame)
 const localSearch = ref<SearchFunction>('ALPHABETA_NEGAMAX_TT')
 const localMove = ref<MoveFunction>('CANDIDATE_MOVES')
 const localDepth = ref<number>(1)
+const localTimeBudgetMs = ref<number>(500)
 const localSuggest = ref('off')
 
 
@@ -46,6 +47,7 @@ watch(
     localSearch.value = gameStore.gameState.searchFunction
     localMove.value = gameStore.gameState.moveFunction
     localDepth.value = gameStore.gameState.searchDepth
+    localTimeBudgetMs.value = gameStore.gameState.aiTimeBudgetMs
     localSuggest.value = gameStore.gameState.moveSuggestion
   }
 )
@@ -68,6 +70,7 @@ async function applyConfig() {
       searchFunction: localSearch.value,
       moveFunction: localMove.value,
       searchDepth: String(localDepth.value),
+      aiTimeBudgetMs: String(localTimeBudgetMs.value),
       moveSuggestion: String(localSuggest.value),
     })
     const resp = await fetch(
@@ -120,11 +123,6 @@ const suggestOptions = [
                 :active="aiGame === 2"
                 @click="toggleAI(2)"
               >White</AppButton>
-              <div class="cm-range-row" data-hint="Add a delay between human and ai move.">
-                <input id="aispeed" type="range" :value="gameStore.watcherState.speed"
-                  @input="event => gameStore.watcherState.speed = (event.target as any).value || 0" min="0" max="10">
-                <label for="aispeed"><span class="cm-value">{{ +gameStore.watcherState.speed }}s</span></label>
-              </div>
             </div>
           </section>
 
@@ -179,6 +177,25 @@ const suggestOptions = [
               <template v-else-if="localDepth <= 7">Slightly serious, mediocre depth.</template>
               <template v-else-if="localDepth <= 9">Somewhat serious. There is some depth, but it's slower.</template>
               <template v-else>Very strong, maximum depth, expect enlightenment.</template>
+            </p>
+          </section>
+
+          <section class="cm-section">
+            <h3>AI time budget</h3>
+            <div class="cm-range-row">
+              <input
+                id="aiTimeBudget"
+                type="range"
+                min="100"
+                max="10000"
+                step="100"
+                v-model.number="localTimeBudgetMs"
+                @change="applyConfig"
+              />
+              <label for="aiTimeBudget"><span class="cm-value">{{ (localTimeBudgetMs / 1000).toFixed(1) }}s</span></label>
+            </div>
+            <p class="cm-hint">
+              Cutoff given to the AI's search: it stops thinking and plays the best move found so far, however deep it got (capped by search depth above).
             </p>
           </section>
 
