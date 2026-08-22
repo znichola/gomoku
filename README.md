@@ -2,6 +2,8 @@
 
 Gomoku is a strategy board game traditionally played on a Go board with stones of two different colors. We will be implementing a variation that's loosly based on the [Ninuki renju rules](https://en.wikipedia.org/wiki/Gomoku#Ninuki-renju) and the [Pent rules](https://en.wikipedia.org/wiki/Gomoku#Pente).
 
+Deployed on [gomoku-n53g.onrender.com](https://gomoku-n53g.onrender.com), mind it's a slow onrender free tier instance.
+
 ## Quickstart
 
 Dev setup below, it's also possible to individually launch the front/back with their respective Makefiles. Frontend deployed on [localhost:5173](localhost:5173)
