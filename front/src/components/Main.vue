@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/stores/game'
+import { apiUrl } from '@/helpers/api'
 
 const gameStore = useGameStore()
 
@@ -23,7 +24,7 @@ const configOpen = ref(false)
 async function reset() {
   try {
     gameStore.startThinking()
-    const resp = await fetch(`http://${window.location.hostname}:9012/reset`, {
+    const resp = await fetch(apiUrl('/reset'), {
       method: 'GET',
     })
     const data = await resp.json()

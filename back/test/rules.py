@@ -34,13 +34,13 @@ def load_game_state(host, port, grid_overrides, black_to_play, black_captured=0,
         f"&board_blackCaptured={black_captured}&board_whiteCaptured={white_captured}"
         f"&board_isBlackToPlay={str(black_to_play).lower()}&moveHistory="
     )
-    url = f"http://{host}:{port}/debug-action?{params}"
+    url = f"http://{host}:{port}/api/debug-action?{params}"
     with urllib.request.urlopen(url, timeout=15) as r:
         return json.load(r)
 
 
 def play_move(host, port, move_id):
-    url = f"http://{host}:{port}/move?id={move_id}"
+    url = f"http://{host}:{port}/api/move?id={move_id}"
     with urllib.request.urlopen(url, timeout=15) as r:
         return json.load(r)
 

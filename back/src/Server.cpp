@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <atomic>
@@ -79,6 +80,10 @@ void Server::get(const std::string& path, Handler handler) {
     get_handlers[path] = handler;
 }
 
+void Server::serveStatic(const std::string& root) {
+    static_root = root;
+}
+
 
 void Server::dispatch(int client, const Request& req) {
     Handler* handler = nullptr;
@@ -101,6 +106,8 @@ void Server::dispatch(int client, const Request& req) {
             res.status(500).body("{\"error\":\"unknown internal error\"}");
             std::cerr << "[500] " << req.method << " " << req.path << " — unknown exception" << std::endl;
         }
+    else if (req.method == "GET" && !static_root.empty() && req.path.rfind("/api/", 0) != 0)
+        res = serveStaticFile(req.path);
     else {
         res.status(404).body("{\"error\":\"not found\"}");
         std::cerr << "[404] Unknown route " << req.path << std::endl;
@@ -109,6 +116,51 @@ void Server::dispatch(int client, const Request& req) {
     std::string raw = buildResponse(res);
     if (send(client, raw.c_str(), raw.size(), 0) < 0)
         perror("send");
+}
+
+std::string Server::mimeType(const std::string& path) const {
+    static const std::unordered_map<std::string, std::string> types = {
+        {".html",  "text/html; charset=utf-8"},
+        {".js",    "application/javascript"},
+        {".mjs",   "application/javascript"},
+        {".css",   "text/css"},
+        {".json",  "application/json"},
+    };
+    size_t slash = path.find_last_of('/');
+    size_t dot = path.find_last_of('.');
+    if (dot == std::string::npos || (slash != std::string::npos && dot < slash))
+        return "application/octet-stream";
+    auto it = types.find(path.substr(dot));
+    return it != types.end() ? it->second : "application/octet-stream";
+}
+
+Server::Response Server::serveStaticFile(const std::string& reqPath) const {
+    if (reqPath.find("..") != std::string::npos)
+        return Response{403, "{\"error\":\"forbidden\"}"};
+
+    std::string relative = (reqPath.empty() || reqPath == "/") ? "/index.html" : reqPath;
+    size_t slash = relative.find_last_of('/');
+    bool hasExtension = relative.find_last_of('.') != std::string::npos
+        && relative.find_last_of('.') > slash;
+
+    std::ifstream file(static_root + relative, std::ios::binary);
+    if (!file.is_open()) {
+        if (hasExtension)
+            return Response{404, "{\"error\":\"not found\"}"};
+        // No extension: treat as a client-side (Vue Router) route and let
+        // index.html + the SPA handle it, rather than 404ing on refresh.
+        relative = "/index.html";
+        file.open(static_root + relative, std::ios::binary);
+        if (!file.is_open())
+            return Response{404, "{\"error\":\"not found\"}"};
+    }
+
+    std::ostringstream contents;
+    contents << file.rdbuf();
+
+    Response res{200, contents.str()};
+    res._content_type = mimeType(relative);
+    return res;
 }
 
 std::string Server::buildResponse(const Response& res) const {

@@ -42,7 +42,7 @@ def analyze(host, port, grid_overrides, black_to_play, ai_color, depth,
     )
     if search_function:
         params += f"&searchFunction={search_function}"
-    url = f"http://{host}:{port}/analyze?{params}"
+    url = f"http://{host}:{port}/api/analyze?{params}"
     with urllib.request.urlopen(url, timeout=15) as r:
         return json.load(r)
 

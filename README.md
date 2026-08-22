@@ -4,10 +4,20 @@ Gomoku is a strategy board game traditionally played on a Go board with stones o
 
 ## Quickstart
 
+Dev setup below, it's also possible to individually launch the front/back with their respective Makefiles. Frontend deployed on [localhost:5173](localhost:5173)
+
 ```bash
-# front project root
-make dev # this launches tmux with both back and frontend running, 
-         # exit with ctrl+B then type :kill-session, or kill both temrinal
+# repo root
+make dev # launches tmux with back & frontend running in hotreload 
+         # exit with ctrl+B then type :kill-session, or kill both terminals
+```
+
+Deployment build, one c++ process launched on [localhost:9012](localhost:9012)
+
+```bash
+# repo root
+make launch # build and serves everything front & back as one server
+```
 
 ## Reaserh notes
 

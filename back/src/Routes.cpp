@@ -11,12 +11,12 @@ using Response = Server::Response;
 void registerRoutes(Server& server, GameState& gs) {
     registerRoutes_Arbiter(server, gs);
 
-    server.get("/gameState", [&gs](const Request& req) -> Response {
+    server.get("/api/gameState", [&gs](const Request& req) -> Response {
         (void)req;
         return Response{200, gs.serialize()};
     });
 
-    server.get("/move", [&gs](const Request& req) -> Response {
+    server.get("/api/move", [&gs](const Request& req) -> Response {
         Server::QueryMap::const_iterator it = req.query.find("id");
         if (it == req.query.end())
             return Response{400, "missing 'id' query parameter"};
@@ -43,7 +43,7 @@ void registerRoutes(Server& server, GameState& gs) {
         return Response{200, gs.serialize()};
     });
 
-    server.get("/ai-move", [&gs](const Request& req) -> Response {
+    server.get("/api/ai-move", [&gs](const Request& req) -> Response {
         (void)req; // no query params expected
 
         if (gs.board.winner != Cell::EMPTY)
@@ -65,7 +65,7 @@ void registerRoutes(Server& server, GameState& gs) {
         return Response{200, gs.serialize()};
     });
 
-    server.get("/reset", [&gs](const Request& req) -> Response {
+    server.get("/api/reset", [&gs](const Request& req) -> Response {
         (void)req;
         gs.reset();
         MessageQueue::drain();
@@ -74,7 +74,7 @@ void registerRoutes(Server& server, GameState& gs) {
         return Response{200, gs.serialize()};
     });
 
-    server.get("/set-config", [&gs](const Request& req) -> Response {
+    server.get("/api/set-config", [&gs](const Request& req) -> Response {
         if (!handleLoadAIState(req.query, gs)) {
             return Response{400, "{ \"error\": \"invalid action\" }"};
         }
@@ -83,7 +83,7 @@ void registerRoutes(Server& server, GameState& gs) {
         return Response{200, gs.serialize()};
     });
 
-    server.get("/replay", [&gs](const Request& rq) -> Response {
+    server.get("/api/replay", [&gs](const Request& rq) -> Response {
         if (rq.query.find("moves") != rq.query.end()) {
             std::vector<std::string> m = splitCSV(rq.query.at("moves"));
             MessageQueue::drain();
@@ -103,7 +103,7 @@ void registerRoutes(Server& server, GameState& gs) {
         return Response{200, gs.serialize()};
     });
 
-    server.get("/debug-action", [&gs](const Request& req) -> Response {
+    server.get("/api/debug-action", [&gs](const Request& req) -> Response {
         Server::QueryMap::const_iterator it = req.query.find("action");
         if (it == req.query.end())
             return Response{400, "missing 'action' query parameter"};
@@ -149,7 +149,7 @@ void registerRoutes(Server& server, GameState& gs) {
     // isAIGame/searchDepth/aiTimeBudgetMs/searchFunction/moveFunction to trigger a move), but loaded into a
     // throwaway GameState instead of the live one - lets a position be analyzed (what would the
     // AI play here, and why) without touching whatever game is actually in progress.
-    server.get("/analyze", [](const Request& req) -> Response {
+    server.get("/api/analyze", [](const Request& req) -> Response {
         GameState scratch;
         // MessageQueue is a global, shared with whatever live game is in progress - start clean
         // so this analysis doesn't pick up stray leftover messages, and drain again afterwards
