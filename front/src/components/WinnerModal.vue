@@ -2,6 +2,7 @@
 import { ref, watch, onUnmounted, computed, nextTick, onMounted } from 'vue'
 import { Cell } from '@/types/game'
 import { useGameStore } from '@/stores/game'
+import AppButton from '@/components/AppButton.vue'
 
 const winner = computed(() => gameStore.gameState.board?.winner || Cell.EMPTY)
 
@@ -35,9 +36,16 @@ const EXPLODE_DURATION = 80
 
 const isClosing = ref(false)
 let closingFrameCount = 0
+let closeShouldRestart = true // whether the in-progress close should trigger a game restart
 const CLOSE_DURATION = 55 // ~0.9 s at 60 fps
 
-const open = computed(() => winner.value !== Cell.EMPTY)
+const dismissed = ref(false) // true when closed via "Close" without restarting
+const open = computed(() => winner.value !== Cell.EMPTY && !dismissed.value)
+
+// A new win (or a fresh game) clears the dismissal so the modal can show again next time.
+watch(winner, (newVal) => {
+  if (newVal === Cell.EMPTY) dismissed.value = false
+})
 
 const playerType = computed(() => {
   if (winner.value === Cell.EMPTY) return ''
@@ -248,7 +256,8 @@ function animate() {
 
     if (t >= 1) {
       isClosing.value = false
-      emit('close')
+      if (closeShouldRestart) emit('close')
+      else dismissed.value = true
       return
     }
     animFrame = requestAnimationFrame(animate)
@@ -437,15 +446,17 @@ function animate() {
   animFrame = requestAnimationFrame(animate)
 }
 
-function handleClose() {
+function handleClose(restart: boolean = true) {
   // Respect prefers-reduced-motion: skip animation, close instantly
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    emit('close')
+    if (restart) emit('close')
+    else dismissed.value = true
     return
   }
 
   if (isClosing.value) return
   isClosing.value = true
+  closeShouldRestart = restart
 
   // Fade the card out immediately
   cardVisible.value = false
@@ -453,7 +464,10 @@ function handleClose() {
   const canvas = canvasEl.value
   if (!canvas || particles.length === 0) {
     // No canvas / particles yet – derive delay from CLOSE_DURATION (assume 60 fps)
-    setTimeout(() => emit('close'), Math.round((CLOSE_DURATION / 60) * 1000))
+    setTimeout(() => {
+      if (restart) emit('close')
+      else dismissed.value = true
+    }, Math.round((CLOSE_DURATION / 60) * 1000))
     return
   }
 
@@ -697,7 +711,10 @@ onUnmounted(onLeave)
         <div class="wm-player" v-if="playerType">
           <span class="wm-badge">{{ playerType === 'AI' ? '🤖 AI' : '👤 Human' }}</span>
         </div>
-        <button class="wm-close-btn" type="button" @click="handleClose">Close</button>
+        <div class="wm-actions">
+          <AppButton @click="handleClose(false)">Close</AppButton>
+          <AppButton variant="accent" @click="handleClose(true)">New Game</AppButton>
+        </div>
       </div>
       <div v-if="!isShiftPressed" class="shift-hint">
         Hold Shift to interact with elements
@@ -783,24 +800,11 @@ onUnmounted(onLeave)
   padding: 0.15rem 0.7rem;
 }
 
-.wm-close-btn {
+.wm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
   margin-top: 0.6rem;
-  border: solid 0.165rem var(--accent-color);
-  background-color: transparent;
-  color: var(--primary-color);
-  border-radius: 0.9rem;
-  padding: 0.35rem 1.2rem;
-  font: var(--ui-font);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: rgba(211, 80, 19, 0.15);
-  }
-
-  &:active {
-    transform: scale(0.96);
-  }
 }
 
 .shift-hint {
