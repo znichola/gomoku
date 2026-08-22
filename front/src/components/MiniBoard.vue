@@ -47,8 +47,8 @@ function highlightLabel(id: number): string | undefined {
   return props.highlight.find(h => h.id === id)?.label
 }
 
-function highlightCircle(id: number): bool {
-  return props.highlight.find(h => h.id === id)?.highlight
+function highlightCircle(id: number): boolean {
+  return props.highlight.find(h => h.id === id)?.highlight || false
 }
 </script>
 

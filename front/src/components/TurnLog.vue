@@ -6,7 +6,7 @@ const gameStore = useGameStore()
 
 const moves = computed(() => gameStore.gameState.moveHistory)
 
-const savedMoves = ref<string[] | null>(null)
+const savedMoves = ref<number[] | null>(null)
 
 // Clear redo once a new move is played beyond the replayed state
 watch(moves, (newMoves, oldMoves) => {
@@ -49,7 +49,7 @@ async function redoMoves() {
 
 <template>
   <div class="turnlog">
-    <h2>Turn log</h2>
+    <h2>Turn log [{{ Math.floor((moves.length) / 2) }}]</h2>
     <div class="scroll">
       <ul>
         <li v-for="(move, i) in moves"

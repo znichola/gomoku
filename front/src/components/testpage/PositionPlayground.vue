@@ -3,22 +3,23 @@ import { computed, ref } from 'vue'
 import BoardPositionsSection from '@/components/BoardPositionsSection.vue'
 import PositionStats from './PositionStats.vue'
 import { positions } from './positions'
+import type { HightLable, Position } from '@/types/miniBoard'
 
-const positionUpdates = ref<Record<string | number, { black: number[], white: number[], lastMove: number }>>({})
+const positionUpdates = ref<Record<string | number, { black: number[], white: number[], lastMove: number | null }>>({})
 
 function resolvePosition(pos: Position): Position {
-  if (!pos.history || pos.history.length === 0) return pos
+  if (!pos.history || pos.history.length === 0 || !pos?.id) return pos
 
   const boardUpdate = positionUpdates.value[pos.id]
-  if (boardUpdate) {
+  if (boardUpdate && boardUpdate.lastMove) {
     const highlight: HightLable[] = [{id: boardUpdate.lastMove, highlight: true}]
     return { ...pos, black: boardUpdate.black, white: boardUpdate.white, highlight }
   }
   return { ...pos}
 }
 
-function handleBoardPositionUpdate(posId: string | number, boardPosition: { black: number[], white: number[], lastMove: number }) {
-  positionUpdates.value[posId] = boardPosition
+function handleBoardPositionUpdate(posId: string | number | undefined, boardPosition: { black: number[], white: number[], lastMove: number | null }) {
+  if (posId) positionUpdates.value[posId] = boardPosition
 }
 
 const resolvedPositions = computed(() => positions.map(resolvePosition))

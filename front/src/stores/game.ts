@@ -249,7 +249,8 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  let _watch_interval = 0
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let _watch_interval: any
   function backWatcher(type: string = 'none') {
     if (type === 'mounted' && !watcherState.enabled) {
       const previewStr = localStorage.getItem('gomoku-watcher-preview')

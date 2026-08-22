@@ -23,10 +23,11 @@ const grids = computed(() => {
 const overlayMap = computed(() => {
   const map = new Map<number, OverlayMessage>()
   for (const msg of gameStore.overlay.messages) {
-    if (map.has(msg.id))
-      continue
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!msg.group || !(gameStore.overlay.disabled as any)[msg.group?.name])
+    if (msg.group && (gameStore.overlay.disabled as any)[msg.group.name])
+      continue
+    const current = map.get(msg.id)
+    if (!current || (msg.group?.name === 'AI suggestion' && current.group?.name !== 'AI suggestion'))
       map.set(msg.id, msg)
   }
   return map

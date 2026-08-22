@@ -38,6 +38,7 @@ void registerRoutes(Server& server, GameState& gs) {
             // return Response{400, "{\"error\": \"invalid move\"}"};
 
         AI::evaluate(gs.board, 0, gs.board.winner);
+        gs.pushMoveSuggestion();
 
         return Response{200, gs.serialize()};
     });
@@ -59,6 +60,7 @@ void registerRoutes(Server& server, GameState& gs) {
             MQ << "INVALID MOVE FROM AI";
             return Response{400, "{\"error\": \"AI failed to produce a move\"}"};
         }
+        gs.pushMoveSuggestion();
 
         return Response{200, gs.serialize()};
     });
@@ -68,6 +70,7 @@ void registerRoutes(Server& server, GameState& gs) {
         gs.reset();
         MessageQueue::drain();
         gs.askAI2Play();
+        gs.pushMoveSuggestion();
         return Response{200, gs.serialize()};
     });
 
@@ -75,6 +78,7 @@ void registerRoutes(Server& server, GameState& gs) {
         if (!handleLoadAIState(req.query, gs)) {
             return Response{400, "{ \"error\": \"invalid action\" }"};
         }
+        gs.pushMoveSuggestion();
 
         return Response{200, gs.serialize()};
     });
@@ -91,6 +95,7 @@ void registerRoutes(Server& server, GameState& gs) {
             }
             gs.askAI2Play();
             ENABLE_LOG
+            gs.pushMoveSuggestion();
         } else {
             return Response{400, "missing 'moves' query parameter"};
         }
@@ -130,6 +135,7 @@ void registerRoutes(Server& server, GameState& gs) {
         } else if (it->second == "load-game-state") {
             try {
                 handleLoadGameState(req.query, gs);
+                gs.pushMoveSuggestion();
             } catch (const std::exception& e) {
                 return Response{400, std::string("{\"error\":\"") + e.what() + "\"}"};
             }

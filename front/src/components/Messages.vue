@@ -15,7 +15,7 @@ watch(messages, () => {
 </script>
 
 <template>
-  <div class="messages" v-if="messages.length > 0">
+  <div class="messages">
     <h2>Messages</h2>
     <div class="scroll" ref="scrollEl">
       <ul>

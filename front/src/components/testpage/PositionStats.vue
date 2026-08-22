@@ -1,6 +1,8 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import type { Position } from '@/types/miniBoard'
+import type { GameState } from '@/types/game'
 import { usePositionQueueStore } from '@/stores/testPositionQueue'
 import router from '@/router'
 
@@ -9,7 +11,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:boardPosition', value: { black: number[], white: number[], lastMove: number }): void
+  (e: 'update:boardPosition', value: { black: number[], white: number[], lastMove: number | null }): void
 }>()
 
 type Status = 'idle' | 'queued' | 'loading' | 'done' | 'error'
@@ -51,6 +53,7 @@ function scheduleStats() {
 
       const aiPlayer = whoseTurn(history)
       const data: GameState = await get(`/set-config?isAIGame=${aiPlayer}`).then(r => r.json())
+      if (!data.board?.grid) throw Error("Backend should return board")
       console.log(aiPlayer, 'DATA', data)
 
       await get('/set-config?isAIGame=0')
@@ -65,7 +68,7 @@ function scheduleStats() {
         if (cell === 1) black.push(index)
         else if (cell === 2) white.push(index)
       })
-      const lastMove: number = data.moveHistory[data.moveHistory.length - 1]
+      const lastMove = data.moveHistory[data.moveHistory.length - 1] || null
       computedLastMove.value = lastMove
 
       console.log("Black", black, "White", white, "lastMove", lastMove)
@@ -130,13 +133,13 @@ onMounted(scheduleStats)
       <div class="ctrl-pos ctrl-spacing">
         <button
           class="ctrl-btn"
-          :disabled="status === 'queued' || status === 'loading'"
+          :disabled="status === 'idle'"
           title="Refetch"
           @click="scheduleStats"
         >↺</button>
         <button
           class="ctrl-btn"
-          :disabled="status === 'queued' || status === 'loading'"
+          :disabled="status === 'idle'"
           title="Load"
           @click="loadPosition"
         >↪</button>
