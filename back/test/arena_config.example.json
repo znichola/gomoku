@@ -1,0 +1,6 @@
+{
+    "searchDepth": 10,
+    "aiTimeBudgetMs": 3000,
+    "searchFunction": "ALPHABETA_NEGAMAX_TT",
+    "moveFunction": "CANDIDATE_MOVES"
+}
