@@ -13,7 +13,16 @@ void TranspositionTable::resetAge() {
     age = 0;
 }
 
-void TranspositionTable::store(uint64_t hash, float score, int16_t depth, int move, Bound bound) {
+uint64_t TranspositionTable::hashOf(const Board &board) {
+    uint64_t h = board.grid.getHash();
+    h ^= (static_cast<uint64_t>(board.blackCaptured) * 0x9E3779B97F4A7C15ULL);
+    h ^= (static_cast<uint64_t>(board.whiteCaptured) * 0xC2B2AE3D27D4EB4FULL);
+    if (board.isBlackToPlay) h ^= 0xD1B54A32D192ED03ULL;
+    return h;
+}
+
+void TranspositionTable::store(const Board &board, float score, int16_t depth, int move, Bound bound) {
+    uint64_t hash = hashOf(board);
     TTEntry& e = table[hash & mask];
 
     // Keep deeper entries unless they're stale
@@ -27,13 +36,14 @@ void TranspositionTable::store(uint64_t hash, float score, int16_t depth, int mo
     }
 }
 
-const TTEntry* TranspositionTable::probe(uint64_t hash) const {
+const TTEntry* TranspositionTable::probe(const Board &board) const {
+    uint64_t hash = hashOf(board);
     const TTEntry& e = table[hash & mask];
     return (e.hash == hash) ? &e : nullptr;
 }
 
-int TranspositionTable::bestMove(uint64_t hash) const {
-    const TTEntry* e = probe(hash);
+int TranspositionTable::bestMove(const Board &board) const {
+    const TTEntry* e = probe(board);
     return e ? e->move : Board::FIRSTMOVE;
 }
 

@@ -246,6 +246,60 @@ def check_minmax_board_state_regression(host, port, depth):
     return ok
 
 
+def check_capture_count_hash_collision_regression(host, port, _depth):
+    """
+    Regression test for a hashing bug: Grid::getHash() only Zobrist-hashes stone
+    positions - it knows nothing about blackCaptured/whiteCaptured or isBlackToPlay.
+    AI::tt is a single table shared across the whole game (and, via /api/analyze,
+    across unrelated positions too - see the TT staleness regression above), and every
+    TranspositionTable::store()/probe() used to be keyed directly off that stone-only
+    hash (computed ad hoc at each AI.cpp call site). So two totally different real game
+    states that happen to share the same stone layout - but different capture counts,
+    or different side to move - collided on the same TT slot and silently reused each
+    other's cached score/bound, corrupting the search: since evaluate() weighs
+    captureBanked by pairs^2 * 150 and picks its whole active/passive weight table off
+    isBlackToPlay, the reused score could be wildly wrong for the actual position.
+    Confirmed live: the "take a free capture" position below reliably stopped finding
+    the capture after a handful of unrelated /analyze calls hit the same server, and
+    passed every time on a freshly started one - see git history around this test for
+    the investigation. Fixed by moving hashing into TranspositionTable itself:
+    store()/probe()/bestMove() now take a Board directly and hash it via the table's
+    own hashOf() (stone layout + blackCaptured + whiteCaptured + isBlackToPlay), so
+    there's exactly one place that computes a TT key and no call site can key a lookup
+    off only part of what makes two positions the same.
+
+    Poisons the TT the way this bug was actually found: run a batch of unrelated
+    searches first (each one stores nodes reached mid-search, at whatever capture
+    counts/turn that search happened to produce, all keyed only by stone layout
+    pre-fix), then immediately re-run the "take a free capture" scenario and check it
+    still finds 174. A single hand-crafted collision isn't reliable to construct (the
+    corrupting entry has to land on a node the real search actually revisits, one ply
+    into some candidate line - not the freshly-loaded root, which is never itself
+    stored by /analyze); running a representative spread of positions first reproduces
+    it the way it was actually observed. Uses a fixed, shallow depth regardless of
+    --depth: that's what reliably collides (it's shallow enough that both the priming
+    searches and the real one keep revisiting the same handful of near-root nodes -
+    deeper searches spread across more distinct positions and the corrupting entry is
+    less likely to land somewhere the real search actually probes), and it's also
+    exactly the depth this engine ships with by default (AI::maxDepth's default),
+    which is what made this bug bite in real, default-config games.
+    """
+    depth = 3
+    grid = {171: WHITE, 172: BLACK, 173: BLACK}
+
+    for t in TESTS:
+        analyze(host, port, t["grid"], t["black_to_play"], t["ai_color"], depth)
+
+    data = analyze(host, port, grid, black_to_play=False, ai_color=WHITE, depth=depth)
+    move = data["moveHistory"][-1] if data["moveHistory"] else None
+
+    ok = move == 174
+    print(f"[{'PASS' if ok else 'FAIL'}] capture-count/turn hash collision regression "
+          f"(TT key must include captures+turn, not just stone layout) "
+          f"-> played {move}, expected 174")
+    return ok
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--host", default="localhost")
@@ -254,7 +308,7 @@ def main():
     args = parser.parse_args()
 
     passed = 0
-    total = len(TESTS) + 5
+    total = len(TESTS) + 6
     for t in TESTS:
         try:
             data = analyze(args.host, args.port, t["grid"], t["black_to_play"], t["ai_color"], args.depth)
@@ -291,6 +345,11 @@ def main():
         passed += check_fork_no_false_block_regression(args.host, args.port, args.depth)
     except Exception as e:
         print(f"[ERROR] fork capture-rescue regression: {e}")
+
+    try:
+        passed += check_capture_count_hash_collision_regression(args.host, args.port, args.depth)
+    except Exception as e:
+        print(f"[ERROR] capture-count/turn hash collision regression: {e}")
 
     print(f"\n{passed}/{total} passed")
     sys.exit(0 if passed == total else 1)

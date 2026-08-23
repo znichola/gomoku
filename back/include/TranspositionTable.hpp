@@ -30,12 +30,17 @@ public:
 
     void resetAge();
     void newSearch();
-    void store(uint64_t hash, float score, int16_t depth, int move, Bound bound);
-    const TTEntry* probe(uint64_t hash) const;
-    int bestMove(uint64_t hash) const;
+
+    void store(const Board &board, float score, int16_t depth, int move, Bound bound);
+    const TTEntry* probe(const Board &board) const;
+    int bestMove(const Board &board) const;
     void clear();
 
 private:
+    // The actual TT key. Grid::getHash() is an incrementally-maintained Zobrist hash
+    // of stone positions only and is also used standalone to key the GridTraversal cache
+    static uint64_t hashOf(const Board &board);
+
     std::vector<TTEntry> table;
     size_t mask;
     uint8_t age;

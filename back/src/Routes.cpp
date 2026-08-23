@@ -155,6 +155,19 @@ void registerRoutes(Server& server, GameState& gs) {
         // so this analysis doesn't pick up stray leftover messages, and drain again afterwards
         // so this analysis's own messages don't leak into the live game's next /gameState poll.
         MessageQueue::drain();
+
+        // searchDepth/aiTimeBudgetMs/searchFunction/moveFunction all land on AI:: globals, not on
+        // `scratch` - they're shared with whatever live game is in progress, same problem as
+        // MessageQueue above but for engine config instead of messages: without saving and
+        // restoring them here, an /analyze call with e.g. searchFunction=MINMAX or a shallow
+        // searchDepth would silently degrade the live game's AI for every move after it, directly
+        // contradicting this endpoint's "without touching whatever game is actually in progress"
+        // contract above.
+        const auto savedSearchFn  = AI::searchFunction;
+        const auto savedMoveFn    = AI::moveFunction;
+        const auto savedMaxDepth  = AI::maxDepth;
+        const auto savedThinkMs   = AI::maxThinkMillis;
+
         Response res;
         try {
             handleLoadGameState(req.query, scratch);
@@ -162,6 +175,12 @@ void registerRoutes(Server& server, GameState& gs) {
         } catch (const std::exception& e) {
             res = Response{400, std::string("{\"error\":\"") + e.what() + "\"}"};
         }
+
+        AI::searchFunction = savedSearchFn;
+        AI::moveFunction   = savedMoveFn;
+        AI::maxDepth       = savedMaxDepth;
+        AI::maxThinkMillis = savedThinkMs;
+
         MessageQueue::drain();
         return res;
     });
