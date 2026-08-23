@@ -63,7 +63,7 @@ export const useGameStore = defineStore('game', () => {
   // Prevent server spamming
   const fetchIsAvailable: Ref<boolean> = ref(true)
 
-  const overlayDisabled = reactive({})
+  const overlayDisabled: Ref<Record<string, boolean>> = ref({})
   const overlayLayers = ref<OverlayLayer[]>([])
   const overlayMessages = ref<OverlayMessage[]>([])
 
@@ -102,7 +102,9 @@ export const useGameStore = defineStore('game', () => {
             }
           })()
           const newElement = { name, color }
-          overlayLayers.value.push(newElement)
+          overlayLayers.value.push(newElement);
+          if (newElement.name !== 'AI suggestion')
+            overlayDisabled.value[newElement.name] = true
           obj.group = newElement
         } else {
           obj.group = element
