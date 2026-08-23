@@ -103,7 +103,7 @@ export const useGameStore = defineStore('game', () => {
           })()
           const newElement = { name, color }
           overlayLayers.value.push(newElement);
-          if (newElement.name !== 'AI suggestion')
+          if (newElement.name !== 'AI suggestion' && !(newElement.name in overlayDisabled.value))
             overlayDisabled.value[newElement.name] = true
           obj.group = newElement
         } else {
