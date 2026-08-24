@@ -456,9 +456,10 @@ AI::BoardStats AI::gatherBoardStats(const Board &board) {
         bool openL = n.prev && n.prev->type == Cell::EMPTY;
         bool openR = n.next && n.next->type == Cell::EMPTY;
         int openEnds = (int)openL + (int)openR;
+        int openCount = (int(openL) ? n.prev->size : 0) + (int(openR) ? n.next->size : 0);
 
-        if (openEnds == 0) continue; // closed, skip
-
+        // if the group cannot become a 5, it's shite.
+        if (openEnds == 0 || openCount <= 4) continue; // closed, skip
         Eval& target = (openEnds == 2) ? eg->open : eg->half;
         if (n.type == Cell::BLACK) target.black++; else target.white++;
     }
