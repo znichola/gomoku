@@ -108,7 +108,7 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
     float origA = a;
 
     float value = -INF;
-    for (auto move : mainCandidateMoves(board, bestMove, -color, depth)) {
+    for (auto move : mainCandidateMoves(board, bestMove, color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
@@ -145,7 +145,7 @@ float AI::alphaBetaNegaMax(const Board &board, int16_t depth, float a, float b, 
     }
 
     float value = -INF;
-    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, -color, depth)) {
+    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
 
@@ -179,7 +179,7 @@ float AI::negaMax(const Board &board, int16_t depth, float color, std::stop_toke
         return color * evaluate(board, depth, victory);
     }
     float value = -INF;
-    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, -color, depth)) {
+    for (auto move : mainCandidateMoves(board, Board::FIRSTMOVE, color, depth)) {
         Board newBoard(board);
         if (newBoard.playMove(move) == false) continue;
         value = std::max(value, -negaMax(newBoard, depth-1, -color, st));
@@ -472,11 +472,11 @@ float AI::mainSearch(const Board &board, float color, std::stop_token st) {
         case SearchFunction::MINMAX:
             return color * minMax(board, AI::maxDepth, !isWhite, st);
         case SearchFunction::NEGAMAX:
-            return negaMax(board, AI::maxDepth, color, st);
+            return -negaMax(board, AI::maxDepth, -color, st);
         case SearchFunction::ALPHABETA_NEGAMAX:
-            return alphaBetaNegaMax(board, AI::maxDepth, -INF, INF, color, st);
+            return -alphaBetaNegaMax(board, AI::maxDepth, -INF, INF, -color, st);
         case SearchFunction::ALPHABETA_NEGAMAX_TT:
-            return alphaBetaNegaMaxTT(board, AI::maxDepth, -INF, INF, color, st);
+            return -alphaBetaNegaMaxTT(board, AI::maxDepth, -INF, INF, -color, st);
     }
     throw std::runtime_error("Must select valid Search function");
 }
