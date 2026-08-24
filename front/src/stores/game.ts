@@ -1,6 +1,7 @@
 import { reactive, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import { Cell, type GameState, type OverlayLayer, type OverlayMessage } from '../types/game'
+import { apiUrl } from '../helpers/api'
 
 // Conversion HSV → RGB
 function hsvToRgb(h: number, s: number, v: number) {
@@ -62,7 +63,7 @@ export const useGameStore = defineStore('game', () => {
   // Prevent server spamming
   const fetchIsAvailable: Ref<boolean> = ref(true)
 
-  const overlayDisabled = reactive({})
+  const overlayDisabled: Ref<Record<string, boolean>> = ref({})
   const overlayLayers = ref<OverlayLayer[]>([])
   const overlayMessages = ref<OverlayMessage[]>([])
 
@@ -101,7 +102,9 @@ export const useGameStore = defineStore('game', () => {
             }
           })()
           const newElement = { name, color }
-          overlayLayers.value.push(newElement)
+          overlayLayers.value.push(newElement);
+          if (newElement.name !== 'AI suggestion' && !(newElement.name in overlayDisabled.value))
+            overlayDisabled.value[newElement.name] = true
           obj.group = newElement
         } else {
           obj.group = element
@@ -189,7 +192,7 @@ export const useGameStore = defineStore('game', () => {
       .replace(/isHumanGame=(false|true|\d)/, 'isAIGame=0') // fix old cache version
     if (!query || query.length <= 0)
       return console.debug('No T0.')
-    fetch(`http://${window.location.hostname}:9012/debug-action?action=load-game-state&${query}`)
+    fetch(apiUrl(`/debug-action?action=load-game-state&${query}`))
       .then((response) => {
         if (response.status != 200) {
           console.warn('watcher: STATUS NOT 200')
@@ -229,7 +232,7 @@ export const useGameStore = defineStore('game', () => {
     try {
       if (!fetchIsAvailable.value)
         return false
-      const resp = await fetch(`http://${window.location.hostname}:9012/gameState?silent`)
+      const resp = await fetch(apiUrl('/gameState?silent'))
       if (resp.status != 200)
         throw Error('STATUS NOT 200')
       const data = await resp.json()

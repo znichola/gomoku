@@ -44,8 +44,11 @@ public:
     void start();
     void get(const std::string& path, Handler handler);
 
+    void serveStatic(const std::string& root);
+
 private:
     int server_fd;
+    std::string static_root;
 
     std::unordered_map<std::string, Handler> get_handlers;
 
@@ -57,6 +60,8 @@ private:
     std::string parseBody(const std::string& request) const;
     std::string buildResponse(const Response& res) const;
     void dispatch(int client, const Request& req);
+    Response serveStaticFile(const std::string& reqPath) const;
+    std::string mimeType(const std::string& path) const;
 };
 
 std::ostream &operator<<(std::ostream &os, const Server::QueryMap &map);

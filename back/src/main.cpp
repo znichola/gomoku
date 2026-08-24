@@ -16,6 +16,8 @@ int	main() {
 
 	init_zobrist(seed);
 
+	server.serveStatic("../front/dist");
+
 	GameState gs;
 	registerRoutes(server, gs);
 	server.start();

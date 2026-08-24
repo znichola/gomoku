@@ -4,6 +4,7 @@ import { useGameStore } from '@/stores/game'
 import AppButton from '@/components/AppButton.vue'
 import { computed } from 'vue';
 import { searchOptions, moveOptions } from '@/helpers/helpers';
+import { apiUrl } from '@/helpers/api'
 import { Cell } from '@/types/game';
 import type { MoveFunction, MoveSuggestion, SearchFunction } from '@/types/game';
 
@@ -24,7 +25,7 @@ async function toggleAI(color: 1 | 2) {
       localSuggest.value = 'off'
       params.set('moveSuggestion', 'off')
     }
-    const resp = await fetch(`http://${window.location.hostname}:9012/set-config?${params}`, {
+    const resp = await fetch(apiUrl(`/set-config?${params}`), {
       method: 'GET',
     })
     const data = await resp.json()
@@ -86,7 +87,7 @@ async function applyConfig() {
       moveSuggestion: String(localSuggest.value),
     })
     const resp = await fetch(
-      `http://${window.location.hostname}:9012/set-config?${params}`,
+      apiUrl(`/set-config?${params}`),
       { method: 'GET' }
     )
     const data = await resp.json()

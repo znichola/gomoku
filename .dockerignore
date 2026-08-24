@@ -1,0 +1,16 @@
+.git
+
+# backend build artifacts - built fresh inside the image, and copying
+# host-built ones in risks Make treating them as already up to date
+back/obj
+back/gobj
+back/gomoku
+back/gomoku_*
+back/test/obj
+back/test/moves
+
+# frontend build artifacts / deps - installed & built fresh inside the image
+front/node_modules
+front/dist
+front/package.json.mklock
+front/.eslintcache

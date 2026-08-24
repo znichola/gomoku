@@ -3,6 +3,7 @@ import type { RefStringOrNull } from '@/types/vue'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { Cell, type OverlayMessage } from '@/types/game'
 import { getCellClass } from '@/helpers/helpers'
+import { apiUrl } from '@/helpers/api'
 import { useGameStore } from '@/stores/game'
 
 const errorMessage: RefStringOrNull = ref(null)
@@ -60,7 +61,7 @@ let _load_timeout = 0
 async function load(error: boolean = false) {
   errorMessage.value = ''
   try {
-    const resp = await fetch(`http://${window.location.hostname}:9012/gameState?silent&firstload`)
+    const resp = await fetch(apiUrl('/gameState?silent&firstload'))
     if (resp.status != 200)
       throw Error('STATUS NOT 200')
     const watcher = gameStore.backWatcher('mounted')
@@ -104,7 +105,7 @@ async function move(event: MouseEvent) {
     if (color)
       objQuery.force_color = color
     const query = new URLSearchParams(objQuery).toString()
-    const resp = await fetch(`http://${window.location.hostname}:9012/move?${query}`)
+    const resp = await fetch(apiUrl(`/move?${query}`))
     if (resp.status == 400) {
       gameStore.fetchIsAvailable.set(true)
       errorMessage.value = (await resp.json()).error || 'Invalid move.'
@@ -138,7 +139,7 @@ async function requestAiMove() {
   try {
     gameStore.fetchIsAvailable.set(false)
     gameStore.startThinking()
-    const resp = await fetch(`http://${window.location.hostname}:9012/ai-move`)
+    const resp = await fetch(apiUrl('/ai-move'))
     gameStore.stopThinking()
     if (resp.status == 400) {
       gameStore.fetchIsAvailable.set(true)

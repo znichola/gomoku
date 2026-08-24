@@ -7,3 +7,4 @@ gomoku
 
 test/obj
 test/moves
+arena_results.json

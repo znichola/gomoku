@@ -4,6 +4,7 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import type { Position } from '@/types/miniBoard'
 import type { GameState } from '@/types/game'
 import { usePositionQueueStore } from '@/stores/testPositionQueue'
+import { apiUrl } from '@/helpers/api'
 import router from '@/router'
 
 const props = defineProps<{
@@ -28,7 +29,7 @@ const whoseTurn = (history: number[]): 1 | 2 => history.length % 2 === 0 ? 1 : 2
 let alive = true
 onUnmounted(() => { alive = false })
 
-const get = (path: string) => fetch(`http://${window.location.hostname}:9012${path}`).then(r => {
+const get = (path: string) => fetch(apiUrl(path)).then(r => {
   if (!r.ok) throw new Error(`${path} failed: ${r.status}`)
   return r
 })

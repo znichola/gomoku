@@ -50,6 +50,10 @@ unsigned AI::play(const Board &board, bool isWhite) {
     } while (status != std::future_status::ready);
 
     ENABLE_LOG
+    const auto &cm = getCandidateMoves(board.grid);
+    for (const auto &m : cm) {
+        MBL("getCandidateMoves", m, "");
+    }
     if (us < 1'000) {
         COUT << "] " << us << " µs\n";
         MQ   << "[AI] Move took " << us << " µs\n";
@@ -88,13 +92,12 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
         return 0;
     }
     nodeVisitCounter[depth] += 1;
-    uint64_t hash = board.grid.getHash();
 
     // Lookup previous position, either tighten search window (adjust a b bestMove)
     // or return exact score if it's already stored
     float ttScore = 0;
     unsigned bestMove = Board::FIRSTMOVE;
-    if (tryApplyTTBounds(hash, depth, a, b, ttScore, bestMove))
+    if (tryApplyTTBounds(board, depth, a, b, ttScore, bestMove))
         return ttScore;
 
     Cell victory = board.winner;
@@ -119,7 +122,7 @@ float AI::alphaBetaNegaMaxTT(const Board &board, int16_t depth, float a, float b
     Bound bound = value <= origA ? Bound::UPPER
                 : value >= b     ? Bound::LOWER
                                  : Bound::EXACT;
-    tt.store(hash, value, depth, bestMove, bound);
+    tt.store(board, value, depth, bestMove, bound);
     return value;
 }
 
@@ -235,7 +238,7 @@ float AI::minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::sto
 */
 unsigned AI::findForcedMove(const Board &board, Cell myColor) {
     const Cell opponent = (myColor == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
-    std::set<unsigned> candidates = getCandidateMoves(board.grid);
+    std::vector<unsigned> candidates = getCandidateMoves(board.grid);
 
     for (unsigned move : candidates) {
         Board myTry(board);
@@ -385,7 +388,7 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
     if (board.lastMove == Board::FIRSTMOVE || board.lastMove >= board.grid.size) {
         return 0;
     }
-    const TTEntry* e = tt.probe(board.grid.getHash());
+    const TTEntry* e = tt.probe(board);
     if (e) return e->score;
 
     // 1 for the side to play, 0 for the waiting side
@@ -426,7 +429,7 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
        << "\npossible captures" << possibleCaptures;
        ;
 
-    tt.store(board.grid.getHash(), res, 0, -1, Bound::ONEOFF);
+    tt.store(board, res, 0, -1, Bound::ONEOFF);
     return res; // + is good for white, - good for black
 }
 
@@ -535,20 +538,31 @@ float AI::mainSearch(const Board &board, float color, std::stop_token st) {
 }
 
 
-std::set<unsigned> AI::getCandidateMoves(const Grid &grid) {
-    std::set<unsigned> cm;
+std::vector<unsigned> AI::getCandidateMoves(const Grid &grid) {
+    if (candidateStamp.size() != grid.size)
+        candidateStamp.assign(grid.size, 0);
+    ++candidateGen;
+
+    std::vector<unsigned> candidates;
+    candidates.reserve(64);
+
     for (size_t id = 0; id < grid.size; id++) {
         if (grid[id] == Cell::EMPTY) continue;
         Vector2D v = grid.idToVec(id);
-        for (const Vector2D &e: EXTREMITIES) {
+
+        for (const Vector2D &e : EXTREMITIES) {
             Vector2D nv = v + e;
             if (!grid.isInside(nv)) continue;
             unsigned nid = grid.vecToId(nv);
-            if (grid[nid] == Cell::EMPTY)
-                cm.insert(nid);
+            if (grid[nid] != Cell::EMPTY) continue;
+
+            if (candidateStamp[nid] != candidateGen) {
+                candidateStamp[nid] = candidateGen;
+                candidates.push_back(nid);
+            }
         }
     }
-    return cm;
+    return candidates;
 }
 
 // TODO unused, but could be interesting
@@ -685,7 +699,7 @@ static float localTacticalScore(const Board &board, unsigned id, Cell color) {
 }
 
 std::vector<unsigned> AI::getOrderedCandidateMoves(const Board &board, unsigned bestMove, float color, int depth) {
-    std::set<unsigned> moves = getCandidateMoves(board.grid);
+    std::vector<unsigned> moves = getCandidateMoves(board.grid);
     const Cell cColor = color == -1 ? Cell::BLACK : Cell::WHITE;
 
     std::vector<std::pair<unsigned, float>> scoredMoves;
@@ -697,7 +711,7 @@ std::vector<unsigned> AI::getOrderedCandidateMoves(const Board &board, unsigned 
             continue;
         }
         if (board.grid.isDoubleThree(move, cColor)) continue;
-        scoredMoves.push_back({move, localTacticalScore(board, move, cColor)});
+        scoredMoves.push_back({move, +randNoise(0.1f) + localTacticalScore(board, move, cColor)});
     }
 
     constexpr size_t MAX_MOVES = 3;
@@ -728,8 +742,8 @@ std::vector<unsigned> AI::getOrderedCandidateMoves(const Board &board, unsigned 
 /*
 
 */
-bool AI::tryApplyTTBounds(uint64_t hash, int depth, float &alpha, float &beta, float &score, unsigned &bestMove) {
-    const TTEntry* e = tt.probe(hash);
+bool AI::tryApplyTTBounds(const Board &board, int depth, float &alpha, float &beta, float &score, unsigned &bestMove) {
+    const TTEntry* e = tt.probe(board);
     if (!e || e->depth < depth) return false;
 
     bestMove = e->move;

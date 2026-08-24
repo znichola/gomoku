@@ -20,6 +20,9 @@ dev:
 	tmux set-option -g mouse on
 	tmux attach -t $(NAME)
 
+launch: back front
+	cd back && ./gomoku
+
 clean:
 	make -C back clean
 	make -C front clean
@@ -30,4 +33,4 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all $(NAME) back front dev clean fclean re
+.PHONY: all $(NAME) back front dev launch clean fclean re

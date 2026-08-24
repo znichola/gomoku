@@ -2,6 +2,7 @@
 import { useGameStore } from '@/stores/game'
 import { Cell } from '@/types/game'
 import { onMounted, onUnmounted } from 'vue'
+import { apiUrl } from '@/helpers/api'
 
 const gameStore = useGameStore()
 
@@ -35,7 +36,7 @@ async function click(event: MouseEvent) {
   event.stopPropagation()
   event.preventDefault()
   try {
-    const resp = await fetch(`http://${window.location.hostname}:9012/debug-action?action=${action[0]}&id=${action[1]}`, {
+    const resp = await fetch(apiUrl(`/debug-action?action=${action[0]}&id=${action[1]}`), {
       method: 'GET',
     })
     const data = await resp.json()
@@ -47,7 +48,7 @@ async function click(event: MouseEvent) {
 
 async function reset() {
   try {
-    const resp = await fetch(`http://${window.location.hostname}:9012/reset`, {
+    const resp = await fetch(apiUrl('/reset'), {
       method: 'GET',
     })
     const data = await resp.json()
@@ -59,7 +60,7 @@ async function reset() {
 
 async function debug(action: string) {
   try {
-    const resp = await fetch(`http://${window.location.hostname}:9012/debug-action?action=${action}`, {
+    const resp = await fetch(apiUrl(`/debug-action?action=${action}`), {
       method: 'GET',
     })
     const data = await resp.json()

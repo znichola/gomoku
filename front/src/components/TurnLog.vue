@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useGameStore } from '@/stores/game'
+import { apiUrl } from '@/helpers/api'
 
 const gameStore = useGameStore()
 
@@ -22,7 +23,7 @@ async function replayMoves(turnIndex: number) {
       savedMoves.value = [...gameStore.gameState.moveHistory]
     }
     const moveSlice = gameStore.gameState.moveHistory.slice(0, turnIndex).join(',');
-    const resp = await fetch(`http://${window.location.hostname}:9012/replay?moves=${moveSlice}`, {
+    const resp = await fetch(apiUrl(`/replay?moves=${moveSlice}`), {
       method: 'GET',
     })
     const data = await resp.json()
@@ -35,7 +36,7 @@ async function replayMoves(turnIndex: number) {
 async function redoMoves() {
   if (!savedMoves.value) return
   try {
-    const resp = await fetch(`http://${window.location.hostname}:9012/replay?moves=${savedMoves.value.join(',')}`, {
+    const resp = await fetch(apiUrl(`/replay?moves=${savedMoves.value.join(',')}`), {
       method: 'GET',
     })
     const data = await resp.json()

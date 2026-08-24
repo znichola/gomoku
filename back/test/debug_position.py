@@ -34,7 +34,7 @@ def analyze(host, port, grid_overrides, black_to_play, ai_color, depth,
         f"&isAIGame={ai_color}"
         f"&searchDepth={depth}"
     )
-    url = f"http://{host}:{port}/analyze?{params}"
+    url = f"http://{host}:{port}/api/analyze?{params}"
     with urllib.request.urlopen(url, timeout=30) as r:
         return json.load(r)
 
