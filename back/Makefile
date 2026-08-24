@@ -5,6 +5,12 @@ PORT     ?= 9012
 CXX       = clang++
 CXXFLAGS  = -Wall -Wextra -Werror
 CXXFLAGS += -std=c++20
+# Release-only (never debug/sanitize, which want unoptimized -g builds):
+#   -O3            aggressive optimization
+#   -march=native  tune/vectorize for this machine's CPU
+#   -flto          inline/optimize across .cpp files at link time
+#   -funroll-loops unroll loops to cut branch overhead
+RELFLAGS  = -O3 -march=native -flto -funroll-loops
 
 FILES     = Board Cell GameState Grid Routes Server Utils MessageQueue AI Vector2D GridTraversal TranspositionTable EnumIO AI_Eval
 # CXXFILES are files without header (.hpp file) :
@@ -27,7 +33,7 @@ all: $(NAME)
 
 $(OBJ_PATH)main_$(PORT).o: $(SRC_PATH)main.cpp $(HDEP)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -D PORT=$(PORT) $(LIBS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(RELFLAGS) -D PORT=$(PORT) $(LIBS) -c $< -o $@
 
 $(GOBJ_PATH)main_$(PORT).o: $(SRC_PATH)main.cpp $(HDEP)
 	@mkdir -p $(@D)
@@ -39,14 +45,14 @@ $(SRC_PATH)main_$(PORT).cpp: $(SRC_PATH)main.cpp $(HDEP)
 
 $(OBJ_PATH)%.o: $(SRC_PATH)%.cpp $(HDEP)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(LIBS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(RELFLAGS) $(LIBS) -c $< -o $@
 
 $(GOBJ_PATH)%.o: $(SRC_PATH)%.cpp $(HDEP)
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) $(LIBS) -g -c $< -o $@
 
 $(NAME): $(OBJ) $(HDEP)
-	$(CXX) $(CXXFLAGS) $(LIBS) -o $(NAME) $(OBJ)
+	$(CXX) $(CXXFLAGS) $(RELFLAGS) $(LIBS) -o $(NAME) $(OBJ)
 
 # Usage: make debug && lldb gomoku_debug -o run
 $(NAME)_debug: $(GOBJ) $(HDEP)
@@ -64,14 +70,14 @@ watcher:
 	@(trap '' INT; \
 	while true; do \
 		echo "\033[0;32m=== BUILD ===\033[0;00m"; \
-		if ! make debug PORT=$(PORT); then \
+		if ! make PORT=$(PORT); then \
 			echo "\n\033[0;31mBuild failed.\033[0;00m"; \
 			read -p "Press enter to retry (q to quit): " input; \
 			[ "$$input" = "q" ] && exit 0; \
 			continue; \
 		fi; \
 		echo "\033[0;32m=== RUN ===\033[0;00m"; \
-		./$(NAME)_debug || true; \
+		./$(NAME) || true; \
 		echo ""; \
 		read -p "Press enter to continue (q to quit): " input; \
 		[ "$$input" = "q" ] && break; \
@@ -107,10 +113,10 @@ TEST_BINS = $(TEST_FILES)
 
 $(TEST_OBJ_PATH)%.o: $(TEST_DIR)%.cpp
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -c -I$(INC_PATH) -o $@ $<
+	$(CXX) $(CXXFLAGS) $(RELFLAGS) -c -I$(INC_PATH) -o $@ $<
 
 test/moves: $(TEST_OBJ_PATH)moves.o $(TEST_MAIN_OBJ)
-	$(CXX) $(CXXFLAGS) $() $^ -o $@
+	$(CXX) $(CXXFLAGS) $(RELFLAGS) $() $^ -o $@
 
 
 .PHONY: all debug watcher sanitize sanitize3 clean bclean fclean re run
