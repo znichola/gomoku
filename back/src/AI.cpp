@@ -550,7 +550,7 @@ std::vector<unsigned> AI::getCandidateMoves(const Grid &grid) {
         if (grid[id] == Cell::EMPTY) continue;
         Vector2D v = grid.idToVec(id);
 
-        for (const Vector2D &e : NEIGHBORHOOD_2) {
+        for (const Vector2D &e : EXTREMITIES) {
             Vector2D nv = v + e;
             if (!grid.isInside(nv)) continue;
             unsigned nid = grid.vecToId(nv);
@@ -714,7 +714,7 @@ std::vector<unsigned> AI::getOrderedCandidateMoves(const Board &board, unsigned 
         scoredMoves.push_back({move, +randNoise(0.1f) + localTacticalScore(board, move, cColor)});
     }
 
-    constexpr size_t MAX_MOVES = 5;
+    constexpr size_t MAX_MOVES = 3;
 
 	// Trie seulement les 3 premiers
 	size_t count = std::min(MAX_MOVES, scoredMoves.size());
