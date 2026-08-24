@@ -273,65 +273,40 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
 
     const int16_t targetDepth = AI::maxDepth;
     unsigned bestMove = Board::FIRSTMOVE;
-    int16_t lastDepthRun = 0;
+    float bestScore = -INF;
     tt.newSearch();
+    AI::nodeVisitCounter.assign(targetDepth + 1, 0);
+    AI::nodeEvalCounter.assign(targetDepth + 1, 0);
 
-    for (int16_t d = 1; d <= targetDepth; ++d) {
-        if (st.stop_requested())
-            break;
-
-        AI::maxDepth = d; // drives evaluate()'s mate-distance scoring and mainSearch's depth for this iteration
-        AI::nodeVisitCounter.assign(d + 1, 0);
-        AI::nodeEvalCounter.assign(d + 1, 0);
-
-        float bestScoreThisDepth = -INF;
-        unsigned bestMoveThisDepth = Board::FIRSTMOVE;
-        bool interrupted = false;
-
-        auto candidateMoves = mainCandidateMoves(board, bestMove, isWhite ? 1 : -1, d);
-        for (auto move : candidateMoves) {
-            if (st.stop_requested()) { interrupted = true; break; }
-            Board newBoard(board);
-            if (newBoard.playMove(move) == false) continue;
-            float score = mainSearch(newBoard, isWhite ? 1 : -1, st);
-            if (st.stop_requested()) { interrupted = true; break; } // score may be 0-contaminated, don't trust it
-            ENABLE_LOG MBL("findBestMove_" + std::to_string(d), move, score); DISABLE_LOG
-            if (score >= bestScoreThisDepth) {
-                bestMoveThisDepth = move;
-                bestScoreThisDepth = score;
-            }
+    auto candidateMoves = mainCandidateMoves(board, Board::FIRSTMOVE, isWhite ? 1 : -1, targetDepth);
+    for (auto move : candidateMoves) {
+        if (st.stop_requested()) { break; }
+        Board newBoard(board);
+        if (newBoard.playMove(move) == false) continue;
+        float score = mainSearch(newBoard, isWhite ? 1 : -1, st);
+        if (st.stop_requested()) { break; } // score may be 0-contaminated, don't trust it
+        ENABLE_LOG MBL("findBestMove", move, score); DISABLE_LOG
+        if (score >= bestScore) {
+            bestMove = move;
+            bestScore = score;
         }
-
-        if (interrupted || bestMoveThisDepth == Board::FIRSTMOVE) {
-            ENABLE_LOG MQ << AI << "depth " << d << " interrupted, keeping depth " << lastDepthRun << "'s move\n"; DISABLE_LOG
-            break;
-        }
-
-        bestMove = bestMoveThisDepth;
-        lastDepthRun = d;
-        ENABLE_LOG MQ << AI << "depth " << d << " complete: move " << bestMove << " (" << bestScoreThisDepth << ")\n"; DISABLE_LOG
     }
-
-    AI::maxDepth = targetDepth; // restore the configured depth (used by evaluate()/UI outside of a search)
-
     ENABLE_LOG
     if (bestMove == Board::FIRSTMOVE) {
         MQ << AI << "No best move found";
-        auto candidateMoves = mainCandidateMoves(board, Board::FIRSTMOVE, isWhite ? 1 : -1, 1);
         if (candidateMoves.empty()) {
-            MQ << AI << " (no candidates)";
+            MQ << " (no candidates)";
         }  else {
-            MQ << AI << " (first candidate move played instead)";
+            MQ << " (first candidate move played instead)";
             bestMove = *candidateMoves.begin();
         }
     }
-    MQ << AI << " reached depth " << lastDepthRun << "/" << targetDepth << ", explored "
-       << std::accumulate(nodeVisitCounter.begin(), nodeVisitCounter.end(), 0) << " nodes\n"
+    MQ << AI << "explored " << std::accumulate(nodeVisitCounter.begin(), nodeVisitCounter.end(), 0) << " nodes\n"
        << "and evaluated " << std::accumulate(nodeEvalCounter.begin(), nodeEvalCounter.end(), 0) << " positions\n"
        << [](){
         std::stringstream ss;
         for (int i = static_cast<int>(nodeVisitCounter.size()) - 1, last = 1; 0 <= i; i--) {
-            ss << "Ply " << (nodeVisitCounter.size() - i) << ": " << nodeVisitCounter[i] << " nodes (x"
+            ss << "Depth " << (maxDepth - i + 1) << ": " << nodeVisitCounter[i] << " nodes (x"
                 << (nodeVisitCounter[i] * 100 / std::max(1, last)) / 100.0 << ")\n";
             last = nodeVisitCounter[i];
         }
