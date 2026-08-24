@@ -42,8 +42,7 @@ void GridTraversal::iterateNode(const Grid& grid, void (GridTraversal::*populate
 		const Vector2D cellPoint = Vector2D::createFromIndex(id, width);
 		for (long ext = 0; ext < 4; ++ext) {
 			const Vector2D newPoint = cellPoint + *(extptr + ext);
-			if (!grid.isInside(newPoint)) continue;
-			const long nid = newPoint.toIndex(width);
+			const long nid = grid.isInside(newPoint) ? newPoint.toIndex(width) : -1;
 
 			(this->*populateNode)(id, nid, ext, grid);
 		}
@@ -60,6 +59,8 @@ NodeLOD* GridTraversal::createLOD(Cell type) {
 }
 
 void GridTraversal::populateLOD(long id, long nid, long ext, const Grid& grid) {
+	if (nid < 0) return; // board edge, no neighbor to compare id against - unchanged from before
+
 	NodeLOD*& cell = gridCellRow[id].lod[ext];
 	NodeLOD*& next = gridCellRow[nid].lod[ext];
 
@@ -90,7 +91,6 @@ NodeCellRow* GridTraversal::createCellRow() {
 
 void GridTraversal::populateCellRow(long id, long nid, long ext, const Grid& grid) {
 	NodeCellRow*& cell = gridCellRow[id][ext];
-	NodeCellRow*& next = gridCellRow[nid][ext];
 
 	// Init
 	if (cell == NULL) { // cell->step == NodeStep::LOOKING
@@ -102,10 +102,13 @@ void GridTraversal::populateCellRow(long id, long nid, long ext, const Grid& gri
 		cell->ext = ext;
 		cell->step = NodeStep::BOILING;
 	}
-	// Increment, link and detect the end of the line 
+	// Increment, link and detect the end of the line
 	if (cell->step == NodeStep::BOILING) {
 		cell->incrementSize(gridCellRow[id].dead);
 
+		if (nid < 0) return;
+
+		NodeCellRow*& next = gridCellRow[nid][ext];
 		if (grid[id] == grid[nid]) {
 			next = cell; // Link the next grid cell to this Node
 		} else { // End of the line
@@ -128,6 +131,7 @@ const std::deque<NodeCellRow>& GridTraversal::getCellRowsGarbage() const {
 const std::vector<AdjacentNode>& GridTraversal::getGridCellRow() const {
 	return gridCellRow;
 };
+
 
 void NodeCellRow::incrementSize(bool cellIsDead){
 	++size;
