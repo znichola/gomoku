@@ -371,17 +371,21 @@ float AI::evaluate(const Board &board, int16_t depth, Cell winningPlayer) {
 
     auto captureDanger = [](unsigned capturedStones) -> float {
         float pairs = static_cast<float>(capturedStones) / 2.0f;
-        return pairs * pairs * 150.0f;
+        return pairs * pairs * 306.0f; // peugeot 4 life
     };
     Eval captureBanked = {captureDanger(board.blackCaptured), captureDanger(board.whiteCaptured)};
 
-    Eval eval = fours.open  * (active * 5000.0f + passive * 4200.0f)
-              + fours.half  * (active *  950.0f + passive * 400.0f)
-              + threes.open * (active *  700.0f + passive * 600.0f)
-              + threes.half * (active *  200.0f + passive * 90.0f)
-              + twos.open   * (active *   10.0f + passive * 6.0f)
-              + twos.half   * (active *    8.5f + passive * 3.2f)
-              + possibleCaptures * (active * 200.0f + passive * 140.0f)
+    Eval eval = fours.open         * (active * 5000.0f + passive * 4200.0f)
+              + fours.openCutable  * (active * 5000.0f + passive * 4200.0f) * 0.95
+              + fours.half         * (active *  950.0f + passive * 400.0f)
+              + fours.halfCutable  * (active *  855.0f + passive * 320.0f)  * 0.95
+              + threes.open        * (active *  800.0f + passive * 600.0f)
+              + threes.openCutable * (active *  800.0f + passive * 600.0f)  * 0.95
+              + threes.half        * (active *  200.0f + passive * 90.0f)
+              + threes.halfCutable * (active *  200.0f + passive * 90.0f)   * 0.95
+              + twos.open          * (active *   10.0f + passive * 6.0f)
+              + twos.half          * (active *    8.5f + passive * 3.2f)
+              + possibleCaptures   * (active * 200.0f + passive * 140.0f)
               + captureBanked
               + active * 1.2f; // move advantage
 
@@ -459,9 +463,14 @@ AI::BoardStats AI::gatherBoardStats(const Board &board) {
         int openCount = (int(openL) ? n.prev->size : 0) + (int(openR) ? n.next->size : 0);
 
         // if the group cannot become a 5, it's shite.
-        if (openEnds == 0 || openCount <= 4) continue; // closed, skip
-        Eval& target = (openEnds == 2) ? eg->open : eg->half;
-        if (n.type == Cell::BLACK) target.black++; else target.white++;
+        if (openEnds == 0 || openCount <= 4) continue;
+        if (n.score == n.size || n.size == 2) {
+            Eval& target = (openEnds == 2) ? eg->open : eg->half;
+            if (n.type == Cell::BLACK) target.black++; else target.white++;
+        } else {
+            Eval& target = (openEnds == 2) ? eg->openCutable : eg->halfCutable;
+            if (n.type == Cell::BLACK) target.black++; else target.white++;
+        }
     }
     return stats;
 }

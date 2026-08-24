@@ -32,6 +32,7 @@ namespace AI {
   struct EvalGroups {
       Eval open;
       Eval half;
-      Eval score;
+      Eval openCutable;
+      Eval halfCutable;
   };
 };
