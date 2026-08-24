@@ -75,6 +75,7 @@ namespace AI {
 
     std::vector<unsigned>getCandidateMoves(const Grid &grid);
     std::vector<unsigned>getOrderedCandidateMoves(const Board &board, unsigned bestMove, float, int depth);
+    std::vector<unsigned>getOrderedCandidateMovesLogAll(const Board &board, unsigned bestMove, float, int depth);
     Eval countGroupsOf(const Board &board, int size);
 
     // twos/threes/fours/captures computed in a single pass over the board's line segments,

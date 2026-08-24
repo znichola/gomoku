@@ -50,10 +50,7 @@ unsigned AI::play(const Board &board, bool isWhite) {
     } while (status != std::future_status::ready);
 
     ENABLE_LOG
-    const auto &cm = getCandidateMoves(board.grid);
-    for (const auto &m : cm) {
-        MBL("getCandidateMoves", m, "");
-    }
+    getOrderedCandidateMovesLogAll(board, -1, isWhite ? 1 : -1, -1); ENABLE_LOG
     if (us < 1'000) {
         COUT << "] " << us << " µs\n";
         MQ   << "[AI] Move took " << us << " µs\n";
@@ -625,6 +622,30 @@ std::vector<unsigned> AI::getOrderedCandidateMoves(const Board &board, unsigned 
     return orderedMoves;
 }
 
+
+std::vector<unsigned> AI::getOrderedCandidateMovesLogAll(const Board &board, unsigned bestMove, float color, int depth) {
+    std::vector<unsigned> moves = getCandidateMoves(board.grid);
+    const Cell cColor = color == -1 ? Cell::BLACK : Cell::WHITE;
+
+    std::vector<std::pair<unsigned, float>> scoredMoves;
+    scoredMoves.reserve(moves.size());
+
+    for (auto move : moves) {
+        if (bestMove != Board::FIRSTMOVE && bestMove == move) {
+            scoredMoves.push_back({move, INF});
+            continue;
+        }
+        if (board.grid.isDoubleThree(move, cColor)) continue;
+        scoredMoves.push_back({move, +randNoise(0.1f) + localTacticalScore(board, move, cColor)});
+    }
+    (void)depth;
+    std::vector<unsigned> orderedMoves;
+    for (auto [move, score] : scoredMoves) {
+            MBL("getOrderedCandidateMovesAll", move, score);
+        orderedMoves.push_back(move);
+    }
+    return orderedMoves;
+}
 
 /*
 
