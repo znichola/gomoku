@@ -219,23 +219,6 @@ float AI::minMax(const Board &board, int16_t depth, bool isBlackToPlay, std::sto
 	return best;
 }
 
-/*
-    Cheap tactical safety net, checked before the heuristic search even starts: does ANY
-    candidate move win outright for `myColor` right now? If not, is there a cell where the
-    OPPONENT would win outright if they got to play there next? A handful of direct
-    isVictory()/getWinningLineColor() checks (one Board copy per raw candidate, no
-    recursion) is a few orders of magnitude cheaper than a full search, and unlike the
-    heuristic search below it can't be fooled: it's not an approximation, it's just asking
-    the same rules engine that ends the game whether this exact move ends it.
-
-    This exists because the heuristic search (localTacticalScore ordering, MAX_MOVES-wide
-    candidate lists, alpha-beta pruning trusting that ordering) is fundamentally an
-    approximation, and in some board configurations it can fail to notice or properly
-    prioritize exactly this kind of forced, unambiguous tactic - regardless of how deep it
-    searches. Confirmed against two real lost games (see the "half-open four" and
-    "diagonal four" regression tests in test/tactics.py) where the AI had a forced block
-    available and searched right past it.
-*/
 unsigned AI::findForcedMove(const Board &board, Cell myColor) {
     const Cell opponent = (myColor == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
     std::vector<unsigned> candidates = getCandidateMoves(board.grid);
@@ -279,23 +262,6 @@ unsigned AI::findForcedMove(const Board &board, Cell myColor) {
     return Board::FIRSTMOVE;
 }
 
-/*
-    Choosing the best move by using iterative deepening: search depth 1, then 2, then 3...
-    up to the configured AI::maxDepth, always keeping the move found by the LAST FULLY
-    COMPLETED depth as the answer.
-
-    Why: a plain fixed-depth search has no valid move to fall back on if the time budget
-    (the stop_token, see AI::play) runs out mid-search - alphaBetaNegaMaxTT returns 0 for
-    any node it had to abandon, and that 0 can silently bubble up and corrupt the score of
-    whichever root move was being explored when time ran out. Iterative deepening sidesteps
-    this: each depth is only ever accepted once it has finished normally, so a timeout just
-    means "we stop at the deepest depth we had time to finish", never a corrupted pick.
-
-    It also happens to make deeper searches cheaper: the best move from depth d-1 is passed
-    back in as the move-ordering hint for depth d (mainCandidateMoves' bestMove param), and
-    the transposition table carries over across depths (single tt.newSearch() for the whole
-    call), so alpha-beta gets much tighter bounds earlier at each new depth.
-*/
 unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) {
     Cell myColor = isWhite ? Cell::WHITE : Cell::BLACK;
     std::string AI = "[AI " + std::string(isWhite ? "W" : "B") + "] ";
@@ -329,7 +295,7 @@ unsigned AI::findBestMove(const Board &board, bool isWhite, std::stop_token st) 
             if (newBoard.playMove(move) == false) continue;
             float score = mainSearch(newBoard, isWhite ? 1 : -1, st);
             if (st.stop_requested()) { interrupted = true; break; } // score may be 0-contaminated, don't trust it
-            ENABLE_LOG MBL("findBestMove", move, score); DISABLE_LOG
+            ENABLE_LOG MBL("findBestMove_" + std::to_string(d), move, score); DISABLE_LOG
             if (score >= bestScoreThisDepth) {
                 bestMoveThisDepth = move;
                 bestScoreThisDepth = score;
@@ -447,13 +413,6 @@ AI::Eval AI::countGroupsOf(const Board &board, int size) {
     return eval;
 }
 
-/*
-    Single pass over the board's line segments (NodeCellRow) that used to be
-    4 separate full scans (countOpenGroupsOf(2/3/4) + countCaptures). Each
-    segment can only match one of: a capturable pair, an empty gap between two
-    same-color runs (half-open Nth), or a contiguous same-color run of 2/3/4 -
-    so the three checks below are mutually exclusive per node.
-*/
 AI::BoardStats AI::gatherBoardStats(const Board &board) {
     const auto &nodes = board.grid.nodes().getCellRowsGarbage();
 
@@ -565,52 +524,6 @@ std::vector<unsigned> AI::getCandidateMoves(const Grid &grid) {
     return candidates;
 }
 
-// TODO unused, but could be interesting
-// Normalize scores to [0,1] then measure how "spread out" they are
-// Low entropy = one dominant move = danger/forced
-// High entropy = many good moves = safe, prune aggressively
-inline float scoreEntropy(const std::vector<std::pair<unsigned, float>> &scoredMoves) {
-    if (scoredMoves.size() <= 1) return 0.f;
-
-    float minS = scoredMoves.back().second;
-    float maxS = scoredMoves.front().second;
-    float range = maxS - minS;
-
-    if (range < 1e-6f) return 1.f; // all moves equal = maximally safe
-
-    // Softmax-style: how much probability mass is on the top move?
-    // A sharp peak = low entropy = danger
-    constexpr float temperature = 10.f; // tune to your score scale
-    float sum = 0.f;
-    for (auto &[move, s] : scoredMoves)
-        sum += std::exp((s - maxS) / temperature);
-
-    // Fraction of mass on best move: close to 1 = forced, close to 1/N = safe
-    float topFraction = 1.f / sum; // exp(0)/sum
-
-    // Convert to a danger signal in [0,1]: 1 = fully forced, 0 = all moves equal
-    return topFraction; // rename to "forcedness" if you like
-}
-
-/*
-    Local (no board copy, no GridTraversal rebuild) estimate of how good playing `color` at
-    `id` looks. For each of the 4 line axes through `id` (using the 8 EXTREMITIES directions,
-    opposite pairs forming an axis), walks outward in both directions counting consecutive
-    same-color stones - once for `color` (offense) and once for the opponent (defense/blocking).
-    Longer and more open runs score higher, roughly mirroring evaluate()'s own ordering (open
-    four > half four > open three > ...). Also checks for an immediate capture via
-    Grid::detectCaptures, which - like the rest of this function - reads the board directly at
-    fixed offsets around `id` without needing the move actually played.
-
-    This replaces move ordering that used to copy the board and run the full evaluate() (4
-    board-wide scans + a fresh GridTraversal construction) for every single candidate at every
-    node of the search tree. An earlier version of this function tried to reuse the cached
-    GridTraversal's line segments instead of walking the grid directly, gating on the flanking
-    segment's size - that was wrong: a segment's size is the length of the WHOLE contiguous
-    empty run id belongs to, not id's distance from the stone it's touching, so it silently
-    skipped axes where id was directly touching a critical run (e.g. failed to find an obvious
-    forced block). Walking the grid directly has no such ambiguity.
-*/
 static float localTacticalScore(const Board &board, unsigned id, Cell color) {
     const Grid &grid = board.grid;
     const Cell opponent = (color == Cell::BLACK) ? Cell::WHITE : Cell::BLACK;
@@ -673,17 +586,6 @@ static float localTacticalScore(const Board &board, unsigned id, Cell color) {
         if ((backEnemy && frontEmpty) || (backEmpty && frontEnemy)) score -= 100;
     }
 
-    // Defensive bonus: does this move DEFUSE an existing vulnerable pair of mine (already
-    // on the board, from an earlier move) by extending it to a run of 3+? A pair flanked by
-    // one enemy stone and one empty cell is one legal move away from being captured; if
-    // `id` is that empty flank, playing there removes the vulnerability outright (a run of
-    // 3+ can never be captured, per the rules), which is worth more than the ordinary
-    // alignment-extension score alone - without this, the AI has no reason to prefer
-    // defusing an active threat over any other similarly-scored extension, and a pair can
-    // sit exposed for turns until the opponent finally cashes it in (confirmed against a
-    // real lost game: white had 4 spare turns to play the exact cell that would have
-    // defused pair 84-85 flanked by black at 83, played elsewhere every time, and black
-    // captured it - one of 5 pairs lost that game).
     for (const Vector2D &dir : EXTREMITIES) {
         const Vector2D p1 = origin + dir;
         const Vector2D p2 = origin + dir * 2;

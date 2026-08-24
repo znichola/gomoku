@@ -44,11 +44,4 @@ inline const std::array<Vector2D, 8> EXTREMITIES = {{
     { 0, -1}, // top
     { 1, -1}  // top-right
 }};
-inline const std::array<Vector2D, 24> NEIGHBORHOOD_2 = {{
-    {-2,-2}, {-1,-2}, {0,-2}, {1,-2}, {2,-2},
-    {-2,-1}, {-1,-1}, {0,-1}, {1,-1}, {2,-1},
-    {-2, 0}, {-1, 0},         {1, 0}, {2, 0},
-    {-2, 1}, {-1, 1}, {0, 1}, {1, 1}, {2, 1},
-    {-2, 2}, {-1, 2}, {0, 2}, {1, 2}, {2, 2}
-}};
 inline const Vector2D *extptr = EXTREMITIES.begin();
