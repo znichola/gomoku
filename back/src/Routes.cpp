@@ -75,6 +75,7 @@ void registerRoutes(Server& server, GameState& gs) {
     });
 
     server.get("/api/set-config", [&gs](const Request& req) -> Response {
+        MessageQueue::drain();
         if (!handleLoadAIState(req.query, gs)) {
             return Response{400, "{ \"error\": \"invalid action\" }"};
         }
