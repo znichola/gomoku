@@ -58,6 +58,7 @@ private:
 	std::deque<NodeLOD> nodeLODsGarbage;
 	std::deque<NodeCellRow> cellRowsGarbage;
 	std::vector<AdjacentNode> gridCellRow;
+	std::vector<Cell> sourceGrid;
 
 	void iterateNode(const Grid& grid, void (GridTraversal::*populateNode)(long, long, long, const Grid&));
 
@@ -75,4 +76,5 @@ public:
 	const std::deque<NodeLOD>& getNodeLODsGarbage() const;
 	const std::deque<NodeCellRow>& getCellRowsGarbage() const;
 	const std::vector<AdjacentNode>& getGridCellRow() const;
+	const std::vector<Cell>& getSourceGrid() const;
 };

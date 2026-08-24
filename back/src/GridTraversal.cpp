@@ -4,7 +4,7 @@
 
 std::unordered_map<uint64_t, GridTraversal> tableGridTraversal;
 
-GridTraversal::GridTraversal(const Grid &grid) {
+GridTraversal::GridTraversal(const Grid &grid) : sourceGrid(grid.getGrid()) {
 	const unsigned size = grid.size;
 
 	gridCellRow.reserve(size);
@@ -132,6 +132,9 @@ const std::vector<AdjacentNode>& GridTraversal::getGridCellRow() const {
 	return gridCellRow;
 };
 
+const std::vector<Cell>& GridTraversal::getSourceGrid() const {
+	return sourceGrid;
+};
 
 void NodeCellRow::incrementSize(bool cellIsDead){
 	++size;

@@ -106,14 +106,17 @@ const GridTraversal& Grid::nodes() const {
         return *gridTraversal;
 
     auto it = tableGridTraversal.find(hash);
-    if (it != tableGridTraversal.end()
-            // && memcmp(it->second.grid.getGrid().data(), grid.getGrid().data(), 361) == 0
-            ) {
+    if (it != tableGridTraversal.end()) {
+        if (it->second.getSourceGrid() == grid)
+            return it->second;
         return it->second;
     } else {
         auto [it, inserted] = tableGridTraversal.try_emplace(hash, *this);
         return it->second;
+        tableGridTraversal.erase(it);
     }
+    auto [it2, inserted] = tableGridTraversal.try_emplace(hash, *this);
+    return it2->second;
 }
 
 std::string Grid::serialize() const {
