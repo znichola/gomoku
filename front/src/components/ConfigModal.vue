@@ -215,11 +215,11 @@ const suggestOptions: { value: MoveSuggestion, label: string }[] = [
                 type="range"
                 min="100"
                 max="10000"
-                step="100"
+                step="50"
                 v-model.number="localTimeBudgetMs"
                 @change="applyConfig"
               />
-              <label for="aiTimeBudget"><span class="cm-value">{{ (localTimeBudgetMs / 1000).toFixed(1) }}s</span></label>
+              <label for="aiTimeBudget"><span class="cm-value">{{ (localTimeBudgetMs / 1000).toFixed(2) }}s</span></label>
             </div>
             <p class="cm-hint">
               Cutoff given to the AI's search: it stops thinking and plays the best move found so far, however deep it got (capped by search depth above).

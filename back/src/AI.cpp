@@ -37,7 +37,7 @@ unsigned AI::play(const Board &board, bool isWhite) {
     std::future_status status;
     bool stopRequested = false;
     do {
-        status = fMove.wait_for(50ms);
+        status = fMove.wait_for(25ms);
         if (stopRequested) continue;
         bool outOfTime = std::chrono::steady_clock::now() - pollStart >= budget;
         if (outOfTime || g_interrupted.load(std::memory_order_relaxed)) {

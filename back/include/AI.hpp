@@ -34,7 +34,7 @@ namespace AI {
 
     // Apparently the back decides the final config used on first load
     inline int16_t maxDepth = 10;
-    inline int64_t maxThinkMillis = 500;
+    inline int64_t maxThinkMillis = 450;
 
     inline SearchFunction searchFunction = SearchFunction::ALPHABETA_NEGAMAX_TT;
     inline MoveFunction moveFunction = MoveFunction::CANDIDATE_MOVES;
