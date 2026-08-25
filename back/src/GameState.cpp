@@ -26,6 +26,7 @@ std::string GameState::serialize() const {
     }) << ",\n";
     out << "\"moveFunction\": " << serializeEnum<AI::MoveFunction>(AI::moveFunction, {
         {AI::MoveFunction::CANDIDATE_MOVES, "CANDIDATE_MOVES"},
+        {AI::MoveFunction::ALL_MOVES, "ALL_MOVES"},
     }) << ",\n";
     out << "\"moveSuggestion\": " << serializeEnum<Cell>(moveSuggestion, {
         {Cell::EMPTY, "off"},

@@ -453,6 +453,8 @@ std::vector<unsigned> AI::mainCandidateMoves(
     switch (moveFunction) {
     case MoveFunction::CANDIDATE_MOVES:
         return getOrderedCandidateMoves(board, bestMove, color, depth);
+    case MoveFunction::ALL_MOVES:
+        return getCandidateMoves(board.grid);
     }
     std::runtime_error("Must select valid Move function");
 }

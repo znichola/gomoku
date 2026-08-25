@@ -22,6 +22,7 @@ const searchOptions: { value: SearchFunction; label: string; desc: string }[] = 
 
 const moveOptions: { value: MoveFunction; label: string; desc: string }[] = [
   { value: 'CANDIDATE_MOVES',    label: 'Candidate moves', desc: 'Ordering based on evaluation delta after move, and aggressive move pruning' },
+  { value: 'ALL_MOVES',    label: 'All moves', desc: 'All moves around existing stones, no pruning nor ordering, it\'s very inefficient.' },
 ]
 
 export { getCellClass, searchOptions, moveOptions };

@@ -1,6 +1,7 @@
 NAME = gomoku
 
 all: $(NAME)
+	@echo "..built, start server with 'cd back && ./$(NAME)'"
 
 $(NAME): back front
 

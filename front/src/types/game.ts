@@ -14,6 +14,7 @@ export type MoveSuggestion =
 
 export type MoveFunction =
   | 'CANDIDATE_MOVES'
+  | 'ALL_MOVES'
 
 export interface Board {
   grid: Cell[]
